@@ -10,7 +10,6 @@
     - available
     - need help
     
-    ![image.png](attachment:91a6995e-23c9-4a23-86d6-455b9896b68f:image.png)
     
 - maybe threads to keep related/similar issues grouped together if the prj is big enough to warrant the need for categorization for organization within the dashboard; like you can mark certain categories to be updated on so you’re not constantly bombarded by notifications that might not necessarily be relevant to you
 - from discord: maybe when you hover/click on a user you’ll be able to see what they’re currently doing(eg “on vscode doing blah blah blah, on claude…”
