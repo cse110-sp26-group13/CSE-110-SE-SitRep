@@ -1,0 +1,154 @@
+.checkin-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  align-items: center;
+}
+.checkin-row.cover { border-color: rgba(255, 69, 58, 0.35); }
+.checkin-row.stale { border-color: rgba(255, 176, 32, 0.3); }
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+.checkin-name { font-weight: 600; font-size: 13px; }
+.checkin-role { color: var(--text-muted); font-size: 11px; margin-left: 6px; }
+.checkin-meta {
+  display: flex; gap: 8px;
+  align-items: center; flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.checkin-note {
+  color: var(--text);
+  font-size: 12px;
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.checkin-actions { display: flex; gap: 6px; flex-direction: column; }
+
+.mood-pill {
+  display: inline-flex; align-items: center;
+  font-size: 15px;
+  line-height: 1;
+}
+.mood-none { color: var(--text-muted); font-size: 11px; }
+
+.cover-badge {
+  display: inline-block;
+  background: rgba(255, 69, 58, 0.15);
+  color: var(--bad);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 69, 58, 0.4);
+}
+.cover-msg-btn, .cover-take-btn {
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+  white-space: nowrap;
+}
+.cover-msg-btn:hover { background: var(--surface-3); }
+.cover-take-btn {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #fff;
+}
+.cover-take-btn:hover { background: #d63a30; border-color: #d63a30; }
+
+.checkin-form {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.checkin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.checkin-form input[type="text"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 9px;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 13px;
+}
+.checkin-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.mood-faces {
+  display: flex;
+  gap: 8px;
+  justify-content: space-around;
+}
+.mood-face {
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  filter: grayscale(0.4);
+  opacity: 0.7;
+  transition: transform 0.1s, opacity 0.1s, filter 0.1s, border-color 0.1s;
+}
+.mood-face:hover {
+  opacity: 1;
+  filter: none;
+}
+.mood-face.selected {
+  opacity: 1;
+  filter: none;
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+.mood-quick-card .mood-faces {
+  padding: 4px 0 2px;
+}
+
+.standup-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.standup-column .mood-quick-card { flex: 0 0 auto; }
+.standup-column .standup-card { flex: 1; min-height: 0; }
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
