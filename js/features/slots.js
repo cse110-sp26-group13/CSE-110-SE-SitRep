@@ -5,6 +5,7 @@ function effectiveAvailability(slot, teammateId) {
 }
 
 function toggleSlotAvailability(slotId, teammateId) {
+  if (teammateId !== team.currentUserId) return;
   const slot = meetingSlots.find(s => s.id === slotId);
   if (!slot) return;
   if (!state.slotAvailability) state.slotAvailability = {};
@@ -44,8 +45,9 @@ function renderSlots() {
         data-slot="${s.id}"
         data-teammate="${t.id}"
         aria-pressed="${avail}"
+        ${isMe ? "" : "disabled aria-disabled=\"true\""}
         title="${escapeHTML(t.name)} — ${escapeHTML(s.label)}: ${avail ? "Available" : "Unavailable"}"
-        aria-label="Toggle ${escapeHTML(t.name)} availability at ${escapeHTML(s.label)}"
+        aria-label="${isMe ? `Toggle your availability at ${escapeHTML(s.label)}` : `${escapeHTML(t.name)} at ${escapeHTML(s.label)}: ${avail ? "Available" : "Unavailable"}`}"
       ></button>`;
     }).join("");
     return `<div class="w2m-name" title="${escapeHTML(t.name)}">${escapeHTML(initials)}</div>${cells}`;
@@ -70,7 +72,7 @@ function renderSlots() {
     </div>
   `;
 
-  list.querySelectorAll(".w2m-cell").forEach(btn => {
+  list.querySelectorAll(".w2m-cell.me").forEach(btn => {
     btn.addEventListener("click", () => {
       toggleSlotAvailability(btn.dataset.slot, btn.dataset.teammate);
     });

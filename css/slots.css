@@ -34,7 +34,8 @@
   background: var(--surface-3);
   transition: background 0.12s, transform 0.08s, border-color 0.12s;
 }
-.w2m-cell:hover { transform: scale(1.08); }
+.w2m-cell:not(:disabled):hover { transform: scale(1.08); }
+.w2m-cell:disabled { cursor: default; }
 .w2m-cell.available { background: var(--good); }
 .w2m-cell.unavailable { background: var(--surface-3); }
 .w2m-cell.me { border-color: var(--accent); }
