@@ -1,14 +1,21 @@
-.app { display: flex; height: 100vh; }
+.app {
+  display: flex;
+  min-height: 100vh;
+}
 
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
 .content {
   flex: 1;
   overflow: auto;
   padding: 16px 24px 24px 24px;
   display: grid;
-  gap: 12px;
-  grid-template-rows: minmax(320px, 1.2fr) minmax(220px, 0.9fr);
+  gap: 20px;
+  grid-template-rows: auto auto;
 }
 .row-main {
   display: grid;
