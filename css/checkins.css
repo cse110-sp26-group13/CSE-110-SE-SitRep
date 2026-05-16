@@ -149,7 +149,8 @@
 .standup-column .mood-quick-card { flex: 0 0 auto; }
 .standup-column .standup-card {
   flex: 1;
-  min-height: fit-content;
+  min-height: 0;
+  overflow: hidden;
 }
 .form-actions {
   display: flex;
