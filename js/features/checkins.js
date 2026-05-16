@@ -39,15 +39,26 @@ function renderCheckIns() {
       t.coverNeeded ? "cover" : "",
       !t.lastCheckIn ? "stale" : "",
     ].filter(Boolean).join(" ");
+
     const moodPill = `<span class="mood-pill ${moodClass(t.mood)}">${moodFace(t.mood)}</span>`;
     const ts = t.lastCheckIn?.time ?? "Not checked in";
+
+    // "Today" note — what they're working on right now
     const today = t.lastCheckIn?.today;
+
+    // "Yesterday" note — what they completed; only show if present
+    const yesterday = t.lastCheckIn?.yesterday;
+
+    // Inline blocker note from their standup; only show if non-empty
+    const blockerNote = t.lastCheckIn?.blockers;
+
     const coverBadge = t.coverNeeded ? `<span class="cover-badge">Cover needed</span>` : "";
     const actions = t.coverNeeded ? `
       <div class="checkin-actions">
         <button class="cover-take-btn" data-take="${t.id}">I'll cover</button>
         <button class="cover-msg-btn" data-msg="${t.id}">Message</button>
       </div>` : "";
+
     return `
       <li class="${cls}">
         ${avatar(t.name, t.id)}
@@ -56,7 +67,13 @@ function renderCheckIns() {
             <span class="checkin-name">${escapeHTML(t.name)}</span>
             <span class="checkin-role">${escapeHTML(t.role)}</span>
           </div>
-          ${today ? `<div class="checkin-note">${escapeHTML(today)}</div>` : ""}
+
+          ${yesterday ? `<div class="checkin-note checkin-yesterday"><span class="checkin-field-label">Yesterday:</span> ${escapeHTML(yesterday)}</div>` : ""}
+
+          ${today ? `<div class="checkin-note checkin-today"><span class="checkin-field-label">Today:</span> ${escapeHTML(today)}</div>` : ""}
+
+          ${blockerNote ? `<div class="checkin-note checkin-blocker"><span class="checkin-field-label">Blocker:</span> ${escapeHTML(blockerNote)}</div>` : ""}
+
           <div class="checkin-meta">
             ${moodPill}
             <span>· ${escapeHTML(ts)}</span>
@@ -146,10 +163,16 @@ function bindComposeForm() {
       blockers: blockerNote,
     };
 
+    // Single activity entry combining mood, yesterday, and today
+    const parts = [];
+    if (mood != null)   parts.push(`mood ${moodFace(mood)}`);
+    if (yesterday)      parts.push(`yesterday: ${yesterday}`);
+    if (today)          parts.push(`today: ${today}`);
+
     pushActivity({
       type: "checkin",
       who: me.name,
-      text: `posted standup${mood != null ? ` — mood ${moodFace(mood)}` : ""}${today ? ` · ${today}` : ""}`,
+      text: `posted standup${parts.length ? ` — ${parts.join(" · ")}` : ""}`,
     });
 
     if (blockerNote) {
