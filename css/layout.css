@@ -17,17 +17,20 @@
   gap: 20px;
   grid-template-rows: auto auto;
 }
+
 .row-main {
   display: grid;
   grid-template-columns: 1fr 1.3fr 260px;
   gap: 12px;
   min-height: 0;
+  height: 680px; 
 }
 .row-bottom {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 12px;
   min-height: 0;
+  height: 280px;
 }
 .right-rail {
   display: flex;
