@@ -1,0 +1,184 @@
+/**
+ * CALENDAR FEATURE STYLES
+ * Implements a Gantt-style timeline with resizable container.
+ */
+
+.calendar-card {
+  margin-top: 1.5rem;
+  overflow: auto; /* Required for 'resize' property to function */
+  resize: vertical; /* User can drag bottom-right corner to expand view */
+  min-height: 200px;
+  max-height: 1200px;
+  flex-shrink: 0; /* Ensures resizing doesn't trigger parent flex collapse */
+  border-bottom: 2px solid var(--border); /* Visual affordance for resizing */
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.timeline-view {
+  min-width: 800px;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr; /* Label column | Days grid */
+  gap: 1px;
+  background-color: var(--border);
+  border: 1px solid var(--border);
+}
+
+.timeline-row {
+  display: contents; /* Allows children to align directly to the grid */
+}
+
+.timeline-label {
+  background-color: var(--card-bg);
+  padding: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.timeline-label .subtext {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.timeline-content {
+  background-color: var(--card-bg);
+  position: relative;
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Header row with day names/numbers */
+.timeline-days-header {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr); /* 14-day window */
+  background-color: var(--bg-soft);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+
+.timeline-day-col {
+  padding: 0.5rem 0;
+  border-right: 1px solid var(--border);
+}
+
+/* Layered on top of timeline-content grid */
+.timeline-bar-container {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.timeline-bar {
+  height: 28px;
+  margin-top: 16px;
+  border-radius: 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem 0 2.2rem; /* Left padding makes room for bar-avatar */
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+  min-width: 0; /* Fixes flex child truncation */
+}
+
+/* Truncation for long task titles */
+.timeline-bar span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.timeline-bar:hover {
+  transform: scaleY(1.1);
+  z-index: 10;
+}
+
+.bar-avatar {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid white;
+  object-fit: cover;
+}
+
+/* Specific styling for Issue/Blocker rows */
+.timeline-bar.issue {
+  height: 20px;
+  margin-top: 20px;
+  font-size: 0.7rem;
+  padding-left: 1.8rem;
+}
+
+.timeline-bar.issue .bar-avatar {
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  top: 2px;
+}
+
+.extension-badge {
+  background: var(--danger);
+  color: white;
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.request-extension-btn {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}

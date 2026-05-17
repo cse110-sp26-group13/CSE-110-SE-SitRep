@@ -1,3 +1,8 @@
+/**
+ * MOCK DATASET
+ * Used as a fallback for Supabase persistence during local development.
+ */
+
 const team = {
   name: "Sprint 4 — Onboarding flow",
   currentUserId: "alex",
@@ -10,6 +15,7 @@ const teammates = [
     role: "Frontend",
     mood: 8,
     moodHistory: [6, 7, 7, 8, 9, 7, 8],
+    avatar: "https://ui-avatars.com/api/?name=Alex+Kim&background=4f46e5&color=fff",
     lastCheckIn: {
       time: "9:42 AM",
       yesterday: "Wired up dashboard skeleton",
@@ -24,6 +30,7 @@ const teammates = [
     role: "Backend",
     mood: 4,
     moodHistory: [7, 6, 5, 5, 4, 4, 4],
+    avatar: "https://ui-avatars.com/api/?name=Jordan+Lee&background=0891b2&color=fff",
     lastCheckIn: {
       time: "8:15 AM",
       yesterday: "Auth refactor PR",
@@ -39,6 +46,7 @@ const teammates = [
     role: "Design",
     mood: 7,
     moodHistory: [8, 8, 7, 7, 8, 7, 7],
+    avatar: "https://ui-avatars.com/api/?name=Sam+Patel&background=059669&color=fff",
     lastCheckIn: {
       time: "10:01 AM",
       yesterday: "Empty-state illustrations",
@@ -53,6 +61,7 @@ const teammates = [
     role: "PM",
     mood: 9,
     moodHistory: [8, 9, 9, 8, 9, 9, 9],
+    avatar: "https://ui-avatars.com/api/?name=Riley+Chen&background=f59e0b&color=fff",
     lastCheckIn: {
       time: "9:55 AM",
       yesterday: "Sprint planning prep",
@@ -67,6 +76,7 @@ const teammates = [
     role: "QA",
     mood: null,
     moodHistory: [7, 7, 6, 7, 7, 6, null],
+    avatar: "https://ui-avatars.com/api/?name=Taylor+Brooks&background=7c3aed&color=fff",
     lastCheckIn: null,
     coverNeeded: false,
   },
@@ -82,6 +92,8 @@ const blockers = [
     ownerId: "jordan",
     owner: "Jordan Lee",
     postedAt: "8:20 AM",
+    startDate: "2026-05-15", // Required for Calendar Timeline
+    endDate: "2026-05-18",   // Required for Calendar Timeline
     comments: [
       { id: "c1-1", who: "Alex Kim", text: "Saw this too — reproduced on my account. Happy to pair this afternoon.", time: "9:05 AM" },
     ],
@@ -95,6 +107,8 @@ const blockers = [
     ownerId: "riley",
     owner: "Riley Chen",
     postedAt: "Yesterday 4:12 PM",
+    startDate: "2026-05-16",
+    endDate: "2026-05-20",
     comments: [],
   },
   {
@@ -106,6 +120,8 @@ const blockers = [
     ownerId: "alex",
     owner: "Alex Kim",
     postedAt: "Yesterday 1:30 PM",
+    startDate: "2026-05-14",
+    endDate: "2026-05-19",
     comments: [],
   },
   {
@@ -117,8 +133,44 @@ const blockers = [
     ownerId: "sam",
     owner: "Sam Patel",
     postedAt: "9:50 AM",
+    startDate: "2026-05-17",
+    endDate: "2026-05-17",
     comments: [],
   },
+];
+
+/**
+ * PROJECT TIMELINES
+ * Array of team and individual projects rendered in the Calendar feature.
+ */
+const projects = [
+  {
+    id: "p1",
+    name: "Onboarding Flow Redesign",
+    type: "team",
+    startDate: "2026-05-10",
+    endDate: "2026-05-25",
+    color: "#4f46e5",
+    ownerId: "riley" // Primary owner for avatar display
+  },
+  {
+    id: "p2",
+    name: "Auth Migration",
+    type: "individual",
+    ownerId: "jordan",
+    startDate: "2026-05-12",
+    endDate: "2026-05-18",
+    color: "#0891b2"
+  },
+  {
+    id: "p3",
+    name: "KPI Dashboard",
+    type: "individual",
+    ownerId: "alex",
+    startDate: "2026-05-14",
+    endDate: "2026-05-22",
+    color: "#059669"
+  }
 ];
 
 const meetingSlots = [

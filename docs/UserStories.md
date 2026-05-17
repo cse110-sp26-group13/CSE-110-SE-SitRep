@@ -17,3 +17,8 @@ Shazi
 1. I am a CEO of a startup consisting of 5 engineers. I want to check on the daily progress of my engineers to be able to make sure everyone is on task and can reach out to me easily if need be, and vice versa.
 2. I am a leader for a team in my software engineering class and I want to be able to recieve daily standups from my student teammates to make sure everyone is on track and we are making progress.
 3. I am a developer, part of a large FAANG dev team, and I want a product to let me see my teams availablity for when I need assistance and clarity on a product.
+
+Stephanie
+1. I’m a student balancing classes and a software engineering team project. I want to receive quick summaries of project updates and blockers so I can stay informed even if I miss meetings or am busy with coursework.
+2. I’m a developer working on a large collaborative project. I want to organize issues into categories and receive only relevant notifications so I can focus on my assigned work without being overwhelmed.
+3. I’m a team member who is stuck on a task. I want to quickly indicate that I need help and share my current blocker so teammates can understand the issue and assist me efficiently.

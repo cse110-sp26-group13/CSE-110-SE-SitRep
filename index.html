@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/slots.css" />
   <link rel="stylesheet" href="css/mood-trend.css" />
   <link rel="stylesheet" href="css/activity.css" />
+  <link rel="stylesheet" href="Calender/calendar.css" />
 </head>
 <body>
   <div class="app">
@@ -72,21 +73,6 @@
               <h2 id="checkins-title">Daily standup</h2>
               <span class="card-sub" id="checkins-sub"></span>
             </div>
-            <form class="checkin-form" id="checkin-form" hidden>
-              <label>What did you do yesterday?
-                <input type="text" id="yesterday-input" placeholder="Shipped the auth migration..." />
-              </label>
-              <label>What are you doing today?
-                <input type="text" id="today-input" placeholder="Pairing with Sam on the empty states..." />
-              </label>
-              <label>Any blockers?
-                <input type="text" id="blockers-input" placeholder="Leave blank if none" />
-              </label>
-              <div class="form-actions">
-                <button type="button" class="btn-secondary" id="cancel-checkin">Cancel</button>
-                <button type="submit" class="btn-primary">Post standup</button>
-              </div>
-            </form>
             <ul class="checkin-list" id="checkin-list"></ul>
             </section>
           </div>
@@ -99,12 +85,6 @@
                   <button data-status="open" class="chip active">Open</button>
                   <button data-status="resolved" class="chip">Resolved</button>
                   <button data-status="all" class="chip">All</button>
-                </div>
-                <div class="filters" id="severity-filters" role="tablist" aria-label="Filter by severity">
-                  <button data-sev="all" class="chip active">All</button>
-                  <button data-sev="critical" class="chip">Critical</button>
-                  <button data-sev="high" class="chip">High</button>
-                  <button data-sev="medium" class="chip">Medium</button>
                 </div>
               </div>
               <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
@@ -122,6 +102,16 @@
             </section>
           </aside>
         </div>
+
+        <section class="card calendar-card" id="calendar-card" aria-labelledby="calendar-title">
+          <div class="card-head">
+            <div>
+              <h2 id="calendar-title">Project Timelines</h2>
+              <span class="card-sub">May 11 – May 24, 2026</span>
+            </div>
+          </div>
+          <div id="calendar-timeline"></div>
+        </section>
 
         <div class="row-bottom">
           <section class="card" aria-labelledby="mood-title">
@@ -165,6 +155,7 @@
   <script src="js/features/slots.js"></script>
   <script src="js/features/mood-trend.js"></script>
   <script src="js/features/activity.js"></script>
+  <script src="Calender/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

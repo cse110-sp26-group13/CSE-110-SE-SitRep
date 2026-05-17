@@ -18,6 +18,40 @@ Newest first. Date format: `YYYY-MM-DD`.
 
 ---
 
+### 2026-05-17 — Stephanie Yan
+
+**Tooling:** Gemini CLI (default operating mode).
+
+**AI-assisted output that landed in the repo:**
+
+- Implementation of the **Calendar Timeline** feature (`Calender/calendar.js`, `Calender/calendar.css`).
+- Updated `data.js` to include project timelines and issue dates.
+- Updated `js/state.js` to persist project date extensions.
+- Integrated the calendar into `index.html` and refined `css/layout.css` for a 3-row responsive dashboard.
+- Implemented **inline vertical resizability** for the calendar card using CSS `resize` property.
+- Added **circular profile icons** to timeline bars for task owners.
+- Implemented **Request Extension** functionality with activity feed integration.
+
+**Decisions made:**
+
+- Used a 14-day rolling window for the timeline view starting from May 11, 2026.
+- Opted for **inline expansion** via drag-to-resize rather than a separate modal or full-screen overlay based on user feedback.
+- Chose placeholder avatars from `ui-avatars.com` to demonstrate owner visualization.
+- Moved the calendar to its own row in the dashboard layout to prevent resizing from breaking adjacent elements (Team Pulse/Activity Feed).
+
+**Where the AI helped most:**
+
+- Rapid prototyping of the Gantt-style timeline grid and bar positioning logic.
+- Iterative layout refinement based on real-time feedback regarding component isolation during resizing.
+- Handling boilerplate for activity feed logging and state persistence.
+
+**Where I (user) had to push back:**
+
+- Initial implementation of "Expand View" used a fixed overlay; I requested it to be inline and resizable by dragging the corner to better match the intended UX.
+- Corrected text truncation issues on short timeline bars where long titles were bleeding out.
+
+---
+
 ### 2026-05-16 — Shazi
 
 **Tooling:** Claude (Anthropic Opus 4.7) via Claude Code CLI. Connected to the project's Supabase instance (`HardCoders`) through the official Supabase MCP server (OAuth-authorized this session). Installed the `supabase/agent-skills` Postgres best-practices skill for the model.

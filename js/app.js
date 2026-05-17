@@ -6,6 +6,7 @@ function renderAll() {
   renderSlots();
   renderMoodTrend();
   renderActivity();
+  if (typeof renderCalendar === "function") renderCalendar();
 }
 
 function bindReset() {
