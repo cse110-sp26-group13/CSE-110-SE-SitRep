@@ -34,3 +34,7 @@ logs/
 Thumbs.db
 *.bak
 *.tmp
+
+# Claude Code agent skills (per-developer, not team config)
+.agents/
+skills-lock.json
