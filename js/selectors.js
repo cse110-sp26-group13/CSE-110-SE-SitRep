@@ -21,6 +21,9 @@ function effectiveBlockers() {
       description: ov.description ?? b.description ?? "",
       status: ov.status ?? b.status ?? "open",
       comments: ov.comments ?? b.comments ?? [],
+      startDate: ov.startDate ?? b.startDate ?? "",
+      dueDate: ov.dueDate ?? b.dueDate ?? "",
+      category: ov.category ?? b.category ?? "",
     };
   });
 }
@@ -33,6 +36,7 @@ function updateBlocker(id, patch) {
   const existing = state.blockerOverrides[id] || {};
   const base = [...state.extraBlockers, ...blockers].find(b => b.id === id);
   state.blockerOverrides[id] = {
+    ...existing,
     description: existing.description ?? base?.description ?? "",
     status: existing.status ?? base?.status ?? "open",
     comments: existing.comments ?? base?.comments ?? [],

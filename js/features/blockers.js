@@ -70,6 +70,13 @@ function severityOptions(selected) {
   ).join("");
 }
 
+function categoryOptions(selected) {
+  const placeholder = `<option value="" disabled${!selected ? " selected" : ""}>Select category</option>`;
+  return placeholder + ["ui", "swe", "backend"].map(c =>
+    `<option value="${c}"${c === selected ? " selected" : ""}>${c.toUpperCase()}</option>`
+  ).join("");
+}
+
 function openModal(titleText, bodyHTML) {
   document.getElementById("issue-modal-title").textContent = titleText;
   document.getElementById("issue-modal-body").innerHTML = bodyHTML;
@@ -103,6 +110,21 @@ function openCreateModal() {
           <select id="issue-owner">${teammateOptions(me?.id)}</select>
         </label>
       </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Start date</span>
+          <input type="date" id="issue-start" />
+        </label>
+        <label class="field">
+          <span>Due date</span>
+          <input type="date" id="issue-due" />
+        </label>
+      </div>
+      <p id="date-error" class="field-error" hidden></p>
+      <label class="field">
+        <span>Category</span>
+        <select id="issue-category" required>${categoryOptions("")}</select>
+      </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
         <button type="submit" class="btn-primary">Create issue</button>
@@ -119,6 +141,17 @@ function openCreateModal() {
     const severity = document.getElementById("issue-sev").value;
     const ownerId = document.getElementById("issue-owner").value;
     const ownerObj = teammates.find(t => t.id === ownerId);
+    const startDate = document.getElementById("issue-start").value;
+    const dueDate = document.getElementById("issue-due").value;
+    const category = document.getElementById("issue-category").value;
+    const dateError = document.getElementById("date-error");
+
+    if (startDate && dueDate && startDate > dueDate) {
+      dateError.textContent = "Start date must be before due date.";
+      dateError.hidden = false;
+      return;
+    }
+    dateError.hidden = true;
 
     const newId = `u${Date.now()}`;
     state.extraBlockers.unshift({
@@ -130,6 +163,9 @@ function openCreateModal() {
       ownerId,
       owner: ownerObj?.name ?? "Unassigned",
       postedAt: nowTime(),
+      startDate,
+      dueDate,
+      category,
       comments: [],
     });
 
@@ -150,6 +186,11 @@ function openCreateModal() {
 function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
+
+  const ov = state.blockerOverrides[id] || {};
+  const currentStartDate = ov.startDate ?? b.startDate ?? "";
+  const currentDueDate = ov.dueDate ?? b.dueDate ?? "";
+  const currentCategory = ov.category ?? b.category ?? "swe";
 
   const commentsHTML = b.comments.length
     ? b.comments.map(c => `
@@ -176,6 +217,21 @@ function openDetailModal(id) {
         </label>
         <span class="issue-owner-meta">Assigned to <strong>${escapeHTML(b.owner)}</strong></span>
         <span class="issue-posted-meta">Opened ${escapeHTML(b.postedAt)}</span>
+      </div>
+
+      <div class="field-row issue-dates-row">
+        <label class="field">
+          <span>Start date</span>
+          <input type="date" id="detail-start" value="${escapeHTML(currentStartDate)}" />
+        </label>
+        <label class="field">
+          <span>Due date</span>
+          <input type="date" id="detail-due" value="${escapeHTML(currentDueDate)}" />
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="detail-category">${categoryOptions(currentCategory)}</select>
+        </label>
       </div>
 
       <div class="issue-description">
@@ -210,6 +266,19 @@ function openDetailModal(id) {
     saveState();
     renderAll();
     openDetailModal(id);
+  });
+
+  document.getElementById("detail-start").addEventListener("change", e => {
+    updateBlocker(id, { startDate: e.target.value });
+    saveState();
+  });
+  document.getElementById("detail-due").addEventListener("change", e => {
+    updateBlocker(id, { dueDate: e.target.value });
+    saveState();
+  });
+  document.getElementById("detail-category").addEventListener("change", e => {
+    updateBlocker(id, { category: e.target.value });
+    saveState();
   });
 
   document.getElementById("comment-form").addEventListener("submit", e => {
