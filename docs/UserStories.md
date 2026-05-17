@@ -11,3 +11,9 @@ Yang
 1. I’m a student working on a group project. I want to quickly see what my teammates are doing and if anyone is stuck so we can work together better and finish tasks on time.
 2. I’m a team leader managing a small project team. I want to check team progress, task status, and meeting schedules in one place so it is easier to organize the team and avoid confusion.
 3. I’m a developer working with a fast-moving team. I want to post daily updates and blockers quickly so everyone knows the current progress and communication is more clear.
+
+Shazi
+
+1. I am a CEO of a startup consisting of 5 engineers. I want to check on the daily progress of my engineers to be able to make sure everyone is on task and can reach out to me easily if need be, and vice versa.
+2. I am a leader for a team in my software engineering class and I want to be able to recieve daily standups from my student teammates to make sure everyone is on track and we are making progress.
+3. I am a developer, part of a large FAANG dev team, and I want a product to let me see my teams availablity for when I need assistance and clarity on a product.
