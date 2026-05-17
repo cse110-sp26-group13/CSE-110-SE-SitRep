@@ -1,6 +1,6 @@
 # Sprint Planning — Week 7
 
-**Dates:** Sun May 10, 2026 – Sun May 17, 2026
+**Dates:** Thurs May 14, 2026 – Tues May 19, 2026
 **Sprint type:** First full build sprint (following the design/prototyping sprint)
 **Team:** Group 13
 
