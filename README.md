@@ -29,7 +29,7 @@ For local development with live reload, any static server works (e.g. `python3 -
 
 ## Tech stack
 
-Vanilla HTML, CSS, and JavaScript — no framework, no build step. See [docs/adr/0001-vanilla-stack-no-framework.md](docs/adr/0001-vanilla-stack-no-framework.md) for the decision and rationale.
+Vanilla HTML, CSS, and JavaScript — no framework, no build step. This is a course constraint, not a team decision (per the CSE 110 Sp 26 project rubric). Backend persistence lives in Supabase ([docs/adr/0003-adopt-supabase-for-persistence.md](docs/adr/0003-adopt-supabase-for-persistence.md)).
 
 ## Project structure
 

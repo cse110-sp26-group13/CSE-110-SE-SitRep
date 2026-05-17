@@ -30,7 +30,6 @@ Initial barebones dashboard skeleton.
 - Mock team dataset for local development ([data.js](data.js))
 - Modular CSS architecture, one stylesheet per feature ([css/](css/))
 - Modular JS architecture with per-feature modules under [js/features/](js/features/)
-- First Architectural Decision Record: vanilla HTML/CSS/JS stack, no framework ([docs/adr/0001-vanilla-stack-no-framework.md](docs/adr/0001-vanilla-stack-no-framework.md))
 
 [Unreleased]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.1.0...v0.1.1
