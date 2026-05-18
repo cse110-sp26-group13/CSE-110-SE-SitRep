@@ -35,7 +35,7 @@ Ship the four MVP features identified in [docs/MVP/Minimum Value Product.md](../
   - v2: at least one real GitHub repo's issues render in the dashboard.
 
 ### 2. Calendar
-- **Owner:** Stephanie (looking for a +1)
+- **Owner:** Stephanie, Aaron
 - **Branch:** `stephanie/calendar`
 - **Scope:**
   - Track both individual and team project timelines.
