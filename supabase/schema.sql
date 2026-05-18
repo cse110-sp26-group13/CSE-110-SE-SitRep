@@ -119,6 +119,38 @@ end;
 $$;
 
 -- ============================================================
+-- create_team(p_name text)
+-- Atomic "insert team + add creator as lead" for the splash flow.
+-- security definer bypasses the team_member_read RLS gap that
+-- prevented the creator from reading back their own freshly
+-- inserted team. Raises 'team_name_blank' or 'team_name_too_long'
+-- on bad input.
+-- ============================================================
+create or replace function public.create_team(p_name text)
+returns public.teams
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text := btrim(coalesce(p_name, ''));
+  v_team public.teams;
+begin
+  if v_name = '' then
+    raise exception 'team_name_blank' using errcode = 'P0001';
+  end if;
+  if char_length(v_name) > 80 then
+    raise exception 'team_name_too_long' using errcode = 'P0001';
+  end if;
+  insert into public.teams (name) values (v_name) returning * into v_team;
+  insert into public.memberships (user_id, team_id, role)
+  values (auth.uid(), v_team.id, 'lead')
+  on conflict (user_id, team_id) do nothing;
+  return v_team;
+end;
+$$;
+
+-- ============================================================
 -- Auto-create a profile row when a new auth user signs up.
 -- ============================================================
 create or replace function public.handle_new_user()
@@ -219,6 +251,10 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- but not by anonymous clients.
 revoke execute on function public.join_team_by_code(text) from public, anon;
 grant  execute on function public.join_team_by_code(text) to authenticated;
+
+-- create_team: same stance — authenticated only.
+revoke execute on function public.create_team(text) from public, anon;
+grant  execute on function public.create_team(text) to authenticated;
 
 -- ============================================================
 -- Dev convenience

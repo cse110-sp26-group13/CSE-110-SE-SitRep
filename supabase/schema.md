@@ -4,7 +4,7 @@ Human-readable companion to [schema.sql](schema.sql). If you change the schema, 
 
 **Project:** `HardCoders` (`vbimsbasupcbdxzsazif`)
 **Postgres:** 17.6
-**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`
+**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`, `add_create_team_rpc`
 
 ## Tables
 
@@ -81,6 +81,23 @@ const { data, error } = await supabase.rpc('join_team_by_code', { p_code: '12345
 // data → team row, or error.code === 'P0001'
 ```
 
+### `create_team(p_name text) → teams`
+The **canonical way for a signed-in user to create a team**. Atomic: inserts the team (the `set_team_join_code` trigger fills `join_code`), inserts a `memberships` row for `auth.uid()` with `role='lead'`, and returns the new team row.
+
+`security definer` lets it return the team row even though the user isn't a member at the moment of insert (RLS `team_member_read` would otherwise hide it from the calling user's perspective). This is the resolution of the previously-documented "INSERT-then-SELECT" gap.
+
+Raises:
+- `team_name_blank` (SQLSTATE `P0001`) if the trimmed name is empty.
+- `team_name_too_long` (SQLSTATE `P0001`) if the trimmed name exceeds 80 chars.
+
+EXECUTE granted to `authenticated` only.
+
+Use from the client:
+```js
+const { data: team, error } = await supabase.rpc('create_team', { p_name: 'Group 13' });
+// data → team row (including the 6-digit join_code to share)
+```
+
 ### `handle_new_user()` *(auth trigger function)*
 Fires `after insert on auth.users` (i.e. on signup). Creates a matching `profiles` row. `security definer` because the calling context is the auth system, not the new user.
 
@@ -103,7 +120,7 @@ No `insert` policy: profiles are created exclusively by the `handle_new_user` tr
 - **`team_member_read`** — `select` teams you belong to.
 - **`team_authed_insert`** — any signed-in user can `insert` a new team.
 
-**Known gap:** after `INSERT`, the user can't read the row back via `.select()` because they're not yet a member. The fix is a `create_team(p_name)` RPC that does insert-team + insert-membership atomically — not yet implemented.
+The "creator can't read back their own freshly-inserted team via `.select()`" RLS gap is resolved by the `create_team` RPC (see Functions) — clients should always use the RPC instead of inserting `teams` directly.
 
 ### `memberships`
 - **`membership_self_read`** — read your own memberships and those of your teammates (so you can see who's on a shared team).
@@ -133,18 +150,11 @@ const { data: team, error } = await supabase.rpc('join_team_by_code', { p_code: 
 // error.code === 'P0001' → "invalid code"
 ```
 
-### Create a team *(currently has the gap noted above)*
-Eventually:
+### Create a team
 ```js
 const { data: team, error } = await supabase.rpc('create_team', { p_name: 'Sprint 5 Team' });
-```
-
-For now (workaround):
-```js
-const { data: team } = await supabase
-  .from('teams')
-  .insert({ name: 'My Team' });
-// Then a separate select by id, or insert into memberships first.
+// data → team row; the caller is auto-added to memberships with role='lead'.
+// Share team.join_code (6-digit numeric) with teammates so they can join.
 ```
 
 ---
