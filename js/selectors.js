@@ -40,6 +40,9 @@ function updateBlocker(id, patch) {
     description: existing.description ?? base?.description ?? "",
     status: existing.status ?? base?.status ?? "open",
     comments: existing.comments ?? base?.comments ?? [],
+    startDate: existing.startDate ?? base?.startDate ?? "",
+    dueDate: existing.dueDate ?? base?.dueDate ?? "",
+    category: existing.category ?? base?.category ?? "",
     ...patch,
   };
 }

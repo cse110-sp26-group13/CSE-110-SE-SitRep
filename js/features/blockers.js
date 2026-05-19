@@ -1,6 +1,25 @@
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
 const STATUS_LABEL = { open: "Open", "in-progress": "In progress", resolved: "Resolved" };
 
+function formatIssueDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(`${dateString}T00:00:00`);
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function isIssueOverdue(issue) {
+  if (!issue.dueDate || issue.status === "resolved") return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const due = new Date(`${issue.dueDate}T00:00:00`);
+  return due < today;
+}
+
 function statusMatchesFilter(status, filter) {
   if (filter === "all") return true;
   if (filter === "open") return status === "open" || status === "in-progress";
@@ -32,6 +51,13 @@ function renderBlockers() {
       const commentBadge = commentCount
         ? `<span class="blocker-comments" title="${commentCount} comment${commentCount === 1 ? "" : "s"}">💬 ${commentCount}</span>`
         : "";
+
+      const dueBadge = b.dueDate
+        ? `<span class="blocker-due ${isIssueOverdue(b) ? "overdue" : ""}">
+            ${isIssueOverdue(b) ? "Overdue" : "Due"} ${formatIssueDate(b.dueDate)}
+          </span>`
+        : "";
+
       return `
       <li class="blocker-row status-${b.status}" data-open="${escapeHTML(b.id)}">
         <span class="sev-tag sev-${b.severity}">${b.severity}</span>
@@ -39,7 +65,11 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
+            
+            ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
+            
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
+            ${dueBadge}
             ${commentBadge}
           </div>
         </div>
@@ -271,14 +301,20 @@ function openDetailModal(id) {
   document.getElementById("detail-start").addEventListener("change", e => {
     updateBlocker(id, { startDate: e.target.value });
     saveState();
+    renderAll();
   });
+
   document.getElementById("detail-due").addEventListener("change", e => {
     updateBlocker(id, { dueDate: e.target.value });
     saveState();
+    renderAll(); 
   });
+
+  // FIXED: Added render trigger to category changes
   document.getElementById("detail-category").addEventListener("change", e => {
     updateBlocker(id, { category: e.target.value });
     saveState();
+    renderAll();
   });
 
   document.getElementById("comment-form").addEventListener("submit", e => {
