@@ -1,0 +1,16 @@
+{
+  "name": "se-sitrep",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test": "vitest run && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "serve": "^14.2.0",
+    "vitest": "^2.0.0"
+  }
+}
