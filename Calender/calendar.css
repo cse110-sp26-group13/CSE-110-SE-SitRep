@@ -5,12 +5,10 @@
 
 .calendar-card {
   margin-top: 1.5rem;
-  overflow: auto; /* Required for 'resize' property to function */
-  resize: vertical; /* User can drag bottom-right corner to expand view */
-  min-height: 200px;
+  overflow: hidden;
+  min-height: 360px;
   max-height: 1200px;
   flex-shrink: 0; /* Ensures resizing doesn't trigger parent flex collapse */
-  border-bottom: 2px solid var(--border); /* Visual affordance for resizing */
 }
 
 .calendar-header {
@@ -21,7 +19,8 @@
 }
 
 .timeline-view {
-  min-width: 800px;
+  width: 100%;
+  min-width: 0;
   position: relative;
   padding-bottom: 1rem;
 }
@@ -64,7 +63,7 @@
 /* Header row with day names/numbers */
 .timeline-days-header {
   display: grid;
-  grid-template-columns: repeat(14, 1fr); /* 14-day window */
+  grid-template-columns: repeat(var(--calendar-days, 9), 1fr);
   background-color: var(--bg-soft);
   text-align: center;
   font-size: 0.7rem;
@@ -81,7 +80,7 @@
 /* Layered on top of timeline-content grid */
 .timeline-bar-container {
   display: grid;
-  grid-template-columns: repeat(14, 1fr);
+  grid-template-columns: repeat(var(--calendar-days, 9), 1fr);
   height: 100%;
   position: absolute;
   top: 0;

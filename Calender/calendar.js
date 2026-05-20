@@ -1,14 +1,30 @@
 /**
  * Renders the Gantt-style project timeline.
- * Displays a 14-day window starting from May 11, 2026.
+ * Displays a 9-day window: yesterday + next 7 days.
  */
 function renderCalendar() {
   const container = document.getElementById("calendar-timeline");
   if (!container) return;
 
-  // Window configuration: 14 days starting from May 11, 2026
-  const windowStartDate = new Date("2026-05-11");
-  const totalDays = 14;
+  // Window configuration: previous day and the 7 following days (includes today)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const windowStartDate = new Date(today);
+  windowStartDate.setDate(today.getDate() - 1);
+
+  const totalDays = 9;
+  container.style.setProperty("--calendar-days", String(totalDays));
+
+  // Update the subtitle range text if present in the card header
+  const subtitle = document.querySelector("#calendar-card .card-sub");
+  if (subtitle) {
+    const windowEndDate = new Date(windowStartDate);
+    windowEndDate.setDate(windowStartDate.getDate() + totalDays - 1);
+
+    const fmt = d => d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    subtitle.textContent = `${fmt(windowStartDate)} \u2013 ${fmt(windowEndDate)}`;
+  }
 
   let html = `
     <div class="timeline-view">
@@ -24,7 +40,7 @@ function renderCalendar() {
     date.setDate(windowStartDate.getDate() + i);
     const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = date.getDate();
-    const isToday = date.toDateString() === new Date("2026-05-17").toDateString();
+    const isToday = date.toDateString() === today.toDateString();
     html += `<div class="timeline-day-col ${isToday ? 'today' : ''}">${dayName}<br>${dayNum}</div>`;
   }
 
