@@ -268,3 +268,9 @@
 .cat-ui      { background: rgba(79, 140, 255, 0.18); color: var(--accent); }
 .cat-swe     { background: rgba(52, 199, 89,  0.18); color: var(--good);   }
 .cat-backend { background: rgba(255, 149, 0,  0.18); color: var(--orange); }
+
+/* ---------- Sync Button Layout ---------- */
+.button-group {
+  display: flex;
+  gap: 8px; /* Adds consistent spacing between Sync and New Issue buttons */
+}

@@ -13,8 +13,19 @@ function effectiveTeammates() {
   });
 }
 
+function setGithubIssues(issues) {
+  state.githubIssues = issues;
+  saveState();
+}
+
 function effectiveBlockers() {
-  return [...state.extraBlockers, ...blockers].map(b => {
+  const allIssues = [
+    ...state.extraBlockers, 
+    ...(state.githubIssues || []), 
+    ...blockers
+  ];
+
+  return allIssues.map(b => {
     const ov = state.blockerOverrides[b.id] || {};
     return {
       ...b,
@@ -34,7 +45,13 @@ function findBlockerById(id) {
 
 function updateBlocker(id, patch) {
   const existing = state.blockerOverrides[id] || {};
-  const base = [...state.extraBlockers, ...blockers].find(b => b.id === id);
+  const allIssues = [
+    ...state.extraBlockers, 
+    ...(state.githubIssues || []), 
+    ...blockers
+  ];
+  const base = allIssues.find(b => b.id === id);
+  
   state.blockerOverrides[id] = {
     ...existing,
     description: existing.description ?? base?.description ?? "",
