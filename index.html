@@ -73,6 +73,24 @@
               <h2 id="checkins-title">Daily standup</h2>
               <span class="card-sub" id="checkins-sub"></span>
             </div>
+            <form id="checkin-form" class="checkin-form" hidden>
+              <label>
+                Yesterday
+                <input type="text" id="yesterday-input" placeholder="What did you finish?" />
+              </label>
+              <label>
+                Today
+                <input type="text" id="today-input" placeholder="What are you working on?" />
+              </label>
+              <label>
+                Blockers
+                <input type="text" id="blockers-input" placeholder="Anything blocking you?" />
+              </label>
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancel-checkin">Cancel</button>
+                <button type="submit" class="btn-primary">Post</button>
+              </div>
+            </form>
             <ul class="checkin-list" id="checkin-list"></ul>
             </section>
           </div>

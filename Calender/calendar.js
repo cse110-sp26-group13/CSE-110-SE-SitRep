@@ -46,7 +46,21 @@ function renderCalendar() {
   });
 
   // 2. Render Active Issues (Blockers) as timeline items
-  blockers.forEach(blocker => {
+  const allIssues = (typeof effectiveBlockers === "function" ? effectiveBlockers() : blockers) || [];
+  const filteredIssues = allIssues
+    .filter(b => {
+      const sevFilter = state?.severityFilter ?? "all";
+      return sevFilter === "all" ? true : b.severity === sevFilter;
+    })
+    .filter(b => {
+      const statusFilter = state?.statusFilter ?? "open";
+      const status = b.status ?? "open";
+      if (statusFilter === "all") return true;
+      if (statusFilter === "resolved") return status === "resolved";
+      return status === "open" || status === "in-progress";
+    });
+
+  filteredIssues.forEach(blocker => {
     const owner = teammates.find(t => t.id === blocker.ownerId);
     html += renderTimelineRow(
       blocker.title, 
@@ -70,6 +84,17 @@ function renderCalendar() {
   `;
 
   container.innerHTML = html;
+
+  // Calendar -> Issues sync: clicking an issue opens the same issue modal.
+  if (typeof openDetailModal === "function") {
+    container.querySelectorAll("[data-open-issue]").forEach(el => {
+      el.addEventListener("click", e => {
+        e.preventDefault();
+        const id = el.getAttribute("data-open-issue");
+        if (id) openDetailModal(id);
+      });
+    });
+  }
 }
 
 /**
@@ -83,13 +108,21 @@ function renderCalendar() {
  * @param {boolean} isIssue - Whether this row represents an issue (changes avatar sizing).
  */
 function renderTimelineRow(title, subtext, item, windowStart, windowDays, color, isIssue = false) {
-  const start = new Date(item.startDate);
-  // Use extended date if available in state, otherwise use the original endDate
-  const end = new Date(state.projectExtensions[item.id] || item.endDate);
+  const startStr = item.startDate || item.createdAt || item.created_at;
+  const start = new Date(startStr || windowStart);
+
+  // Use extended date if available in state (projects only), otherwise fall back:
+  // - project: endDate
+  // - issue: dueDate
+  // - missing: start date (1-day bar)
+  const extension = state?.projectExtensions?.[item.id];
+  const endStr = (!isIssue ? extension : null) || item.endDate || item.dueDate || startStr;
+  const end = new Date(endStr || start);
   
   // Calculate grid positions (relative to window start)
   const startDiff = Math.floor((start - windowStart) / (1000 * 60 * 60 * 24));
-  const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  const rawDuration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  const duration = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 1;
   
   // Constrain bar to window boundaries
   const gridStart = Math.max(0, startDiff);
@@ -99,7 +132,7 @@ function renderTimelineRow(title, subtext, item, windowStart, windowDays, color,
   // Skip rendering if the item is completely outside the visible window
   if (gridEnd <= 0 || gridStart >= windowDays) return '';
 
-  const isExtended = !!state.projectExtensions[item.id];
+  const isExtended = !isIssue && !!extension;
   const owner = teammates.find(t => t.id === item.ownerId);
 
   return `
@@ -113,9 +146,9 @@ function renderTimelineRow(title, subtext, item, windowStart, windowDays, color,
         <div class="timeline-bar-container">
           <div class="timeline-bar ${isIssue ? 'issue' : ''}" 
                style="grid-column: ${gridStart + 1} / span ${span}; background-color: ${color};"
-               title="${title}: ${item.startDate} to ${item.endDate}${isExtended ? ' (Extended)' : ''}">
+               title="${title}: ${startStr || ''} to ${endStr || ''}${isExtended ? ' (Extended)' : ''}">
             ${owner ? `<img src="${owner.avatar}" class="bar-avatar" title="${owner.name}" alt="${owner.name}">` : ''}
-            <span>${title} ${isExtended ? '<span class="extension-badge">Extended</span>' : ''}</span>
+            <span ${isIssue ? `data-open-issue="${item.id}"` : ''}>${title} ${isExtended ? '<span class="extension-badge">Extended</span>' : ''}</span>
           </div>
         </div>
       </div>
@@ -135,7 +168,7 @@ function requestExtension(itemId) {
     state.projectExtensions[itemId] = newDate;
     
     // 2. Log request in global activity
-    const item = [...projects, ...blockers].find(i => i.id === itemId);
+    const item = [...projects, ...(typeof effectiveBlockers === "function" ? effectiveBlockers() : blockers)].find(i => i.id === itemId);
     const currentUser = teammates.find(t => t.id === team.currentUserId);
     
     state.extraActivity.unshift({

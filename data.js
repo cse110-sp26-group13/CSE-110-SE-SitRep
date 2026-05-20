@@ -4,7 +4,7 @@
  */
 
 const team = {
-  name: "Sprint 4 — Onboarding flow",
+  name: "Sprint status",
   currentUserId: "alex",
 };
 
@@ -143,35 +143,7 @@ const blockers = [
  * PROJECT TIMELINES
  * Array of team and individual projects rendered in the Calendar feature.
  */
-const projects = [
-  {
-    id: "p1",
-    name: "Onboarding Flow Redesign",
-    type: "team",
-    startDate: "2026-05-10",
-    endDate: "2026-05-25",
-    color: "#4f46e5",
-    ownerId: "riley" // Primary owner for avatar display
-  },
-  {
-    id: "p2",
-    name: "Auth Migration",
-    type: "individual",
-    ownerId: "jordan",
-    startDate: "2026-05-12",
-    endDate: "2026-05-18",
-    color: "#0891b2"
-  },
-  {
-    id: "p3",
-    name: "KPI Dashboard",
-    type: "individual",
-    ownerId: "alex",
-    startDate: "2026-05-14",
-    endDate: "2026-05-22",
-    color: "#059669"
-  }
-];
+const projects = [];
 
 const meetingSlots = [
   {

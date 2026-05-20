@@ -244,6 +244,7 @@ function bindBlockerControls() {
       state.severityFilter = c.dataset.sev;
       saveState();
       renderBlockers();
+      if (typeof renderCalendar === "function") renderCalendar();
     });
   });
   document.querySelectorAll("#status-filters .chip").forEach(c => {
@@ -251,6 +252,7 @@ function bindBlockerControls() {
       state.statusFilter = c.dataset.status;
       saveState();
       renderBlockers();
+      if (typeof renderCalendar === "function") renderCalendar();
     });
   });
   document.getElementById("add-blocker-btn").addEventListener("click", openCreateModal);
