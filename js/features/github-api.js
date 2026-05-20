@@ -3,20 +3,22 @@ async function fetchGitHubIssues(repoPath, token) {
     const headers = {
       "Accept": "application/vnd.github.v3+json"
     };
-    
-    if (token) {
-      headers["Authorization"] = `token ${token}`;
+
+    if (token && token.trim() !== "") {
+        headers["Authorization"] = `token ${token}`;
     }
-  
+
     const response = await fetch(url, { headers });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch from GitHub: ${response.statusText}`);
+        if (response.status === 404) {
+            throw new Error("Repository not found or private (try adding a token).");
+        }
+        throw new Error(`GitHub API Error: ${response.statusText}`);
     }
   
     const data = await response.json();
   
-    // Map the GitHub JSON schema into our internal Blockers schema
     return data.map(issue => ({
       id: `gh-${issue.id}`,
       title: issue.title,

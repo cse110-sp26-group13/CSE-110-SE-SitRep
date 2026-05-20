@@ -1,4 +1,4 @@
-# ADR 0004: Implement GitHub Issues API Integration via Vanilla JS fetch()
+# ADR 0002: Implement GitHub Issues API Integration via Vanilla JS fetch()
 
 ## Context and Problem Statement
 We need to implement "v2" of our Issues Tracker to pull live data from GitHub. The course constraints prohibit the use of external SDKs or wrappers without strict TA approval.

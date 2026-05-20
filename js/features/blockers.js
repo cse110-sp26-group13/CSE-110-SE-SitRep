@@ -310,7 +310,6 @@ function openDetailModal(id) {
     renderAll(); 
   });
 
-  // FIXED: Added render trigger to category changes
   document.getElementById("detail-category").addEventListener("change", e => {
     updateBlocker(id, { category: e.target.value });
     saveState();
@@ -344,6 +343,11 @@ function bindModalDismissers() {
 }
 
 function bindBlockerControls() {
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'sync-gh-btn') {
+      openGitHubSyncModal();
+    }
+  });
   document.querySelectorAll("#severity-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
       state.severityFilter = c.dataset.sev;
@@ -368,4 +372,64 @@ function bindBlockerControls() {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !modal.hidden) closeModal();
   });
+}
+
+function openGitHubSyncModal() {
+  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
+  
+  openModal("Sync with GitHub (v2)", `
+    <form id="gh-sync-form" class="issue-form">
+      <div class="field-row">
+        <label class="field">
+          <span>Repository Path (owner/repo)</span>
+          <input type="text" id="gh-repo" value="${escapeHTML(savedRepo)}" required />
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Personal Access Token (Optional for public repos)</span>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
+        </label>
+      </div>
+      <p id="gh-error" class="field-error" hidden></p>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const repo = document.getElementById("gh-repo").value.trim();
+    const token = document.getElementById("gh-token").value.trim();
+    const errorEl = document.getElementById("gh-error");
+    const btn = document.getElementById("gh-sync-btn");
+
+    try {
+      btn.textContent = "Syncing...";
+      btn.disabled = true;
+      errorEl.hidden = true;
+
+      const issues = await fetchGitHubIssues(repo, token);
+      sessionStorage.setItem("sitrep_gh_repo", repo);
+      setGithubIssues(issues);
+      
+      pushActivity({
+        type: "checkin",
+        who: "System",
+        text: `Synced ${issues.length} issues from GitHub (${repo})`,
+      });
+
+      closeModal();
+      renderAll();
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      btn.textContent = "Pull Issues";
+      btn.disabled = false;
+    }
+  });
+
+  bindModalDismissers();
 }
