@@ -4,7 +4,7 @@ Location: Giesel 7th floor
 
 Time: 6:30 PM, 
 
-Attendence: Andrew, Aidan, Stephanie, Aaron, Yang, Jeong
+Attendence: Andrew, Aidan, Stephanie, Aaron, Yang, Jeong, Jeremy
 
 ### Have to do:
 

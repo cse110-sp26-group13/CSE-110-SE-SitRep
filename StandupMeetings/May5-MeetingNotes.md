@@ -4,7 +4,7 @@ Location: Geisel, 6th Floor
 
 Time: 6:30 pm on May 5, 2026
 
-Attendance: Aidan, Yang, Stephanie, Jeremy, Shazi, Aaron, Ophir, Jeong
+Attendance: Aidan, Yang, Stephanie, Jeremy, Shazi, Aaron, Ophir, Jeong, Jeremy
 
 Have to do!
 
