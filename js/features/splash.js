@@ -1,15 +1,9 @@
 /**
  * Splash page controller — auth view and circle view.
  *
- * State machine:
- *   view:        'auth' | 'circle'
- *   authTab:     'signup' | 'login'
- *   circleTab:   'create' | 'join'
- *   busy:        boolean (prevents double-submit)
- *
  * Routing on load:
- *   - no session                       → auth view
- *   - session + zero memberships       → circle view
+ *   - no session                        → auth view
+ *   - session + zero memberships        → circle view
  *   - session + at least one membership → redirect to index.html
  */
 (function () {
@@ -24,24 +18,14 @@
     busy: false,
   };
 
-  /** @returns {HTMLElement | null} */
   function $(id) { return document.getElementById(id); }
 
-  /**
-   * Show one of the two top-level views, hide the other.
-   * @param {'auth' | 'circle'} name
-   */
   function showView(name) {
     state.view = name;
     $('view-auth').hidden = name !== 'auth';
     $('view-circle').hidden = name !== 'circle';
   }
 
-  /**
-   * Toggle which tab inside a view is active.
-   * @param {'auth' | 'circle'} group
-   * @param {string} name - signup/login for auth, create/join for circle
-   */
   function setTab(group, name) {
     if (group === 'auth') {
       state.authTab = name;
@@ -62,12 +46,9 @@
     }
   }
 
-  /**
-   * Show an inline message (error or success) by id.
-   * @param {string} elId
-   * @param {{code: string, message: string} | null} normalized
-   * @param {'error' | 'success'} [kind='error']
-   */
+//elId = element id
+//normalized = message object
+//kind = success/error
   function showMessage(elId, normalized, kind) {
     const el = $(elId);
     if (!el || !normalized) return;
@@ -77,7 +58,6 @@
     el.hidden = false;
   }
 
-  /** @param {string} elId */
   function clearMessage(elId) {
     const el = $(elId);
     if (!el) return;
@@ -85,7 +65,6 @@
     el.textContent = '';
   }
 
-  /** Field-level error: mark an input invalid and show its error span. */
   function setFieldError(inputId, message) {
     const input = $(inputId);
     const errEl = $(`${inputId}-error`);
@@ -110,41 +89,29 @@
     'signup-first-name', 'signup-last-name',
     'signup-email', 'signup-password',
   ];
+  const ALL_INPUT_FIELDS = [
+    ...SIGNUP_FIELDS,
+    'login-email', 'login-password',
+    'create-name', 'join-code',
+  ];
 
   function clearAllSignupErrors() {
     SIGNUP_FIELDS.forEach(clearFieldError);
   }
 
-  /**
-   * Validate an email string and return a specific error for common
-   * mistakes. Returns null when the address is well-formed enough to
-   * hand off to Supabase.
-   * @param {string} raw
-   * @returns {{code: string, message: string} | null}
-   */
   function validateEmail(raw) {
     const email = (raw || '').trim();
-    if (!email) {
-      return { code: 'email_blank', message: 'Please enter your email.' };
-    }
-    if (/\s/.test(email)) {
-      return { code: 'email_whitespace', message: "Email can't contain spaces." };
-    }
+    if (!email) return { code: 'email_blank', message: 'Please enter your email.' };
+    if (/\s/.test(email)) return { code: 'email_whitespace', message: "Email can't contain spaces." };
     const at = email.indexOf('@');
-    if (at === -1) {
-      return { code: 'email_missing_at', message: "Email is missing an '@'." };
-    }
+    if (at === -1) return { code: 'email_missing_at', message: "Email is missing an '@'." };
     if (email.indexOf('@', at + 1) !== -1) {
       return { code: 'email_multiple_at', message: "Email can only contain one '@'." };
     }
     const local = email.slice(0, at);
     const domain = email.slice(at + 1);
-    if (!local) {
-      return { code: 'email_no_local', message: "Add the part before the '@'." };
-    }
-    if (!domain) {
-      return { code: 'email_no_domain', message: "Add the domain after the '@'." };
-    }
+    if (!local) return { code: 'email_no_local', message: "Add the part before the '@'." };
+    if (!domain) return { code: 'email_no_domain', message: "Add the domain after the '@'." };
     if (!domain.includes('.')) {
       return { code: 'email_no_tld', message: 'Domain needs a dot (like .com).' };
     }
@@ -152,9 +119,7 @@
       return { code: 'email_bad_dots', message: 'Email has a misplaced dot.' };
     }
     const tld = domain.slice(domain.lastIndexOf('.') + 1);
-    if (tld.length < 2) {
-      return { code: 'email_short_tld', message: 'Domain ending is too short.' };
-    }
+    if (tld.length < 2) return { code: 'email_short_tld', message: 'Domain ending is too short.' };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { code: 'email_invalid', message: "That doesn't look like a valid email." };
     }
@@ -169,14 +134,10 @@
       (/[a-z]/.test(p) && /[A-Z]/.test(p)) || /[^a-zA-Z0-9]/.test(p) },
   ];
   const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  // Minimum bar to submit: length + letter + number. The "strong" req is
+  // a bonus that only affects the meter, not the gate.
+  const REQUIRED_KEYS = ['length', 'letter', 'number'];
 
-  /**
-   * Score a password 0–4 against the requirements list, update the
-   * meter + checklist UI, and report whether the minimum bar to
-   * submit (length + letter + number) has been cleared.
-   * @param {string} password
-   * @returns {{score: number, requiredMet: boolean}}
-   */
   function updatePasswordStrength(password) {
     const wrap = $('signup-strength');
     const fill = $('signup-strength-fill');
@@ -204,17 +165,9 @@
     wrap.querySelectorAll('[data-req]').forEach((li) => {
       li.classList.toggle('met', !!met[li.dataset.req]);
     });
-    return {
-      score,
-      requiredMet: !!(met.length && met.letter && met.number),
-    };
+    return { score, requiredMet: REQUIRED_KEYS.every((k) => met[k]) };
   }
 
-  /**
-   * Disable / re-enable the submit button on a form during a request.
-   * @param {HTMLFormElement} form
-   * @param {boolean} isBusy
-   */
   function setBusy(form, isBusy) {
     state.busy = isBusy;
     const btn = form.querySelector('button[type="submit"]');
@@ -230,22 +183,36 @@
   }
 
   /**
-   * After a successful auth, decide where to go: dashboard if the
-   * user already has a team, circle view otherwise.
+   * Put the user in the right place based on session + memberships.
+   * Called on first load, after a successful sign-in/sign-up, and on
+   * bfcache restore — must be idempotent.
    */
-  async function routePostAuth() {
+  async function route() {
+    const { data: session } = await window.auth.getSession();
+    if (!session) {
+      showView('auth');
+      return;
+    }
     const { data: memberships } = await window.auth.getUserMemberships();
     if (memberships && memberships.length > 0) {
       window.location.replace(DASHBOARD_URL);
-    } else {
-      const session = await window.auth.getSession();
-      const email = session.data && session.data.user && session.data.user.email;
-      if (email) $('signed-in-as').textContent = email;
-      showView('circle');
+      return;
     }
+    if (session.user && session.user.email) {
+      $('signed-in-as').textContent = session.user.email;
+    }
+    showView('circle');
   }
 
-  // ---- Form handlers ----------------------------------------------
+  // Resolves to { data, error } whether the RPC returns an error in its
+  // payload or throws (e.g. network failure).
+  async function callRpc(name, args) {
+    try {
+      return await window.sbClient.rpc(name, args);
+    } catch (err) {
+      return { data: null, error: err };
+    }
+  }
 
   async function onSignupSubmit(e) {
     e.preventDefault();
@@ -258,30 +225,29 @@
     const email = $('signup-email').value.trim();
     const password = $('signup-password').value;
 
-    // Validate every field and collect errors so the user sees them all at once.
-    let firstInvalid = null;
+    // Collect every invalid field so the user sees them all at once,
+    // then focus the first one.
+    const invalid = [];
     if (!firstName) {
       setFieldError('signup-first-name', 'First name is required.');
-      firstInvalid = firstInvalid || 'signup-first-name';
+      invalid.push('signup-first-name');
     }
     if (!lastName) {
       setFieldError('signup-last-name', 'Last name is required.');
-      firstInvalid = firstInvalid || 'signup-last-name';
+      invalid.push('signup-last-name');
     }
     const emailError = validateEmail(email);
     if (emailError) {
       setFieldError('signup-email', emailError.message);
-      firstInvalid = firstInvalid || 'signup-email';
+      invalid.push('signup-email');
     }
-    const strength = updatePasswordStrength(password);
-    if (!strength.requiredMet) {
+    if (!updatePasswordStrength(password).requiredMet) {
       setFieldError('signup-password',
         'Doesn’t meet the requirements above (8+ characters, a letter, and a number).');
-      firstInvalid = firstInvalid || 'signup-password';
+      invalid.push('signup-password');
     }
-    if (firstInvalid) {
-      const el = $(firstInvalid);
-      if (el) el.focus();
+    if (invalid.length) {
+      $(invalid[0]).focus();
       return;
     }
 
@@ -290,7 +256,7 @@
     const { data, error } = await window.auth.signUp({ email, password, displayName });
     setBusy(form, false);
     if (error) {
-      // Route server-side errors to the field they describe, when we can.
+      // Route server-side errors to the field they describe when we can.
       if (error.code === 'email_already_registered') {
         setFieldError('signup-email',
           'An account with this email already exists. Try logging in.');
@@ -306,7 +272,7 @@
       showMessage('auth-message', error, kind);
       return;
     }
-    if (data && data.session) await routePostAuth();
+    if (data && data.session) await route();
   }
 
   async function onLoginSubmit(e) {
@@ -328,7 +294,7 @@
       showMessage('auth-message', error);
       return;
     }
-    await routePostAuth();
+    await route();
   }
 
   async function onCreateSubmit(e) {
@@ -343,13 +309,10 @@
       return;
     }
     setBusy(form, true);
-    const { error } = await window.sbClient.rpc('create_team', { p_name: name })
-      .then((r) => ({ data: r.data, error: r.error }))
-      .catch((err) => ({ data: null, error: err }));
+    const { error } = await callRpc('create_team', { p_name: name });
     setBusy(form, false);
     if (error) {
-      showMessage('circle-message',
-        window.auth.mapAuthError(error, 'create_team'));
+      showMessage('circle-message', window.auth.mapAuthError(error, 'create_team'));
       return;
     }
     window.location.replace(DASHBOARD_URL);
@@ -367,13 +330,10 @@
       return;
     }
     setBusy(form, true);
-    const { error } = await window.sbClient.rpc('join_team_by_code', { p_code: code })
-      .then((r) => ({ data: r.data, error: r.error }))
-      .catch((err) => ({ data: null, error: err }));
+    const { error } = await callRpc('join_team_by_code', { p_code: code });
     setBusy(form, false);
     if (error) {
-      showMessage('circle-message',
-        window.auth.mapAuthError(error, 'join_team_by_code'));
+      showMessage('circle-message', window.auth.mapAuthError(error, 'join_team_by_code'));
       return;
     }
     window.location.replace(DASHBOARD_URL);
@@ -384,20 +344,15 @@
     await window.auth.signOut();
     showView('auth');
     setTab('auth', 'signup');
-    ['signup-first-name', 'signup-last-name', 'signup-email', 'signup-password',
-      'login-email', 'login-password',
-      'create-name', 'join-code'].forEach((id) => {
-        const el = $(id);
-        if (el) el.value = '';
-      });
+    ALL_INPUT_FIELDS.forEach((id) => {
+      const el = $(id);
+      if (el) el.value = '';
+    });
     clearAllSignupErrors();
     updatePasswordStrength('');
   }
 
-  // ---- Boot --------------------------------------------------------
-
   async function init() {
-    // Tab buttons
     document.querySelectorAll('[data-auth-tab]').forEach((btn) => {
       btn.addEventListener('click', () => setTab('auth', btn.dataset.authTab));
     });
@@ -405,8 +360,6 @@
       btn.addEventListener('click', () => setTab('circle', btn.dataset.circleTab));
     });
 
-    // Live signup field feedback — clear errors as the user fixes them,
-    // re-validate email on blur once they've typed something.
     SIGNUP_FIELDS.forEach((id) => {
       $(id).addEventListener('input', () => clearFieldError(id));
     });
@@ -421,49 +374,21 @@
       updatePasswordStrength(ev.target.value);
     });
 
-    // Forms
     $('signup-form').addEventListener('submit', onSignupSubmit);
     $('login-form').addEventListener('submit', onLoginSubmit);
     $('create-form').addEventListener('submit', onCreateSubmit);
     $('join-form').addEventListener('submit', onJoinSubmit);
     $('signout-btn').addEventListener('click', onSignoutClick);
 
-    // Route based on current session + memberships
-    await routeBasedOnSession();
-  }
-
-  /**
-   * Inspect the current session + memberships and put the user in the
-   * right place: auth view if no session, dashboard if already on a
-   * team, otherwise the circle view to create/join one.
-   *
-   * Called on first load AND on bfcache restore so that hitting Back
-   * from the dashboard doesn't leave a teamed-up user staring at the
-   * stale "create/join circle" view.
-   */
-  async function routeBasedOnSession() {
-    const { data: session } = await window.auth.getSession();
-    if (!session) {
-      showView('auth');
-      return;
-    }
-    const { data: memberships } = await window.auth.getUserMemberships();
-    if (memberships && memberships.length > 0) {
-      window.location.replace(DASHBOARD_URL);
-      return;
-    }
-    if (session.user && session.user.email) {
-      $('signed-in-as').textContent = session.user.email;
-    }
-    showView('circle');
+    await route();
   }
 
   document.addEventListener('DOMContentLoaded', init);
 
-  // bfcache restore (e.g., user hits Back from the dashboard) doesn't
-  // re-run init; pageshow with event.persisted does. Re-route so a
+  // bfcache restore (e.g. user hits Back from the dashboard) doesn't
+  // re-run init, but pageshow with event.persisted does. Re-route so a
   // user already on a team gets bounced straight back to the dashboard.
   window.addEventListener('pageshow', (e) => {
-    if (e.persisted) routeBasedOnSession();
+    if (e.persisted) route();
   });
 })();

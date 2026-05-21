@@ -35,7 +35,7 @@
     if (rawCode === 'weak_password'
         || /password should be at least/i.test(rawMsg)) {
       return { code: 'weak_password',
-        message: 'Password must be at least 6 characters.' };
+        message: 'Password must be at least 8 characters.' };
     }
     if (rawCode === 'over_email_send_rate_limit'
         || rawCode === 'over_request_rate_limit'

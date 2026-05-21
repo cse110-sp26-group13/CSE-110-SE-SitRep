@@ -39,10 +39,10 @@ Default tab: **Sign up**. Both forms live inside the same `<div class="splash-ca
 │   │  Sign up    │   Log in    │ ← tabs           │
 │   └─────────────┴─────────────┘                  │
 │                                                  │
-│   Display name                                   │
-│   ┌────────────────────────────────────────┐     │
-│   │ Shazi B.                               │     │
-│   └────────────────────────────────────────┘     │
+│   First name           Last name                 │
+│   ┌──────────────────┐ ┌──────────────────┐      │
+│   │ Shazi            │ │ B.               │      │
+│   └──────────────────┘ └──────────────────┘      │
 │                                                  │
 │   Email                                          │
 │   ┌────────────────────────────────────────┐     │
@@ -53,6 +53,11 @@ Default tab: **Sign up**. Both forms live inside the same `<div class="splash-ca
 │   ┌────────────────────────────────────────┐     │
 │   │ ••••••••                               │     │
 │   └────────────────────────────────────────┘     │
+│   ▰▰▰▰▱  Good                                    │ ← strength meter
+│   ✓ At least 8 characters                        │   (appears once
+│   ✓ Contains a letter                            │    user types)
+│   ✓ Contains a number                            │
+│   ○ Mixed case or a symbol                       │
 │                                                  │
 │   ┌────────────────────────────────────────┐     │
 │   │           Create account               │ ← primary
@@ -60,6 +65,8 @@ Default tab: **Sign up**. Both forms live inside the same `<div class="splash-ca
 │                                                  │
 └──────────────────────────────────────────────────┘
 ```
+
+Display name in the database is computed as `${firstName} ${lastName}` and stored via Supabase Auth `options.data.display_name` — the `handle_new_user` trigger picks it up into `profiles.display_name`.
 
 ### A2. Login
 
@@ -89,12 +96,24 @@ Default tab: **Sign up**. Both forms live inside the same `<div class="splash-ca
 └──────────────────────────────────────────────────┘
 ```
 
-### A3. Error state (login with wrong password)
+### A3. Error states
+
+Top-of-form banner — used for server-side errors that aren't tied to a specific field:
 
 ```
    ┌────────────────────────────────────────┐
    │ ⚠ Email or password is incorrect.      │  ← .splash-error
    └────────────────────────────────────────┘     (--bad tint)
+```
+
+Field-level errors — shown inline under the offending input on signup. The input gets a red border (`.splash-input--invalid`) and `aria-invalid="true"`:
+
+```
+   Email
+   ┌────────────────────────────────────────┐
+   │ you@school                             │  ← red border
+   └────────────────────────────────────────┘
+   ⚠ Domain needs a dot (like .com).
 ```
 
 ### A4. Busy state
@@ -186,10 +205,10 @@ At `max-width: 480px` the card goes full-bleed: no border, no radius, `min-heigh
 │  │ Sign up  │   Log in    │  │
 │  └──────────┴─────────────┘  │
 │                              │
-│  Display name                │
-│  ┌────────────────────────┐  │
-│  │                        │  │
-│  └────────────────────────┘  │
+│  First name   Last name      │
+│  ┌──────────┐ ┌────────────┐ │
+│  │          │ │            │ │
+│  └──────────┘ └────────────┘ │
 │                              │
 │  Email                       │
 │  ┌────────────────────────┐  │
@@ -216,6 +235,8 @@ At `max-width: 480px` the card goes full-bleed: no border, no radius, `min-heigh
 - Primary submit button: reuses `.btn-primary` from `css/base.css` (background `--accent`, white text).
 - Error pill (`.splash-error`): `color: var(--bad)`, faint red background tint, 1px red border, 12px font.
 - Success pill (`.splash-success`): same shape but in `--good`.
+- Field error (`.splash-field-error`): 11px text in `--bad`, sits directly under the input. Paired with `.splash-input--invalid` (red border + red focus halo) on the input.
+- Password strength meter: 4-segment bar above a requirements checklist. Hidden via `opacity/max-height` until the user types; segments grow `bad → orange → yellow → good` as 1/2/3/4 requirements pass.
 
 ## Out of scope for this iteration
 

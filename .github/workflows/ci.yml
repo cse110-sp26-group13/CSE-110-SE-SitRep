@@ -1,0 +1,46 @@
+# CI for SE SitRep — vanilla stack, no external lint or test packages.
+#
+# Two jobs run on every push to main and every pull request:
+#   1. checks  — JS syntax, HTML asset references, CSS custom-prop usage
+#   2. tests   — unit tests for js/auth.js (mapAuthError + join-code regex)
+#
+# Both jobs use only Node's built-ins. There is no node_modules, no
+# package.json, no committed dependencies.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Vanilla project checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run scripts/check.js
+        run: node scripts/check.js
+
+  tests:
+    name: Unit tests (auth.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run tests/auth.test.js
+        run: node tests/auth.test.js
