@@ -61,6 +61,9 @@ This project is the SE SitRep deliverable for **CSE 110 (Spring 2026)**, Group 1
 - **Commit style:** [Conventional Commits](https://www.conventionalcommits.org/)
 - **Architectural decisions:** [MADR](https://adr.github.io/madr/) under [docs/adr/](docs/adr/)
 
+## Status Video 1
+https://www.youtube.com/watch?v=428K7RsjKG8
+
 ## Team
 
 Group 13 — Aaron Thung, Aidan Rikic, Andrew, Jeong Min Park, Jeremy, Ophir, Shazi Bidarian, Stephanie Yan, Yang Zou.
