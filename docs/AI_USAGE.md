@@ -18,6 +18,38 @@ Newest first. Date format: `YYYY-MM-DD`.
 
 ---
 
+### 2026-05-20 — Aidan
+
+**Tooling:** Claude via Claude Code CLI, with direct repo access via MCP. Operated in plan mode for review/discussion phases; file writes required explicit approval before execution.
+
+**AI-assisted output that landed in the repo:**
+
+- CI/CD pipeline (`.github/workflows/ci.yml`) — four-job structure: lint → unit tests + E2E tests → deploy to GitHub Pages on `main` push.
+- Config files: `jest.config.js`, `playwright.config.js`, `eslint.config.mjs`, `package.json` with all dev dependencies.
+- Unit test files: `tests/unit/blockers.test.js`, `tests/unit/utils.test.js` — covers `statusMatchesFilter`, `overlapClass`, `SEVERITY_ORDER`, `escapeHTML`, `moodClass`, and `avatar`.
+- E2E smoke test file: `tests/e2e/dashboard.spec.js` — 9 tests verifying page load and core panel visibility.
+- `Research/AidanRikic_Research.md` — drafted from my own notes and bullet points on ClickUp and Linear; CI/CD section written from my own decisions.
+
+**Decisions I made:**
+- Chose to tackle CI/CD in Sprint 1 specifically so that testing can be demonstrated early, not only at the end.
+- Chose Jest + Playwright over alternatives (Vitest, Cypress) — Jest for its jsdom support and simplicity, Playwright for its speed in CI and single browser binary install.
+- Decided to scope E2E tests to smoke tests only for Sprint 1. Deep interaction tests would break constantly while the dashboard is still changing fast.
+- Decided the 177 ESLint warnings were acceptable for now. All `warn`, zero `error`, so lint passes. The warnings are false positives from the vanilla JS global sharing pattern, not real bugs.
+- Kept the inline function pattern in unit tests rather than importing from source avoids needing a bundler, acceptable tradeoff for this project size.
+
+**Where the AI helped most:**
+
+- Config file boilerplate getting Jest, Playwright, and ESLint wired up correctly to be mostly mechanical and error prone to do from scratch.
+- Auditing the files before they were committed and caught the ESLint config module format issue and the missing `serve` dependency before I ran anything.
+- Expanding my ClickUp and Linear bullet points into structured research prose.
+
+**Where I had to push back / catch issues:**
+
+- The AI-generated `avatar` unit test had a wrong expectation for single-word names — expected `"TA"` but the function correctly produces `"T"`. I caught this when running tests locally and fixed it myself.
+- Kept the lint warnings as is against the AI's suggestion to fix them which added browser globals to ESLint is the right long term fix, but not worth the noise in Sprint 1 while the codebase is moving fast.
+
+---
+
 ### 2026-05-16 — Shazi
 
 **Tooling:** Claude (Anthropic Opus 4.7) via Claude Code CLI. Connected to the project's Supabase instance (`HardCoders`) through the official Supabase MCP server (OAuth-authorized this session). Installed the `supabase/agent-skills` Postgres best-practices skill for the model.
