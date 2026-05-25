@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>auth.js — unit tests</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <style>
+    main { padding: 32px; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    p.lede { color: var(--text-muted); margin: 0 0 20px; font-size: 13px; }
+    pre#results {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+    body[data-test-result="pass"] pre#results { border-color: rgba(52, 199, 89, 0.35); }
+    body[data-test-result="fail"] pre#results { border-color: rgba(255, 69, 58, 0.45); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>auth.js — unit tests</h1>
+    <p class="lede">
+      Exercises <code>window.auth.mapAuthError</code> and the 6-digit
+      join-code regex used by splash.js. Results below; the page title
+      and <code>body[data-test-result]</code> attribute reflect overall pass/fail.
+    </p>
+    <pre id="results">running…</pre>
+  </main>
+
+  <!--
+    auth.js calls window.sbClient inside its functions, not at module
+    load, so a placeholder stub is enough to satisfy a defensive check
+    during evaluation.
+  -->
+  <script>window.sbClient = window.sbClient || {};</script>
+  <script src="../js/auth.js"></script>
+  <script src="auth.test.js"></script>
+</body>
+</html>
