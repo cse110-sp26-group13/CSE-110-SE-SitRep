@@ -4,7 +4,7 @@ Location: Discord call
 
 Time: 7:00 pm
 
-Attendence: Shazi, Ophir, Aaron, Stephanie, Yang, Andrew, Aidan, Jeong
+Attendence: Shazi, Ophir, Aaron, Stephanie, Yang, Andrew, Aidan, Jeong, Jeremy
 
 ### Catch Up
 

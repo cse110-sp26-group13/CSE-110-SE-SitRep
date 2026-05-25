@@ -35,7 +35,7 @@ Ship the four MVP features identified in [docs/MVP/Minimum Value Product.md](../
   - v2: at least one real GitHub repo's issues render in the dashboard.
 
 ### 2. Calendar
-- **Owner:** Stephanie (looking for a +1)
+- **Owner:** Stephanie, Aaron
 - **Branch:** `stephanie/calendar`
 - **Scope:**
   - Track both individual and team project timelines.
@@ -75,7 +75,7 @@ Ship the four MVP features identified in [docs/MVP/Minimum Value Product.md](../
 - **Open question:** is this client-only (mock auth) or do we need a real identity provider? Real auth implies a Supabase/Cloudflare dependency — defer to week 8 planning.
 
 ### 5. Review Crew *(role, not feature)*
-- **Members:** Shazi, Aidan, + others (target 3 minimum, as many as possible)
+- **Members:** Shazi, Aidan, Jeremy + others (target 3 minimum, as many as possible)
 - **What this means:** people designated to do PR reviews this sprint so PRs don't stall and >300-LoC batches actually get a second pair of eyes (PDF requirement).
 - **Action:** anyone willing to join, drop your name in the next standup. Reviewers commit to looking at PRs within 24 hours of being requested.
 
