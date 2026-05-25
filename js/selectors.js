@@ -13,14 +13,28 @@ function effectiveTeammates() {
   });
 }
 
+function setGithubIssues(issues) {
+  state.githubIssues = issues;
+  saveState();
+}
+
 function effectiveBlockers() {
-  return [...state.extraBlockers, ...blockers].map(b => {
+  const allIssues = [
+    ...state.extraBlockers, 
+    ...(state.githubIssues || []), 
+    ...blockers
+  ];
+
+  return allIssues.map(b => {
     const ov = state.blockerOverrides[b.id] || {};
     return {
       ...b,
       description: ov.description ?? b.description ?? "",
       status: ov.status ?? b.status ?? "open",
       comments: ov.comments ?? b.comments ?? [],
+      startDate: ov.startDate ?? b.startDate ?? "",
+      dueDate: ov.dueDate ?? b.dueDate ?? "",
+      category: ov.category ?? b.category ?? "",
     };
   });
 }
@@ -31,11 +45,21 @@ function findBlockerById(id) {
 
 function updateBlocker(id, patch) {
   const existing = state.blockerOverrides[id] || {};
-  const base = [...state.extraBlockers, ...blockers].find(b => b.id === id);
+  const allIssues = [
+    ...state.extraBlockers, 
+    ...(state.githubIssues || []), 
+    ...blockers
+  ];
+  const base = allIssues.find(b => b.id === id);
+  
   state.blockerOverrides[id] = {
+    ...existing,
     description: existing.description ?? base?.description ?? "",
     status: existing.status ?? base?.status ?? "open",
     comments: existing.comments ?? base?.comments ?? [],
+    startDate: existing.startDate ?? base?.startDate ?? "",
+    dueDate: existing.dueDate ?? base?.dueDate ?? "",
+    category: existing.category ?? base?.category ?? "",
     ...patch,
   };
 }

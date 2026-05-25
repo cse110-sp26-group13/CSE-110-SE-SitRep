@@ -1,6 +1,25 @@
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
 const STATUS_LABEL = { open: "Open", "in-progress": "In progress", resolved: "Resolved" };
 
+function formatIssueDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(`${dateString}T00:00:00`);
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function isIssueOverdue(issue) {
+  if (!issue.dueDate || issue.status === "resolved") return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const due = new Date(`${issue.dueDate}T00:00:00`);
+  return due < today;
+}
+
 function statusMatchesFilter(status, filter) {
   if (filter === "all") return true;
   if (filter === "open") return status === "open" || status === "in-progress";
@@ -32,6 +51,13 @@ function renderBlockers() {
       const commentBadge = commentCount
         ? `<span class="blocker-comments" title="${commentCount} comment${commentCount === 1 ? "" : "s"}">💬 ${commentCount}</span>`
         : "";
+
+      const dueBadge = b.dueDate
+        ? `<span class="blocker-due ${isIssueOverdue(b) ? "overdue" : ""}">
+            ${isIssueOverdue(b) ? "Overdue" : "Due"} ${formatIssueDate(b.dueDate)}
+          </span>`
+        : "";
+
       return `
       <li class="blocker-row status-${b.status}" data-open="${escapeHTML(b.id)}">
         <span class="sev-tag sev-${b.severity}">${b.severity}</span>
@@ -39,7 +65,11 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
+            
+            ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
+            
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
+            ${dueBadge}
             ${commentBadge}
           </div>
         </div>
@@ -67,6 +97,13 @@ function teammateOptions(selectedId) {
 function severityOptions(selected) {
   return ["critical", "high", "medium"].map(s =>
     `<option value="${s}"${s === selected ? " selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`
+  ).join("");
+}
+
+function categoryOptions(selected) {
+  const placeholder = `<option value="" disabled${!selected ? " selected" : ""}>Select category</option>`;
+  return placeholder + ["ui", "swe", "backend"].map(c =>
+    `<option value="${c}"${c === selected ? " selected" : ""}>${c.toUpperCase()}</option>`
   ).join("");
 }
 
@@ -103,6 +140,21 @@ function openCreateModal() {
           <select id="issue-owner">${teammateOptions(me?.id)}</select>
         </label>
       </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Start date</span>
+          <input type="date" id="issue-start" />
+        </label>
+        <label class="field">
+          <span>Due date</span>
+          <input type="date" id="issue-due" />
+        </label>
+      </div>
+      <p id="date-error" class="field-error" hidden></p>
+      <label class="field">
+        <span>Category</span>
+        <select id="issue-category" required>${categoryOptions("")}</select>
+      </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
         <button type="submit" class="btn-primary">Create issue</button>
@@ -119,6 +171,17 @@ function openCreateModal() {
     const severity = document.getElementById("issue-sev").value;
     const ownerId = document.getElementById("issue-owner").value;
     const ownerObj = teammates.find(t => t.id === ownerId);
+    const startDate = document.getElementById("issue-start").value;
+    const dueDate = document.getElementById("issue-due").value;
+    const category = document.getElementById("issue-category").value;
+    const dateError = document.getElementById("date-error");
+
+    if (startDate && dueDate && startDate > dueDate) {
+      dateError.textContent = "Start date must be before due date.";
+      dateError.hidden = false;
+      return;
+    }
+    dateError.hidden = true;
 
     const newId = `u${Date.now()}`;
     state.extraBlockers.unshift({
@@ -130,6 +193,9 @@ function openCreateModal() {
       ownerId,
       owner: ownerObj?.name ?? "Unassigned",
       postedAt: nowTime(),
+      startDate,
+      dueDate,
+      category,
       comments: [],
     });
 
@@ -150,6 +216,11 @@ function openCreateModal() {
 function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
+
+  const ov = state.blockerOverrides[id] || {};
+  const currentStartDate = ov.startDate ?? b.startDate ?? "";
+  const currentDueDate = ov.dueDate ?? b.dueDate ?? "";
+  const currentCategory = ov.category ?? b.category ?? "swe";
 
   const commentsHTML = b.comments.length
     ? b.comments.map(c => `
@@ -176,6 +247,21 @@ function openDetailModal(id) {
         </label>
         <span class="issue-owner-meta">Assigned to <strong>${escapeHTML(b.owner)}</strong></span>
         <span class="issue-posted-meta">Opened ${escapeHTML(b.postedAt)}</span>
+      </div>
+
+      <div class="field-row issue-dates-row">
+        <label class="field">
+          <span>Start date</span>
+          <input type="date" id="detail-start" value="${escapeHTML(currentStartDate)}" />
+        </label>
+        <label class="field">
+          <span>Due date</span>
+          <input type="date" id="detail-due" value="${escapeHTML(currentDueDate)}" />
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="detail-category">${categoryOptions(currentCategory)}</select>
+        </label>
       </div>
 
       <div class="issue-description">
@@ -212,6 +298,24 @@ function openDetailModal(id) {
     openDetailModal(id);
   });
 
+  document.getElementById("detail-start").addEventListener("change", e => {
+    updateBlocker(id, { startDate: e.target.value });
+    saveState();
+    renderAll();
+  });
+
+  document.getElementById("detail-due").addEventListener("change", e => {
+    updateBlocker(id, { dueDate: e.target.value });
+    saveState();
+    renderAll(); 
+  });
+
+  document.getElementById("detail-category").addEventListener("change", e => {
+    updateBlocker(id, { category: e.target.value });
+    saveState();
+    renderAll();
+  });
+
   document.getElementById("comment-form").addEventListener("submit", e => {
     e.preventDefault();
     const input = document.getElementById("comment-input");
@@ -239,6 +343,11 @@ function bindModalDismissers() {
 }
 
 function bindBlockerControls() {
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'sync-gh-btn') {
+      openGitHubSyncModal();
+    }
+  });
   document.querySelectorAll("#severity-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
       state.severityFilter = c.dataset.sev;
@@ -263,4 +372,64 @@ function bindBlockerControls() {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !modal.hidden) closeModal();
   });
+}
+
+function openGitHubSyncModal() {
+  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
+  
+  openModal("Sync with GitHub (v2)", `
+    <form id="gh-sync-form" class="issue-form">
+      <div class="field-row">
+        <label class="field">
+          <span>Repository Path (owner/repo)</span>
+          <input type="text" id="gh-repo" value="${escapeHTML(savedRepo)}" required />
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Personal Access Token (Optional for public repos)</span>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
+        </label>
+      </div>
+      <p id="gh-error" class="field-error" hidden></p>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const repo = document.getElementById("gh-repo").value.trim();
+    const token = document.getElementById("gh-token").value.trim();
+    const errorEl = document.getElementById("gh-error");
+    const btn = document.getElementById("gh-sync-btn");
+
+    try {
+      btn.textContent = "Syncing...";
+      btn.disabled = true;
+      errorEl.hidden = true;
+
+      const issues = await fetchGitHubIssues(repo, token);
+      sessionStorage.setItem("sitrep_gh_repo", repo);
+      setGithubIssues(issues);
+      
+      pushActivity({
+        type: "checkin",
+        who: "System",
+        text: `Synced ${issues.length} issues from GitHub (${repo})`,
+      });
+
+      closeModal();
+      renderAll();
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      btn.textContent = "Pull Issues";
+      btn.disabled = false;
+    }
+  });
+
+  bindModalDismissers();
 }

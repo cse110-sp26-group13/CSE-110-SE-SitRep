@@ -38,3 +38,5 @@ Thumbs.db
 .agents/
 skills-lock.json
 CSE 110 Sp 26 Project.pdf
+node_modules/
+.last-run.json

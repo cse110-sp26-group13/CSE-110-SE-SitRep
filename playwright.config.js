@@ -1,20 +1,15 @@
-// @ts-check
-const { defineConfig, devices } = require("@playwright/test");
+import { defineConfig } from '@playwright/test'
 
-module.exports = defineConfig({
-  testDir: "./tests/e2e",
-  use: {
-    baseURL: "http://localhost:8000",
-  },
+export default defineConfig({
+  testDir: './tests/e2e',
   webServer: {
-    command: "npx serve . -l 8000",
-    port: 8000,
+    command: 'npx serve . -l 3000',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 30_000,
   },
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-  ],
-});
+  use: {
+    baseURL: 'http://localhost:3000',
+    headless: true,
+  },
+})

@@ -107,7 +107,10 @@
                   <button data-sev="medium" class="chip">Medium</button>
                 </div>
               </div>
-              <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
+              <div class="button-group">
+                <button class="btn-secondary" id="sync-gh-btn">Sync GitHub</button>
+                <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
+              </div>
             </div>
             <ul class="blocker-list" id="blocker-list"></ul>
           </section>
@@ -162,6 +165,7 @@
   <script src="js/state.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/selectors.js"></script>
+  <script src="js/features/github-api.js"></script>
   <script src="js/features/header.js"></script>
   <script src="js/features/kpis.js"></script>
   <script src="js/features/checkins.js"></script>

@@ -6,6 +6,7 @@ function defaultState() {
     extraActivity: [],
     coveredFor: [],
     extraBlockers: [],
+    githubIssues: [],
     blockerOverrides: {},
     severityFilter: "all",
     statusFilter: "open",
@@ -25,6 +26,11 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function setGithubIssues(issues) {
+  state.githubIssues = issues;
+  saveState();
 }
 
 let state = loadState();

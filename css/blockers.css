@@ -38,14 +38,15 @@
   font-weight: 700;
   color: #fff;
   padding: 4px 0;
-  border-radius: 3px;
+  border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   text-align: center;
 }
-.sev-critical { background: var(--bad); }
-.sev-high     { background: var(--orange); }
-.sev-medium   { background: var(--warn); color: #1a1b1e; }
+.sev-critical { background: #8B0000; color: #fff; }
+.sev-high     { background: #DC3545; color: #fff; }
+.sev-medium   { background: #FD7E14; color: #fff; }
+.sev-low      { background: var(--surface-3); color: var(--text); border: 1px solid var(--border-strong); padding: 4px 8px; }
 
 .blocker-main { min-width: 0; }
 .blocker-title { font-size: 13px; line-height: 1.35; }
@@ -235,4 +236,41 @@
 .comment-form textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* ---------- Date validation error ---------- */
+.field-error {
+  color: var(--bad);
+  font-size: 11px;
+  margin: 0;
+  padding: 0 2px;
+}
+
+/* ---------- Date & category row (detail modal) ---------- */
+.issue-dates-row { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.issue-dates-row .field input,
+.issue-dates-row .field select {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+/* ---------- Category badge ---------- */
+.cat-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.cat-ui      { background: rgba(79, 140, 255, 0.18); color: var(--accent); }
+.cat-swe     { background: rgba(52, 199, 89,  0.18); color: var(--good);   }
+.cat-backend { background: rgba(255, 149, 0,  0.18); color: var(--orange); }
+
+/* ---------- Sync Button Layout ---------- */
+.button-group {
+  display: flex;
+  gap: 8px; /* Adds consistent spacing between Sync and New Issue buttons */
 }
