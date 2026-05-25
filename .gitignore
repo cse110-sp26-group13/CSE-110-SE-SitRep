@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+._*
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (in case we add tooling later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / dist (in case we add a build step later)
+dist/
+build/
+out/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS / misc
+Thumbs.db
+*.bak
+*.tmp
+
+# Claude Code agent skills (per-developer, not team config)
+.agents/
+skills-lock.json
