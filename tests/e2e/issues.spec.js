@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { bypassAuth } from './_auth-stub.js';
+import { stubGitHub } from './_github-stub.js';
 
 test.describe('Issues Tracker', () => {
   test.beforeEach(async ({ page }) => {
     await bypassAuth(page);
+    await stubGitHub(page);
     await page.goto('/issues.html');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
