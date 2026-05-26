@@ -1,6 +1,6 @@
-/* When-can-we-meet grid (slots) */
+/* When-can-we-meet grid (slots) — Linear-style dense matrix. */
 
-.meeting-card { gap: 12px; }
+.meeting-card { gap: 8px; }
 
 .slots-list {
   list-style: none;
@@ -10,9 +10,11 @@
 
 .w2m-grid {
   display: grid;
-  gap: 0;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 .w2m-corner,
@@ -21,101 +23,85 @@
 .w2m-cell,
 .w2m-overlap,
 .w2m-overlap-label {
-  border-right: 1px solid var(--hairline-2);
-  border-bottom: 1px solid var(--hairline-2);
-  min-height: 28px;
+  background: var(--surface);
+  min-height: 22px;
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: 10.5px;
 }
-.w2m-corner { background: var(--card-2); }
+.w2m-corner { background: var(--surface-2); }
 
 .w2m-time {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--card-2);
-  padding: 4px 2px;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 2px 4px;
 }
 
 .w2m-name {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--card-2);
+  letter-spacing: 0.02em;
+  color: var(--text-mid);
+  background: var(--surface-2);
 }
 
 .w2m-cell {
   appearance: none;
+  border: 0;
   border-radius: 0;
-  border-left: 0;
-  border-top: 0;
-  border-right: 1px solid var(--hairline-2);
-  border-bottom: 1px solid var(--hairline-2);
-  background: var(--paper);
+  background: var(--surface);
   cursor: default;
   width: 100%;
   padding: 0;
 }
-.w2m-cell.available {
-  background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, rgba(239,236,228,0.18) 1px, transparent 1.5px);
-  background-size: 4px 4px;
-}
-.w2m-cell.unavailable { background: var(--paper); }
+.w2m-cell.available { background: var(--accent); }
+.w2m-cell.unavailable { background: var(--surface); }
 .w2m-cell.me { cursor: pointer; outline: 1.5px solid transparent; }
-.w2m-cell.me:hover { outline-color: var(--ink); outline-offset: -2px; }
-.w2m-cell.me.available { background-color: var(--ink); }
+.w2m-cell.me:hover { outline-color: var(--accent); outline-offset: -2px; }
+.w2m-cell.me.available { background: var(--accent); }
 
 .w2m-overlap-label {
   font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
 }
 .w2m-overlap {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  background: var(--paper);
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-mid);
+  background: var(--surface);
 }
-.w2m-overlap.all  { background: var(--good-soft); color: var(--ink); }
-.w2m-overlap.most { background: var(--good-soft); color: var(--ink); }
-.w2m-overlap.some { background: var(--card-2); color: var(--ink); }
-.w2m-overlap.few  { background: var(--warn-soft); color: var(--ink); }
-.w2m-overlap.none { background: var(--bad-soft); color: var(--ink); }
+.w2m-overlap.all  { background: var(--good-soft);  color: var(--green); }
+.w2m-overlap.most { background: var(--good-soft);  color: var(--green); }
+.w2m-overlap.some { background: var(--surface-3); color: var(--text); }
+.w2m-overlap.few  { background: var(--warn-soft); color: var(--orange); }
+.w2m-overlap.none { background: var(--bad-soft);  color: var(--red); }
 
 .w2m-legend {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  gap: 4px 14px;
   font-family: var(--mono);
   font-size: 10.5px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding-top: 4px;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
 }
 .w2m-swatch {
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 1.5px solid var(--ink);
+  border-radius: 2px;
   vertical-align: middle;
   margin-right: 4px;
 }
-.w2m-swatch.available {
-  background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, rgba(239,236,228,0.18) 1px, transparent 1.5px);
-  background-size: 3px 3px;
-}
-.w2m-swatch.unavailable { background: var(--paper); }
-.w2m-swatch.me { background: var(--paper); outline: 1.5px solid var(--ink); outline-offset: -2px; }
+.w2m-swatch.available { background: var(--accent); }
+.w2m-swatch.unavailable { background: var(--surface-3); border: 1px solid var(--line); }
+.w2m-swatch.me { background: var(--surface); outline: 1.5px solid var(--accent); outline-offset: -2px; }

@@ -1,78 +1,111 @@
-/* Team mood — last 7 days sparkline + summary stats */
+/* Team mood — last 7 days. Mood-trend.js now emits a sparkline
+   STRING (▃▅▄▆▇▆█) instead of an SVG, but we keep the SVG styles
+   below as a fallback in case the JS isn't updated in this PR. */
 
 .sparkline-wrap {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  padding: 12px 14px;
 }
 
+/* String-based sparkline output */
+.sparkline-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.sparkline-string {
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  line-height: 1;
+}
+.sparkline-string.down { color: var(--red); }
+.sparkline-string.flat { color: var(--text-mid); }
+
+.mood-num {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+.mood-delta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.mood-delta.up   { color: var(--green); }
+.mood-delta.down { color: var(--red); }
+
+/* SVG sparkline (fallback / legacy) */
 .sparkline {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 100px;
 }
-
 .sparkline .grid {
-  stroke: var(--hairline);
+  stroke: var(--line);
   stroke-dasharray: 3 4;
   stroke-width: 1;
 }
 .sparkline .label {
-  fill: var(--muted);
+  fill: var(--text-muted);
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .sparkline .area {
-  fill: var(--ink);
-  opacity: 0.08;
+  fill: var(--accent);
+  opacity: 0.12;
 }
 .sparkline .line {
   fill: none;
-  stroke: var(--ink);
-  stroke-width: 2;
-  stroke-linejoin: miter;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
 }
 .sparkline .point {
-  fill: var(--paper);
-  stroke: var(--ink);
+  fill: var(--surface);
+  stroke: var(--accent);
   stroke-width: 1.5;
 }
-.sparkline .point:last-of-type {
-  fill: var(--ink);
-}
+.sparkline .point:last-of-type { fill: var(--accent); }
 
+/* Mood summary stats (3-up grid) */
 .mood-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
+  gap: 1px;
+  background: var(--line);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .mood-stat {
-  padding: 10px 14px;
-  border-left: 1.5px solid var(--ink);
+  padding: 10px 12px;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
-.mood-stat:first-child { border-left: 0; }
 .mood-stat-label {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .mood-stat-value {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 24px;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--text);
   line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
 }
-.mood-stat-value.up   { color: var(--good); }
-.mood-stat-value.down { color: var(--bad); }
+.mood-stat-value.up   { color: var(--green); }
+.mood-stat-value.down { color: var(--red); }

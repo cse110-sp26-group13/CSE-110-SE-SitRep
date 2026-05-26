@@ -1,20 +1,32 @@
-/* Top-level app shell. Per-page layouts live in page.css / calendar.css. */
+/* Page shell: 220px sidebar + 1fr main, full viewport height.
+   Sidebar lives in rail.css; topbar + tabs in topbar.css;
+   content container in page.css. */
 
 .app {
-  position: relative;
-  z-index: 1;
   display: grid;
-  grid-template-columns: 64px 1fr;
-  min-height: 100vh;
+  grid-template-columns: 220px 1fr;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .main {
-  padding: 36px 44px 56px;
-  max-width: 1480px;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  min-width: 0;
+}
+
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
 }
 
 @media (max-width: 900px) {
   .app { grid-template-columns: 56px 1fr; }
-  .main { padding: 24px 22px 40px; }
+  .rail .ws-name, .rail .nav-item span:not(.count),
+  .rail .nav-label, .rail .cmd-trigger .label,
+  .rail .cmd-trigger kbd, .rail .ws-chev,
+  .rail .rail-foot-name { display: none; }
+  .rail .nav-item, .rail .cmd-trigger, .rail .workspace { justify-content: center; }
 }

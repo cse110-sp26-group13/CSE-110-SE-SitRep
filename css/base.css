@@ -1,219 +1,227 @@
 /* ───────────────────────────────────────────────────────────
-   SitRep · Halftone — base tokens
-   One theme: warm cream paper, ink dots, hard borders.
+   SitRep · Linear-style — base tokens
+   Dense dark surfaces, hairline borders, monospace IDs,
+   Inter + JetBrains Mono. One accent (purple-blue).
    ─────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces */
-  --paper:        #efece4;
-  --paper-2:      #e7e3d8;
-  --card:         #f7f5ed;
-  --card-2:       #ece8db;
-  --card-3:       #e0dac8;
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --bg:           #08090a;
+  --surface:      #101113;
+  --surface-2:    #16181a;
+  --surface-3:    #1c1e22;
+  --surface-hi:   #22252a;
+  /* legacy aliases (used by splash.css + utils) */
+  --card:         var(--surface);
+  --paper:        var(--bg);
 
-  /* Ink + lines */
-  --ink:          #000000;
-  --ink-2:        #39352e;
-  --muted:        #6e6655;
-  --subtle:       #948c7a;
-  --hairline:     #b0aa92;
-  --hairline-2:   #cdc6b3;
+  /* ── Lines ────────────────────────────────────────────── */
+  --line:         #1f2024;
+  --line-strong:  #2a2c31;
+  --border:       var(--line);
+  --border-strong: var(--line-strong);
+  --ink:          var(--line);
+  --hairline:     var(--line);
+  --hairline-2:   var(--line-strong);
 
-  /* Semantic — printed/desaturated */
-  --good:         #2f6b3a;
-  --good-soft:    #d6ddc4;
-  --warn:         #b56a14;
-  --warn-soft:    #ecd8b3;
-  --bad:          #b3261e;
-  --bad-soft:     #ecc9c2;
+  /* ── Text ─────────────────────────────────────────────── */
+  --text:         #e5e6e8;
+  --text-mid:     #b3b5ba;
+  --text-muted:   #8a8c92;
+  --text-subtle:  #6b6d73;
+  --text-dim:     #4a4c52;
+  --muted:        var(--text-muted);
+  --subtle:       var(--text-dim);
+  --ink-2:        var(--text-mid);
 
-  /* Halftone pattern knobs */
-  --dot:          #0a0a0a;
-  --dot-size:     7px;
-  --dot-radius:   1.1px;
-  --veil:         rgba(239, 236, 228, 0.55);
+  /* ── Accent ───────────────────────────────────────────── */
+  --accent:       #5e6ad2;
+  --accent-hover: #6f7adf;
+  --accent-soft:  rgba(94, 106, 210, 0.14);
+  --accent-line:  rgba(94, 106, 210, 0.45);
 
-  /* Type */
-  --sans:    "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --display: "Bricolage Grotesque", "Geist", sans-serif;
+  /* ── Status ───────────────────────────────────────────── */
+  --green:        #4cb782;
+  --yellow:       #f2c94c;
+  --orange:       #f2994a;
+  --red:          #eb5757;
+  --purple:       #9b87f5;
+  --good:         var(--green);
+  --good-soft:    rgba(76, 183, 130, 0.14);
+  --warn:         var(--orange);
+  --warn-soft:    rgba(242, 153, 74, 0.14);
+  --bad:          var(--red);
+  --bad-soft:     rgba(235, 87, 87, 0.14);
 
-  /* Hard graphic shadow */
-  --hard-shadow: 4px 4px 0 var(--ink);
+  /* ── Type ─────────────────────────────────────────────── */
+  --sans:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --display: var(--sans);
 
-  --radius: 10px;
+  /* ── Radius ───────────────────────────────────────────── */
+  --radius:    6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
 }
 
 * { box-sizing: border-box; }
-*:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 html, body { margin: 0; height: 100%; }
 
 body {
   font-family: var(--sans);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink);
-  background-color: var(--paper);
-  background-image:
-    radial-gradient(circle at 50% 50%, var(--dot) var(--dot-radius), transparent calc(var(--dot-radius) + 0.4px));
-  background-size: var(--dot-size) var(--dot-size);
-  background-attachment: fixed;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: var(--veil);
-  pointer-events: none;
-  z-index: 0;
-}
 
 h1, h2, h3, h4 {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  letter-spacing: -0.025em;
-  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
   margin: 0;
 }
 
 button {
   font-family: inherit;
   font-size: inherit;
-  cursor: pointer;
   color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
 }
+
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
+  color: var(--text);
 }
 
-/* ── Buttons ─────────────────────────────────────────────── */
-.btn-primary,
-.btn-secondary {
-  appearance: none;
+a { color: inherit; text-decoration: none; }
+
+kbd, .kbd {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--text-mid);
+  line-height: 1;
+}
+
+/* ── Buttons (Linear-style: small, square, subtle) ───────────── */
+.btn-primary, .btn-secondary {
   font-family: var(--sans);
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: -0.005em;
-  padding: 9px 16px;
-  border: 1.5px solid var(--ink);
-  border-radius: 0px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-decoration: none;
   white-space: nowrap;
-  transition: transform .08s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+  text-decoration: none;
   cursor: pointer;
+  transition: background .1s, border-color .1s, color .1s, filter .1s;
 }
 .btn-primary {
-  background: var(--ink-2);
-  color: var(--paper);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
-.btn-primary:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
-}
-.btn-primary:active { transform: none; box-shadow: none; }
+.btn-primary:hover  { filter: brightness(1.1); }
+.btn-primary:active { filter: brightness(0.95); }
+.btn-primary:disabled, .btn-primary[disabled] { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary {
-  background: var(--card);
-  color: var(--ink);
+  background: var(--surface);
+  color: var(--text-mid);
 }
 .btn-secondary:hover {
-  background: var(--card-2);
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--line-strong);
 }
 
-/* ── Card shell (used everywhere) ────────────────────────── */
+/* ── Card shell ──────────────────────────────────────────────── */
 .card {
-  background: var(--card);
-  border: 1.5px solid var(--ink);
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
+  overflow: hidden;
 }
 .card-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  border-radius: var(--radius);
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
 }
-.card-head h2 {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 20px;
-  letter-spacing: -0.02em;
-  margin: 0 0 4px;
-  border-radius: var(--radius);
+.card-head h2, .card-head h3 {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0;
 }
 .card-sub {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.05em;
+  color: var(--text-muted);
 }
 
-/* ── Misc primitives ─────────────────────────────────────── */
-.empty {
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-  padding: 28px 12px;
-  font-family: var(--mono);
-  letter-spacing: 0.04em;
-}
-.text-muted { color: var(--muted); }
-
-/* Anchor styling is opt-in (per-component) so rail icons, snapshot
-   numbers, and button-styled anchors don't inherit underlines or
-   ink-on-hover invert. Inline body links use .lede a. */
-a { color: inherit; text-decoration: none; }
-.lede a {
-  color: var(--ink);
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 3px;
-}
-.lede a:hover { background: var(--ink); color: var(--paper); text-decoration: none; }
-
-/* Avatar (utils.js stamps inline bg color — override to ink-on-paper) */
+/* ── Avatar (utils.js stamps inline bg — override) ───────────── */
 .avatar {
-  width: 32px;
-  height: 32px;
-  background: var(--ink) !important;
-  color: var(--paper);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0;
+  color: #fff;
   flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--purple)) !important;
+  letter-spacing: 0;
 }
+.avatar.sm { width: 18px; height: 18px; font-size: 9px; }
+.avatar.lg { width: 28px; height: 28px; font-size: 11px; }
 
-/* Scrollbars */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+/* ── Empty / muted helpers ───────────────────────────────────── */
+.empty {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 24px 12px;
+  font-family: var(--mono);
+}
+.text-muted { color: var(--text-muted); }
+
+/* ── Scrollbars ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--hairline);
+  background: var(--line-strong);
   border: 2px solid transparent;
+  border-radius: 8px;
   background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--subtle); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); background-clip: content-box; }
 
-/* ── Modal (issue detail + new issue + GH sync) ──────────── */
+/* ── Modal (issue detail + new issue + GH sync) ──────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(20, 18, 12, 0.55);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
   z-index: 100;
   display: grid;
   place-items: center;
@@ -221,11 +229,12 @@ a { color: inherit; text-decoration: none; }
 }
 .modal-backdrop[hidden] { display: none; }
 .modal {
-  background: var(--card);
-  border: 1.5px solid var(--ink);
-  box-shadow: var(--hard-shadow);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   width: 100%;
-  max-width: 640px;
+  max-width: 600px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -236,52 +245,50 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 20px;
-  border-bottom: 1.5px solid var(--ink);
-  background: var(--paper);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
 }
 .modal-head h3 {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 22px;
-  letter-spacing: -0.02em;
+  font-size: 14px;
+  font-weight: 600;
   margin: 0;
 }
 .modal-close {
-  appearance: none;
   background: transparent;
-  border: 1.5px solid var(--ink);
-  width: 28px; height: 28px;
+  border: 0;
+  width: 26px;
+  height: 26px;
   font-size: 18px;
-  line-height: 0;
-  display: grid; place-items: center;
+  line-height: 1;
+  color: var(--text-muted);
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
 }
-.modal-close:hover { background: var(--ink); color: var(--paper); }
-.modal-body { padding: 20px; overflow-y: auto; }
+.modal-close:hover { background: var(--surface-2); color: var(--text); }
+.modal-body { padding: 14px; overflow-y: auto; }
 
-/* Form primitives */
-.issue-form,
-.checkin-form {
+/* ── Form primitives ─────────────────────────────────────────── */
+.issue-form, .checkin-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 .field > span,
 .checkin-form label {
   font-family: var(--mono);
   font-size: 10.5px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 .field input,
 .field textarea,
@@ -289,106 +296,106 @@ a { color: inherit; text-decoration: none; }
 .checkin-form input,
 .checkin-form textarea {
   appearance: none;
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  border-radius: 0;
-  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 10px;
   font-family: var(--sans);
-  font-size: 13.5px;
-  color: var(--ink);
-  letter-spacing: -0.005em;
+  font-size: 13px;
+  color: var(--text);
   text-transform: none;
+  transition: border-color 0.1s, background 0.1s;
+}
+.field input:hover,
+.field textarea:hover,
+.field select:hover,
+.checkin-form input:hover,
+.checkin-form textarea:hover {
+  border-color: var(--line-strong);
 }
 .field input:focus,
 .field textarea:focus,
 .field select:focus,
 .checkin-form input:focus,
 .checkin-form textarea:focus {
-  outline: 2px solid var(--ink);
-  outline-offset: -1.5px;
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-3);
 }
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
-.field-row .field { min-width: 0; }
 .field-error {
   margin: 0;
   font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--bad);
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  color: var(--red);
 }
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--hairline);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
   margin-top: 4px;
 }
 
-/* Issue detail */
-.issue-detail { display: flex; flex-direction: column; gap: 16px; }
+/* ── Issue detail (kept class names, restyled) ───────────────── */
+.issue-detail { display: flex; flex-direction: column; gap: 14px; }
 .issue-meta-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 14px;
-  border-bottom: 1px dashed var(--hairline);
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
-.status-select-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.status-select-wrap { display: flex; flex-direction: column; gap: 4px; }
 .status-select-label {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .status-select-wrap select {
   appearance: none;
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 5px 24px 5px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px 22px 4px 8px;
   font-family: var(--sans);
-  font-size: 12.5px;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
-  background-position: calc(100% - 14px) 12px, calc(100% - 10px) 12px;
-  background-size: 5px 5px;
-  background-repeat: no-repeat;
+  font-size: 12px;
+  color: var(--text);
 }
 .issue-owner-meta,
 .issue-posted-meta {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.04em;
+  color: var(--text-muted);
 }
-.issue-owner-meta strong { color: var(--ink); font-weight: 600; }
+.issue-owner-meta strong { color: var(--text); font-weight: 600; }
 .issue-description {
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.55;
-  color: var(--ink-2);
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 14px 16px;
+  color: var(--text-mid);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 10px 12px;
 }
-.issue-dates-row { padding-top: 4px; }
+.issue-dates-row { padding-top: 2px; }
 
-/* Comments */
-.comments-section { display: flex; flex-direction: column; gap: 10px; }
+/* ── Comments (kept class names, restyled) ───────────────────── */
+.comments-section { display: flex; flex-direction: column; gap: 8px; }
 .comments-title {
   font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-muted);
   margin: 0;
 }
 .comment-list {
@@ -397,40 +404,37 @@ a { color: inherit; text-decoration: none; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 220px;
+  gap: 8px;
+  max-height: 240px;
   overflow-y: auto;
 }
 .comment {
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 10px;
 }
 .comment-head {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
-.comment-who { font-weight: 600; font-size: 13px; }
-.comment-time {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-.comment-text { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
-.comment-empty { padding: 14px 8px; }
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+.comment-who { font-weight: 500; font-size: 12.5px; color: var(--text); }
+.comment-time { font-family: var(--mono); font-size: 10.5px; color: var(--text-muted); }
+.comment-text { font-size: 12.5px; color: var(--text-mid); line-height: 1.45; }
+.comment-empty { padding: 12px 8px; }
+.comment-form { display: flex; flex-direction: column; gap: 8px; }
 .comment-form textarea {
   appearance: none;
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  border-radius: 0;
-  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 10px;
   font-family: var(--sans);
-  font-size: 13.5px;
+  font-size: 13px;
+  color: var(--text);
   resize: vertical;
 }
+
+/* ── Reset for legacy borders/shadows from halftone era ──────── */
+.btn-primary, .btn-secondary { box-shadow: none; }

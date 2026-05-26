@@ -1,0 +1,98 @@
+/* Shared dense-list primitives. Reused by blockers, checkins,
+   palette items, and any future list surface.
+
+   The classes here are the bare bones; per-feature CSS layers
+   on top (e.g. checkins.css adds the standup-specific column
+   layout, blockers.css adds the issue-row columns). */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Generic row (issues, palette items, anywhere a uniform line is needed) */
+.row {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.08s;
+  color: var(--text);
+}
+.row:hover { background: var(--surface-2); }
+.row:last-child { border-bottom: 0; }
+
+/* Status dot */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.dot.backlog  { background: var(--text-dim); }
+.dot.open     { background: var(--yellow); }
+.dot.progress { background: var(--accent); }
+.dot.review   { background: var(--purple); }
+.dot.done     { background: var(--green); }
+.dot.blocked  { background: var(--red); }
+.dot.critical { background: var(--red); }
+.dot.high     { background: var(--orange); }
+.dot.medium   { background: var(--yellow); }
+.dot.low      { background: var(--green); }
+
+/* Mono ID (#34, SIT-142, etc.) */
+.id {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* Title (truncates) */
+.title {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Meta (mono, dim) */
+.meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Severity badge (text labels with tinted bg) */
+.sev-badge {
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.sev-badge.critical { background: var(--bad-soft);  color: var(--red); }
+.sev-badge.high     { background: var(--warn-soft); color: var(--orange); }
+.sev-badge.medium   { background: rgba(242, 201, 76, 0.14); color: var(--yellow); }
+.sev-badge.low      { background: var(--good-soft); color: var(--green); }
+
+/* Status badge (Open / Resolved / In progress) */
+.status-badge {
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: var(--surface-3);
+  color: var(--text-mid);
+  text-transform: capitalize;
+}
+.status-badge.open     { color: var(--yellow); }
+.status-badge.resolved { color: var(--green); }
+.status-badge.progress { color: var(--accent); }
