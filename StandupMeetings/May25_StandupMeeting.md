@@ -1,8 +1,10 @@
 # Standup Meeting — 05/25
 
 **Location:** Discord
+
 **Time:** 4:00 PM
-**Attendance:** Aidan, Andrew, Ophir, Shazi, Yang, Jeong
+
+**Attendance:** Aidan, Andrew, Ophir, Shazi, Yang, Jeong, Jeremy
 
 ---
 
