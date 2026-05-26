@@ -362,16 +362,22 @@ function bindBlockerControls() {
       renderBlockers();
     });
   });
-  document.getElementById("add-blocker-btn").addEventListener("click", openCreateModal);
+  const addBtn = document.getElementById("add-blocker-btn");
+  if (addBtn) addBtn.addEventListener("click", openCreateModal);
 
+  // Modal wiring — null-safe so pages without an add button (e.g. the
+  // Overview, which still shows clickable issue rows) don't throw.
   const modal = document.getElementById("issue-modal");
-  document.getElementById("issue-modal-close").addEventListener("click", closeModal);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeModal();
-  });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && !modal.hidden) closeModal();
-  });
+  if (modal) {
+    const closeBtn = document.getElementById("issue-modal-close");
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", e => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+  }
 }
 
 function openGitHubSyncModal() {

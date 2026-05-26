@@ -1,84 +1,19 @@
-// Dashboard page orchestrator.
-// Summary view: KPIs, standup + issues snapshots, mood trend, activity, next-up.
-
-function renderStandupSnapshot() {
-  const tm = effectiveTeammates();
-  const checkedIn = tm.filter(t => t.lastCheckIn).length;
-  const pending = tm.filter(t => !t.lastCheckIn);
-  const moods = tm.filter(t => t.mood != null).map(t => t.mood);
-  const avg = moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length) : null;
-
-  document.getElementById("snap-standup-num").innerHTML =
-    `${checkedIn}<span class="light"> / ${tm.length}</span>`;
-  document.getElementById("snap-standup-sub").textContent =
-    avg == null ? "Mood pending" : `Avg mood ${avg.toFixed(1)} / 10`;
-
-  const recentBlocker = tm.find(t => t.lastCheckIn?.blockers);
-  const body = document.getElementById("snap-standup-body");
-  let html = "";
-  if (pending.length > 0) {
-    html += `<div class="av-row">
-      ${pending.map(p => avatar(p.name, p.id)).join("")}
-      <div class="pending-names">
-        <strong>${escapeHTML(pending.map(p => p.name.split(" ")[0]).join(", "))}</strong>
-        <span style="color:var(--muted);"> · not in yet</span>
-      </div>
-    </div>`;
-  } else {
-    html += `<div class="pending-names" style="color:var(--good);font-weight:600">
-      Whole team's in.
-    </div>`;
-  }
-  if (recentBlocker) {
-    html += `<div class="checkin-note checkin-blocker" style="margin-top:6px">
-      <span class="checkin-field-label">Heads up:</span>
-      ${escapeHTML(recentBlocker.lastCheckIn.blockers)}
-    </div>`;
-  }
-  body.innerHTML = html;
-}
-
-function renderIssuesSnapshot() {
-  const open = effectiveBlockers().filter(b => b.status !== "resolved");
-  const counts = {
-    critical: open.filter(b => b.severity === "critical").length,
-    high:     open.filter(b => b.severity === "high").length,
-    medium:   open.filter(b => b.severity === "medium").length,
-  };
-  document.getElementById("snap-issues-num").innerHTML =
-    `${open.length}<span class="light"> open</span>`;
-  document.getElementById("snap-issues-sub").textContent =
-    open.length === 0 ? "Nothing's blocking" : `${counts.critical} critical · ${counts.high} high · ${counts.medium} medium`;
-
-  document.getElementById("snap-issues-sev").innerHTML = `
-    <span><i class="dot critical"></i>${counts.critical} critical</span>
-    <span><i class="dot high"></i>${counts.high} high</span>
-    <span><i class="dot medium"></i>${counts.medium} medium</span>
-  `;
-
-  // Top 2 most-severe issues
-  const order = { critical: 0, high: 1, medium: 2 };
-  const top = open.slice().sort((a, b) => order[a.severity] - order[b.severity]).slice(0, 2);
-  document.getElementById("snap-issues-body").innerHTML = top.length
-    ? top.map(b => `
-        <a class="mini-issue" href="issues.html#${escapeHTML(b.id)}">
-          <span class="mini-dot ${b.severity}"></span>
-          <div>
-            <div class="mini-title">${escapeHTML(b.title)}</div>
-            <div class="mini-meta">${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</div>
-          </div>
-        </a>`).join("")
-    : `<div class="empty" style="padding:8px 0">Team's unblocked.</div>`;
-}
+// Dashboard (Overview) orchestrator — Linear-style dense summary.
+// Renders the real feature lists (read-only) plus KPIs, activity, mood, slots.
+// Replaces the halftone snapshot cards with the actual content.
 
 function renderDashboard() {
   renderHeader();
   renderKPIs();
+  renderCheckIns();
+  renderBlockers();
+  renderSlots();
   renderMoodTrend();
   renderActivity();
-  renderStandupSnapshot();
-  renderIssuesSnapshot();
 }
+
+// Feature modules call renderAll() after local mutations (e.g. "I'll cover").
+window.renderAll = renderDashboard;
 
 function bindResetDash() {
   const btn = document.getElementById("reset-btn");
@@ -88,10 +23,14 @@ function bindResetDash() {
     localStorage.removeItem(STORAGE_KEY);
     state = defaultState();
     renderDashboard();
+    if (typeof initGHEmbeds === "function") initGHEmbeds();
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   renderDashboard();
+  bindBlockerControls();   // issue rows open the detail modal (null-safe on Overview)
   bindResetDash();
+  if (typeof initPalette === "function") initPalette();
+  if (typeof initGHEmbeds === "function") initGHEmbeds();
 });

@@ -21,4 +21,6 @@ window.renderActivity = function () { /* no-op: no activity feed on issues page 
 document.addEventListener("DOMContentLoaded", () => {
   renderIssues();
   bindBlockerControls();
+  if (typeof initPalette === "function") initPalette();
+  if (typeof initGHEmbeds === "function") initGHEmbeds();
 });

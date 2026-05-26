@@ -15,4 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderStandup();
   bindMoodQuick();
   bindComposeForm();
+  if (typeof initPalette === "function") initPalette();
+  if (typeof initGHEmbeds === "function") initGHEmbeds();
 });

@@ -9,6 +9,13 @@ function moodBucket(score) {
 
 const MOOD_FACES = { 2: "😢", 4: "🙁", 6: "😐", 8: "🙂", 10: "😄" };
 
+// Render free text with GitHub PR refs (#N) turned into chips when
+// github-embeds.js is present; otherwise just escape. Chips are hydrated
+// (CI status, merge state) by enrichPRChips() after render.
+function checkinText(text) {
+  return (typeof renderPRChipsFor === "function") ? renderPRChipsFor(text) : escapeHTML(text);
+}
+
 function moodFace(score) {
   const b = moodBucket(score);
   return b == null ? "—" : MOOD_FACES[b];
@@ -68,11 +75,11 @@ function renderCheckIns() {
             <span class="checkin-role">${escapeHTML(t.role)}</span>
           </div>
 
-          ${yesterday ? `<div class="checkin-note checkin-yesterday"><span class="checkin-field-label">Yesterday:</span> ${escapeHTML(yesterday)}</div>` : ""}
+          ${yesterday ? `<div class="checkin-note checkin-yesterday"><span class="checkin-field-label">Yesterday:</span> ${checkinText(yesterday)}</div>` : ""}
 
-          ${today ? `<div class="checkin-note checkin-today"><span class="checkin-field-label">Today:</span> ${escapeHTML(today)}</div>` : ""}
+          ${today ? `<div class="checkin-note checkin-today"><span class="checkin-field-label">Today:</span> ${checkinText(today)}</div>` : ""}
 
-          ${blockerNote ? `<div class="checkin-note checkin-blocker"><span class="checkin-field-label">Blocker:</span> ${escapeHTML(blockerNote)}</div>` : ""}
+          ${blockerNote ? `<div class="checkin-note checkin-blocker"><span class="checkin-field-label">Blocker:</span> ${checkinText(blockerNote)}</div>` : ""}
 
           <div class="checkin-meta">
             ${moodPill}

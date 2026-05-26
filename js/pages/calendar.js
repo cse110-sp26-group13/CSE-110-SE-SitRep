@@ -206,4 +206,6 @@ function bindCalendar() {
 document.addEventListener("DOMContentLoaded", () => {
   renderCalendar();
   bindCalendar();
+  if (typeof initPalette === "function") initPalette();
+  if (typeof initGHEmbeds === "function") initGHEmbeds();
 });
