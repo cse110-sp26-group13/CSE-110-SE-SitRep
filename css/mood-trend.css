@@ -1,42 +1,78 @@
+/* Team mood — last 7 days sparkline + summary stats */
+
 .sparkline-wrap {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-height: 0;
+  gap: 14px;
 }
+
 .sparkline {
+  display: block;
   width: 100%;
-  height: 110px;
-  flex: 1;
-  min-height: 0;
+  height: 140px;
 }
-.sparkline path.line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.sparkline path.area { fill: rgba(79, 140, 255, 0.18); }
-.sparkline circle.point { fill: var(--accent); }
-.sparkline line.grid { stroke: var(--border); stroke-dasharray: 2 4; }
-.sparkline text.label { fill: var(--text-muted); font-size: 9px; }
+
+.sparkline .grid {
+  stroke: var(--hairline);
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
+}
+.sparkline .label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.sparkline .area {
+  fill: var(--ink);
+  opacity: 0.08;
+}
+.sparkline .line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: miter;
+}
+.sparkline .point {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.sparkline .point:last-of-type {
+  fill: var(--ink);
+}
 
 .mood-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 0;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
 }
 .mood-stat {
-  background: var(--surface-2);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 10px 14px;
+  border-left: 1.5px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
+.mood-stat:first-child { border-left: 0; }
 .mood-stat-label {
-  color: var(--text-muted);
+  font-family: var(--mono);
   font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--muted);
 }
 .mood-stat-value {
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 2px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.mood-stat-value.up { color: var(--good); }
+.mood-stat-value.up   { color: var(--good); }
 .mood-stat-value.down { color: var(--bad); }

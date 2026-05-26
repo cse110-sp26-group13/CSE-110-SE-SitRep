@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — mock (Linear-style)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <style>
+    :root {
+      --bg: #08090a;
+      --bg-elev: #101113;
+      --bg-hover: #16181a;
+      --bg-active: #1c1e22;
+      --line: #1f2024;
+      --line-strong: #2a2c31;
+      --text: #e5e6e8;
+      --text-mid: #b3b5ba;
+      --text-muted: #6b6d73;
+      --text-dim: #4a4c52;
+      --accent: #5e6ad2;
+      --accent-soft: rgba(94, 106, 210, 0.14);
+      --green: #4cb782;
+      --yellow: #f2c94c;
+      --orange: #f2994a;
+      --red: #eb5757;
+      --purple: #9b87f5;
+      --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 0 0 1px var(--line);
+      --radius: 6px;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --sans: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.45;
+      letter-spacing: -0.005em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: inherit; text-decoration: none; }
+    button {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+    }
+    kbd {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      background: var(--bg-active);
+      border: 1px solid var(--line-strong);
+      border-bottom-width: 2px;
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--text-mid);
+      line-height: 1;
+    }
+
+    /* ─── Layout ───────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      height: 100vh;
+    }
+    .sidebar {
+      background: var(--bg);
+      border-right: 1px solid var(--line);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    .workspace {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .workspace:hover { background: var(--bg-hover); }
+    .ws-logo {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .ws-name { font-weight: 600; font-size: 13px; }
+    .ws-chev { margin-left: auto; color: var(--text-dim); font-size: 11px; }
+
+    .cmd-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .cmd-trigger:hover { background: var(--bg-hover); border-color: var(--line-strong); }
+    .cmd-trigger svg { width: 13px; height: 13px; stroke: currentColor; flex-shrink: 0; }
+    .cmd-trigger .label { flex: 1; }
+    .cmd-trigger kbd { margin-left: auto; }
+
+    .nav-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .nav-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      padding: 6px 8px 2px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      color: var(--text-mid);
+      font-size: 12.5px;
+      cursor: pointer;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+    .nav-item.active { background: var(--accent-soft); color: var(--text); }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+    .nav-item svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.7; fill: none; flex-shrink: 0; }
+    .nav-item .count {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 8px 6px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar.sm { width: 16px; height: 16px; font-size: 9px; }
+    .avatar.b1 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .avatar.b2 { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+    .avatar.b3 { background: linear-gradient(135deg, #84cc16, #10b981); }
+    .avatar.b4 { background: linear-gradient(135deg, #ec4899, #8b5cf6); }
+    .avatar.b5 { background: linear-gradient(135deg, #f97316, #eab308); }
+
+    /* ─── Main ──────────────────────────────────────────────────── */
+    .main { overflow-y: auto; background: var(--bg); }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .crumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .crumb .sep { color: var(--text-dim); }
+    .crumb .current { color: var(--text); font-weight: 500; }
+    .topbar-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tb-btn {
+      padding: 4px 9px;
+      border-radius: 5px;
+      font-size: 12px;
+      color: var(--text-mid);
+      border: 1px solid var(--line);
+      background: var(--bg-elev);
+      transition: background 0.1s, border-color 0.1s, color 0.1s;
+    }
+    .tb-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--line-strong); }
+    .tb-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .tb-btn.primary:hover { filter: brightness(1.1); }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .tab {
+      padding: 8px 12px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      border-bottom: 1.5px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+    .page {
+      padding: 18px 24px 40px;
+      max-width: 1240px;
+    }
+    .page-head {
+      margin-bottom: 16px;
+    }
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+    }
+    .page-sub {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* ─── KPI ──────────────────────────────────────────────────── */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .kpi {
+      background: var(--bg-elev);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    .kpi-value {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .kpi-num {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .kpi-num.green { color: var(--green); }
+    .kpi-num.yellow { color: var(--yellow); }
+    .kpi-num.red { color: var(--red); }
+    .kpi-delta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .kpi-delta.up { color: var(--green); }
+    .kpi-delta.down { color: var(--red); }
+
+    /* ─── Section ──────────────────────────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 14px;
+    }
+    .section {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+    }
+    .section-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .section-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-active);
+      color: var(--text-mid);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .pill:hover { border-color: var(--line-strong); }
+    .pill.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+
+    /* ─── Issue list ───────────────────────────────────────────── */
+    .list { list-style: none; margin: 0; padding: 0; }
+    .row {
+      display: grid;
+      grid-template-columns: 16px 70px 1fr auto auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background 0.08s;
+    }
+    .row:hover { background: var(--bg-hover); }
+    .row:last-child { border-bottom: 0; }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.backlog { background: var(--text-dim); }
+    .dot.open { background: var(--yellow); }
+    .dot.progress { background: var(--accent); }
+    .dot.review { background: var(--purple); }
+    .dot.done { background: var(--green); }
+    .dot.blocked { background: var(--red); }
+    .id {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .title {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .sev-badge {
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    .sev-badge.critical { background: rgba(235, 87, 87, 0.14); color: var(--red); }
+    .sev-badge.high { background: rgba(242, 153, 74, 0.14); color: var(--orange); }
+    .sev-badge.medium { background: rgba(242, 201, 76, 0.14); color: var(--yellow); }
+
+    /* ─── Standup list ─────────────────────────────────────────── */
+    .standup-row {
+      display: grid;
+      grid-template-columns: 20px 100px 1fr 60px;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+    }
+    .standup-row:last-child { border-bottom: 0; }
+    .standup-who { color: var(--text); font-weight: 500; }
+    .standup-body { color: var(--text-mid); }
+    .standup-body .line { display: block; }
+    .standup-body .label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-right: 6px;
+    }
+    .standup-body .pr-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      background: var(--bg-active);
+      border: 1px solid var(--line-strong);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin: 1px 2px 1px 0;
+      color: var(--text-mid);
+    }
+    .standup-body .pr-chip.merged { color: var(--purple); border-color: rgba(155, 135, 245, 0.3); }
+    .standup-body .pr-chip.open { color: var(--green); border-color: rgba(76, 183, 130, 0.3); }
+    .standup-body .pr-chip.ci-pass::after { content: '✓'; color: var(--green); margin-left: 3px; }
+    .standup-body .pr-chip.ci-fail::after { content: '✗'; color: var(--red); margin-left: 3px; }
+    .standup-time {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* ─── Activity feed (log style) ─────────────────────────────── */
+    .feed {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      padding: 8px 14px;
+    }
+    .feed-row {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 10px;
+      color: var(--text-mid);
+      padding: 1px 0;
+    }
+    .feed-row:hover { color: var(--text); }
+    .feed-time { color: var(--text-dim); }
+    .feed-row .who { color: var(--accent); }
+    .feed-row .ref { color: var(--text); }
+    .feed-row .tag { color: var(--green); }
+    .feed-row .tag.fail { color: var(--red); }
+    .feed-row .tag.warn { color: var(--yellow); }
+
+    /* ─── Mood sparkline ───────────────────────────────────────── */
+    .mood-row {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+    .mood-spark {
+      font-family: var(--mono);
+      font-size: 18px;
+      letter-spacing: 0.1em;
+      color: var(--green);
+    }
+    .mood-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .mood-num {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ─── Command palette ───────────────────────────────────────── */
+    .palette-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 18vh;
+      z-index: 50;
+    }
+    .palette-backdrop.open { display: flex; }
+    .palette {
+      width: 580px;
+      max-width: 90vw;
+      background: var(--bg-elev);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      overflow: hidden;
+    }
+    .palette-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .palette-input-wrap svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+    .palette-input {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+    .palette-input::placeholder { color: var(--text-muted); }
+    .palette-list { max-height: 360px; overflow-y: auto; padding: 4px 0; }
+    .palette-group-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      padding: 8px 14px 4px;
+    }
+    .palette-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      font-size: 12.5px;
+      color: var(--text-mid);
+      cursor: pointer;
+    }
+    .palette-item.active, .palette-item:hover {
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+    .palette-item .pi-id {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 64px;
+    }
+    .palette-item .pi-title { flex: 1; }
+    .palette-item .pi-kbd { margin-left: auto; }
+    .palette-foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .palette-foot kbd { margin-right: 4px; }
+
+    /* utilities */
+    .row-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="workspace">
+        <div class="ws-logo">G13</div>
+        <div class="ws-name">Group 13</div>
+        <div class="ws-chev">⌄</div>
+      </div>
+
+      <button class="cmd-trigger" id="cmd-trigger">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
+        <span class="label">Search or jump…</span>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <div class="nav-section">
+        <div class="nav-label">Workspace</div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Overview
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/></svg>
+          Standup<span class="count">4/5</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/></svg>
+          Issues<span class="count">12</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">From GitHub</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M6 3v12a3 3 0 1 0 6 0V9a3 3 0 1 1 6 0v9"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/></svg>
+          Open PRs<span class="count">7</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+          Reviews due<span class="count">3</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0"/><path d="M3 12a9 9 0 0 1 18 0"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+          CI status
+        </div>
+      </div>
+
+      <div class="sidebar-foot">
+        <div class="avatar b3">SB</div>
+        <div>shazi</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="crumb">
+          <span>Group 13</span><span class="sep">/</span><span class="current">Overview</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="tb-btn">Reset demo</button>
+          <button class="tb-btn primary">+ Post standup</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Today</div>
+        <div class="tab">Week</div>
+        <div class="tab">Sprint 4</div>
+      </div>
+
+      <div class="page">
+        <div class="page-head">
+          <h1 class="page-title">Tuesday, May 26</h1>
+          <div class="page-sub">4 of 5 checked in · 7 PRs open · 3 reviews waiting on you · CI green</div>
+        </div>
+
+        <section class="kpis">
+          <div class="kpi">
+            <div class="kpi-label">Checked in</div>
+            <div class="kpi-value">
+              <span class="kpi-num">4<span style="color: var(--text-dim); font-weight: 400;">/5</span></span>
+              <span class="kpi-delta">avg 09:14</span>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Team mood</div>
+            <div class="kpi-value">
+              <span class="kpi-num green">7.6</span>
+              <span class="kpi-delta up">↑ 0.4</span>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Open issues</div>
+            <div class="kpi-value">
+              <span class="kpi-num yellow">12</span>
+              <span class="kpi-delta">2 critical</span>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">PRs awaiting review</div>
+            <div class="kpi-value">
+              <span class="kpi-num">7</span>
+              <span class="kpi-delta down">3 stale</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-2">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">Today's standup</div>
+              <div class="section-sub">· 4 posted</div>
+              <div class="section-actions">
+                <span class="pill active">All</span>
+                <span class="pill">Blockers</span>
+              </div>
+            </div>
+            <ul class="list">
+              <li class="standup-row">
+                <div class="avatar sm b1">SB</div>
+                <div class="standup-who">shazi <span class="meta">· @shazibid</span></div>
+                <div class="standup-body">
+                  <span class="line"><span class="label">Y</span>shipped halftone UI port, opened <span class="pr-chip merged">#34 ci-pass</span></span>
+                  <span class="line"><span class="label">T</span>wiring Supabase reads behind <span class="pr-chip open">#37 ci-pass</span></span>
+                  <span class="line"><span class="label">B</span>—</span>
+                </div>
+                <div class="standup-time">08:42</div>
+              </li>
+              <li class="standup-row">
+                <div class="avatar sm b2">AT</div>
+                <div class="standup-who">andrew <span class="meta">· @andrewt</span></div>
+                <div class="standup-body">
+                  <span class="line"><span class="label">Y</span>finished GitHub issue tracker sync — closed <span class="pr-chip merged">#17 ci-pass</span></span>
+                  <span class="line"><span class="label">T</span>pairing on calendar fixtures, reviewing <span class="pr-chip open">#37 ci-pass</span></span>
+                </div>
+                <div class="standup-time">09:01</div>
+              </li>
+              <li class="standup-row">
+                <div class="avatar sm b4">SY</div>
+                <div class="standup-who">stephanie <span class="meta">· @sy</span></div>
+                <div class="standup-body">
+                  <span class="line"><span class="label">Y</span>iterated on calendar wireframe</span>
+                  <span class="line"><span class="label">T</span>multi-day event bars — drafting <span class="pr-chip open ci-fail">#39 ci-fail</span></span>
+                  <span class="line"><span class="label">B</span><span style="color: var(--yellow);">need design review on event drag-create</span></span>
+                </div>
+                <div class="standup-time">09:18</div>
+              </li>
+              <li class="standup-row">
+                <div class="avatar sm b5">JM</div>
+                <div class="standup-who">jules <span class="meta">· @julesm</span></div>
+                <div class="standup-body">
+                  <span class="line"><span class="label">Y</span>auth-guard flake fix, merged <span class="pr-chip merged">#31 ci-pass</span></span>
+                  <span class="line"><span class="label">T</span>writing supabase migration for checkins table</span>
+                </div>
+                <div class="standup-time">09:35</div>
+              </li>
+              <li class="standup-row" style="opacity: 0.5;">
+                <div class="avatar sm b3">RK</div>
+                <div class="standup-who">rohan <span class="meta">· not in yet</span></div>
+                <div class="standup-body" style="color: var(--text-dim);">last seen yesterday 18:22</div>
+                <div class="standup-time">—</div>
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">Top issues</div>
+              <div class="section-sub">· 12 open · 2 critical</div>
+              <div class="section-actions">
+                <span class="pill active">Open</span>
+                <span class="pill">Mine</span>
+              </div>
+            </div>
+            <ul class="list">
+              <li class="row">
+                <span class="dot blocked"></span>
+                <span class="id">SIT-142</span>
+                <span class="title">Login flow loses session on Safari 17</span>
+                <span class="sev-badge critical">critical</span>
+                <div class="avatar sm b2">AT</div>
+                <span class="meta">2d</span>
+              </li>
+              <li class="row">
+                <span class="dot progress"></span>
+                <span class="id">SIT-141</span>
+                <span class="title">Calendar event bars don't span multi-day</span>
+                <span class="sev-badge high">high</span>
+                <div class="avatar sm b4">SY</div>
+                <span class="meta">1d</span>
+              </li>
+              <li class="row">
+                <span class="dot review"></span>
+                <span class="id">SIT-139</span>
+                <span class="title">Wire Supabase reads into dashboard snapshots</span>
+                <span class="sev-badge high">high</span>
+                <div class="avatar sm b1">SB</div>
+                <span class="meta">6h</span>
+              </li>
+              <li class="row">
+                <span class="dot open"></span>
+                <span class="id">SIT-138</span>
+                <span class="title">⌘K palette should index PRs + issues</span>
+                <span class="sev-badge medium">medium</span>
+                <div class="avatar sm b5">JM</div>
+                <span class="meta">8h</span>
+              </li>
+              <li class="row">
+                <span class="dot blocked"></span>
+                <span class="id">SIT-134</span>
+                <span class="title">Auth migration: confirm email toggle docs</span>
+                <span class="sev-badge critical">critical</span>
+                <div class="avatar sm b5">JM</div>
+                <span class="meta">3d</span>
+              </li>
+              <li class="row">
+                <span class="dot open"></span>
+                <span class="id">SIT-131</span>
+                <span class="title">Mood sparkline truncates at &lt; 5 datapoints</span>
+                <span class="sev-badge medium">medium</span>
+                <div class="avatar sm b3">RK</div>
+                <span class="meta">4d</span>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="grid-2" style="margin-top: 14px;">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">Activity</div>
+              <div class="section-sub">· last 12h</div>
+            </div>
+            <div class="feed">
+              <div class="feed-row"><span class="feed-time">09:35</span><span><span class="who">@julesm</span> merged <span class="ref">#31 Auth-guard flake fix</span> · <span class="tag">ci pass</span></span></div>
+              <div class="feed-row"><span class="feed-time">09:32</span><span><span class="who">github-ci</span> finished build for <span class="ref">#37</span> on <code style="color: var(--text)">main</code> · <span class="tag">all green</span></span></div>
+              <div class="feed-row"><span class="feed-time">09:18</span><span><span class="who">@sy</span> opened <span class="ref">#39 Multi-day event bars</span> · <span class="tag fail">ci fail (1 test)</span></span></div>
+              <div class="feed-row"><span class="feed-time">09:14</span><span><span class="who">@andrewt</span> reviewed <span class="ref">#37</span> · approved with comments (2)</span></div>
+              <div class="feed-row"><span class="feed-time">09:01</span><span><span class="who">@andrewt</span> closed <span class="ref">#17 Issues tracker sync</span></span></div>
+              <div class="feed-row"><span class="feed-time">08:54</span><span><span class="who">@shazibid</span> requested review on <span class="ref">#37 Wire Supabase reads</span> from <span class="who">@andrewt</span> <span class="who">@julesm</span></span></div>
+              <div class="feed-row"><span class="feed-time">08:42</span><span><span class="who">@shazibid</span> opened <span class="ref">#37 Wire Supabase reads</span> · <span class="tag warn">ci pending</span></span></div>
+              <div class="feed-row"><span class="feed-time">08:31</span><span><span class="who">@sy</span> pushed 4 commits to <code style="color: var(--text)">sy/calendar-events</code></span></div>
+              <div class="feed-row"><span class="feed-time">08:10</span><span><span class="who">@julesm</span> opened <span class="ref">#38 supabase migration: checkins</span></span></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">Team mood</div>
+              <div class="section-sub">· 7-day rolling</div>
+            </div>
+            <div class="mood-row">
+              <div class="mood-spark">▃▅▄▆▇▆█</div>
+              <div>
+                <div class="mood-label">Trending up</div>
+                <div class="mood-label" style="color: var(--text-dim); font-size: 11px;">last: today · 7.6 avg</div>
+              </div>
+              <div class="mood-num">7.6</div>
+            </div>
+            <div style="border-top: 1px solid var(--line); padding: 10px 14px;">
+              <div class="section-title" style="margin-bottom: 6px;">When we can meet</div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--text-muted);">
+                <div style="text-align:center;">M<br><span style="color: var(--green);">●●●●</span><span style="color: var(--text-dim);">○</span></div>
+                <div style="text-align:center;">T<br><span style="color: var(--green);">●●●</span><span style="color: var(--text-dim);">○○</span></div>
+                <div style="text-align:center;">W<br><span style="color: var(--green);">●●●●●</span></div>
+                <div style="text-align:center;">T<br><span style="color: var(--yellow);">●●</span><span style="color: var(--text-dim);">○○○</span></div>
+                <div style="text-align:center;">F<br><span style="color: var(--green);">●●●●</span><span style="color: var(--text-dim);">○</span></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ⌘K palette -->
+  <div class="palette-backdrop" id="palette-backdrop">
+    <div class="palette" role="dialog" aria-label="Command palette">
+      <div class="palette-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
+        <input class="palette-input" id="palette-input" placeholder="Search issues, PRs, people, or run a command…" autocomplete="off" />
+      </div>
+      <div class="palette-list" id="palette-list">
+        <div class="palette-group-label">Jump to</div>
+        <div class="palette-item active">
+          <span class="pi-id">G</span>
+          <span class="pi-title">Go to Overview</span>
+          <kbd class="pi-kbd">G O</kbd>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">G</span>
+          <span class="pi-title">Go to Standup</span>
+          <kbd class="pi-kbd">G S</kbd>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">G</span>
+          <span class="pi-title">Go to Issues</span>
+          <kbd class="pi-kbd">G I</kbd>
+        </div>
+
+        <div class="palette-group-label">Issues</div>
+        <div class="palette-item">
+          <span class="pi-id">SIT-142</span>
+          <span class="pi-title">Login flow loses session on Safari 17</span>
+          <span class="sev-badge critical">critical</span>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">SIT-141</span>
+          <span class="pi-title">Calendar event bars don't span multi-day</span>
+          <span class="sev-badge high">high</span>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">SIT-139</span>
+          <span class="pi-title">Wire Supabase reads into dashboard snapshots</span>
+          <span class="sev-badge high">high</span>
+        </div>
+
+        <div class="palette-group-label">Pull requests</div>
+        <div class="palette-item">
+          <span class="pi-id">#37</span>
+          <span class="pi-title">Wire Supabase reads · @shazibid · ci-pass</span>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">#39</span>
+          <span class="pi-title">Multi-day event bars · @sy · ci-fail</span>
+        </div>
+
+        <div class="palette-group-label">Actions</div>
+        <div class="palette-item">
+          <span class="pi-id">▶</span>
+          <span class="pi-title">Post today's standup</span>
+          <kbd class="pi-kbd">N S</kbd>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">▶</span>
+          <span class="pi-title">Create new issue…</span>
+          <kbd class="pi-kbd">N I</kbd>
+        </div>
+        <div class="palette-item">
+          <span class="pi-id">▶</span>
+          <span class="pi-title">Sync from GitHub</span>
+        </div>
+      </div>
+      <div class="palette-foot">
+        <span><kbd>↑↓</kbd>Navigate</span>
+        <span><kbd>↵</kbd>Open</span>
+        <span><kbd>esc</kbd>Close</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const backdrop = document.getElementById('palette-backdrop');
+    const trigger = document.getElementById('cmd-trigger');
+    const input = document.getElementById('palette-input');
+
+    function openPalette() {
+      backdrop.classList.add('open');
+      setTimeout(() => input.focus(), 50);
+    }
+    function closePalette() {
+      backdrop.classList.remove('open');
+      input.value = '';
+    }
+    trigger.addEventListener('click', openPalette);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closePalette();
+    });
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        backdrop.classList.contains('open') ? closePalette() : openPalette();
+      } else if (e.key === 'Escape' && backdrop.classList.contains('open')) {
+        closePalette();
+      }
+    });
+
+    // Simple filter
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase();
+      document.querySelectorAll('.palette-item').forEach((it) => {
+        const text = it.textContent.toLowerCase();
+        it.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

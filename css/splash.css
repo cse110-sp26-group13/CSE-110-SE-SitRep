@@ -11,9 +11,8 @@
 .splash-card {
   width: 100%;
   max-width: 420px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--ink);
   padding: 28px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
@@ -97,7 +96,6 @@
 .splash-input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
   color: var(--text);
   padding: 10px 12px;
   font-size: 14px;
@@ -156,7 +154,6 @@
 .splash-strength-bar {
   height: 4px;
   background: var(--surface-3);
-  border-radius: 999px;
   overflow: hidden;
 }
 
@@ -164,7 +161,6 @@
   height: 100%;
   width: 0;
   background: var(--bad);
-  border-radius: 999px;
   transition: width 0.25s ease, background-color 0.25s ease;
 }
 
@@ -232,7 +228,6 @@
 .splash-message {
   font-size: 12px;
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
   margin-bottom: 14px;
 }
 
@@ -282,7 +277,6 @@
   .splash-card {
     padding: 20px;
     border: none;
-    border-radius: 0;
     max-width: 100%;
     min-height: 100vh;
     box-shadow: none;
