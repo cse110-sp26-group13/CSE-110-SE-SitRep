@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SE SitRep - Calendar</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/blockers.css" />
+  <link rel="stylesheet" href="css/calendar.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="rail-icon" href="index.html" title="Dashboard" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <div class="rail-icon" title="Team" aria-label="Team">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </div>
+      <div class="rail-icon" title="Blockers" aria-label="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg>
+      </div>
+      <a class="rail-icon active" href="calendar.html" title="Calendar" aria-label="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <div class="rail-icon" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <div>
+          <h1>Calendar</h1>
+          <div class="header-sub" id="header-sub"></div>
+        </div>
+        <div class="header-actions">
+          <a class="btn-secondary header-link" href="index.html">Dashboard</a>
+        </div>
+      </header>
+
+      <section class="calendar-content">
+        <section class="calendar-summary" id="calendar-summary" aria-label="Project date summary"></section>
+
+        <div class="calendar-layout">
+          <section class="card calendar-board" aria-labelledby="calendar-title">
+            <div class="calendar-toolbar">
+              <div>
+                <h2 id="calendar-title">Project calendar</h2>
+                <div class="calendar-month-label" id="calendar-month-label"></div>
+              </div>
+              <div class="calendar-actions">
+                <div class="calendar-view-toggle" role="tablist" aria-label="Calendar view">
+                  <button type="button" class="chip active" data-calendar-view="month">Month</button>
+                  <button type="button" class="chip" data-calendar-view="timeline">Timeline</button>
+                </div>
+                <button type="button" class="btn-secondary calendar-nav-btn" id="calendar-prev">Prev</button>
+                <button type="button" class="btn-secondary calendar-nav-btn" id="calendar-today">Today</button>
+                <button type="button" class="btn-secondary calendar-nav-btn" id="calendar-next">Next</button>
+              </div>
+            </div>
+
+            <div class="calendar-month-view" id="calendar-month-view">
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
+
+            <div class="project-timeline-view" id="project-timeline-view" hidden>
+              <div class="timeline-scale" id="timeline-scale"></div>
+              <div class="project-timeline" id="project-timeline"></div>
+            </div>
+          </section>
+
+          <aside class="calendar-sidebar">
+            <section class="card calendar-side-card" aria-labelledby="legend-title">
+              <div class="card-head">
+                <h2 id="legend-title">Project legend</h2>
+              </div>
+              <div class="project-legend" id="project-legend"></div>
+            </section>
+
+            <section class="card calendar-side-card" aria-labelledby="next-title">
+              <div class="card-head">
+                <h2 id="next-title">Next up</h2>
+                <span class="card-sub" id="next-up-sub"></span>
+              </div>
+              <ul class="calendar-upcoming-list" id="calendar-upcoming"></ul>
+            </section>
+
+            <section class="card calendar-side-card" aria-labelledby="selected-title">
+              <div class="card-head">
+                <h2 id="selected-title">Selected issue</h2>
+              </div>
+              <div class="calendar-detail" id="calendar-detail"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/features/header.js"></script>
+  <script src="js/features/calendar.js"></script>
+</body>
+</html>
