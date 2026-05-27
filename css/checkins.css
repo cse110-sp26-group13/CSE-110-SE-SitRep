@@ -158,5 +158,5 @@
   white-space: nowrap;
 }
 .cover-take-btn { background: var(--ink); color: var(--paper); }
-.cover-take-btn:hover { background: #000; }
+.cover-take-btn:hover { background: var(--ink-2); }
 .cover-msg-btn:hover { background: var(--card-2); }

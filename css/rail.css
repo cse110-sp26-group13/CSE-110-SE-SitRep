@@ -32,3 +32,13 @@
 }
 
 .rail-spacer { flex: 1; }
+
+/* Light/dark toggle — sits at the bottom of the rail, reusing .rail-icon. */
+.theme-toggle {
+  appearance: none;
+  background: transparent;
+  padding: 0;
+}
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }

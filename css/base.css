@@ -28,7 +28,7 @@
   --bad-soft:     #ecc9c2;
 
   /* Halftone pattern knobs */
-  --dot:          #0a0a0a;
+  --dot:          #ffffff;
   --dot-size:     7px;
   --dot-radius:   1.1px;
   --veil:         rgba(239, 236, 228, 0.55);
@@ -42,6 +42,40 @@
   --hard-shadow: 4px 4px 0 var(--ink);
 
   --radius: 10px;
+}
+
+/* ───────────────────────────────────────────────────────────
+   Dark mode — same halftone language, inverted to ink paper.
+   Only the tokens flip; every component reads them via var().
+   Toggled by setting data-theme="dark" on <html> (see theme.js).
+   ─────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  /* Surfaces */
+  --paper:        #15130e;
+  --paper-2:      #1b1813;
+  --card:         #1e1b15;
+  --card-2:       #26221a;
+  --card-3:       #302b20;
+
+  /* Ink + lines (now light-on-dark) */
+  --ink:          #f1ede2d1;
+  --ink-2:        #d4cebf;
+  --muted:        #9b9382;
+  --subtle:       #756d5d;
+  --hairline:     #4a4538;
+  --hairline-2:   #383428;
+
+  /* Semantic — brightened so they read on dark */
+  --good:         #76c084;
+  --good-soft:    #243024;
+  --warn:         #e2a64a;
+  --warn-soft:    #382c18;
+  --bad:          #e76b62;
+  --bad-soft:     #3a211e;
+
+  /* Halftone pattern knobs — subtle light dots on dark paper */
+  --dot:          #2c2820;
+  --veil:         rgba(21, 19, 14, 0.5);
 }
 
 * { box-sizing: border-box; }

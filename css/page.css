@@ -288,7 +288,7 @@
 }
 .next-up-text {
   font-size: 13.5px;
-  color: rgba(239, 236, 228, 0.7);
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
 }
 .next-up .btn-secondary {
   background: var(--paper);

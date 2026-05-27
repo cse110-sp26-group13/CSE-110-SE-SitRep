@@ -63,7 +63,7 @@
 }
 .w2m-cell.available {
   background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, rgba(239,236,228,0.18) 1px, transparent 1.5px);
+  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--paper) 18%, transparent) 1px, transparent 1.5px);
   background-size: 4px 4px;
 }
 .w2m-cell.unavailable { background: var(--paper); }
@@ -114,7 +114,7 @@
 }
 .w2m-swatch.available {
   background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, rgba(239,236,228,0.18) 1px, transparent 1.5px);
+  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--paper) 18%, transparent) 1px, transparent 1.5px);
   background-size: 3px 3px;
 }
 .w2m-swatch.unavailable { background: var(--paper); }
