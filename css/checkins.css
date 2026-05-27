@@ -1,7 +1,7 @@
 /* Mood quick + daily standup list + checkin form (Linear style). */
 
 /* ── Mood quick (five faces) ─────────────────────────────── */
-.mood-quick-card { /* uses .section / .card patterns */ }
+.mood-quick-card { /* layout hook; visual shell comes from .section */ }
 
 .mood-faces {
   display: grid;

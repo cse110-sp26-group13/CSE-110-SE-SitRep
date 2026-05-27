@@ -1,7 +1,5 @@
 /* When-can-we-meet grid (slots) — Linear-style dense matrix. */
 
-.meeting-card { gap: 8px; }
-
 .slots-list {
   list-style: none;
   margin: 0;

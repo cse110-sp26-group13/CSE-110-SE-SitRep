@@ -1,6 +1,5 @@
-/* Team mood — last 7 days. Mood-trend.js now emits a sparkline
-   STRING (▃▅▄▆▇▆█) instead of an SVG, but we keep the SVG styles
-   below as a fallback in case the JS isn't updated in this PR. */
+/* Team mood — last 7 days. mood-trend.js renders an SVG sparkline
+   into #sparkline-wrap, followed by the 3-up summary stats. */
 
 .sparkline-wrap {
   display: flex;
@@ -9,39 +8,7 @@
   padding: 12px 14px;
 }
 
-/* String-based sparkline output */
-.sparkline-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px;
-  align-items: center;
-}
-.sparkline-string {
-  font-family: var(--mono);
-  font-size: 18px;
-  letter-spacing: 0.06em;
-  color: var(--green);
-  line-height: 1;
-}
-.sparkline-string.down { color: var(--red); }
-.sparkline-string.flat { color: var(--text-mid); }
-
-.mood-num {
-  font-family: var(--mono);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1;
-}
-.mood-delta {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.mood-delta.up   { color: var(--green); }
-.mood-delta.down { color: var(--red); }
-
-/* SVG sparkline (fallback / legacy) */
+/* SVG sparkline */
 .sparkline {
   display: block;
   width: 100%;

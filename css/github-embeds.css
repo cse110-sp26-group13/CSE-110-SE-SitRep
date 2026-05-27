@@ -38,32 +38,5 @@
 .pr-chip .ci.fail    { color: var(--red); }
 .pr-chip .ci.pending { color: var(--yellow); }
 
-/* Standalone CI tag (used in activity feed) */
-.ci-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  padding: 0 5px;
-  border-radius: 3px;
-  background: var(--surface-3);
-}
-.ci-tag.pass    { color: var(--green); }
-.ci-tag.fail    { color: var(--red); }
-.ci-tag.pending { color: var(--yellow); }
-
-/* Plain fallback when GH lookup fails — chip degrades to a link */
-.pr-ref-fallback {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--accent);
-  text-decoration: none;
-}
-.pr-ref-fallback:hover { text-decoration: underline; }
-
-/* Errors / degraded states (silently shown in console; UI hides) */
-.gh-counts-error { display: none; }
-
 /* "From GitHub" sidebar nav section uses the standard .nav-item /
    .count classes from rail.css — no extra styles needed. */

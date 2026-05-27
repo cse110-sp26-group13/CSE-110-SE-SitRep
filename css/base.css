@@ -152,31 +152,6 @@ kbd, .kbd {
   border-color: var(--line-strong);
 }
 
-/* ── Card shell ──────────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
-}
-.card-head h2, .card-head h3 {
-  font-size: 12.5px;
-  font-weight: 600;
-  margin: 0;
-}
-.card-sub {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 /* ── Avatar (utils.js stamps inline bg — override) ───────────── */
 .avatar {
   width: 22px;
@@ -204,6 +179,23 @@ kbd, .kbd {
   font-family: var(--mono);
 }
 .text-muted { color: var(--text-muted); }
+
+/* ── Severity badge (shared: issues list + command palette) ──── */
+.sev-badge {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  background: var(--surface-3);
+  color: var(--text-mid);
+}
+.sev-badge.critical { background: var(--bad-soft);  color: var(--red); }
+.sev-badge.high     { background: var(--warn-soft); color: var(--orange); }
+.sev-badge.medium   { background: rgba(242, 201, 76, 0.14); color: var(--yellow); }
+.sev-badge.low      { background: var(--good-soft); color: var(--green); }
 
 /* ── Scrollbars ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -290,11 +282,16 @@ kbd, .kbd {
   flex-direction: column;
   gap: 5px;
 }
+/* Shared text-input shell — every form field/select/textarea in the
+   app routes through this one rule group (issue form, check-in form,
+   comment box, status select). Per-field tweaks layer on below. */
 .field input,
 .field textarea,
 .field select,
 .checkin-form input,
-.checkin-form textarea {
+.checkin-form textarea,
+.status-select-wrap select,
+.comment-form textarea {
   appearance: none;
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -310,18 +307,23 @@ kbd, .kbd {
 .field textarea:hover,
 .field select:hover,
 .checkin-form input:hover,
-.checkin-form textarea:hover {
+.checkin-form textarea:hover,
+.status-select-wrap select:hover,
+.comment-form textarea:hover {
   border-color: var(--line-strong);
 }
 .field input:focus,
 .field textarea:focus,
 .field select:focus,
 .checkin-form input:focus,
-.checkin-form textarea:focus {
+.checkin-form textarea:focus,
+.status-select-wrap select:focus,
+.comment-form textarea:focus {
   outline: none;
   border-color: var(--accent);
   background: var(--surface-3);
 }
+.comment-form textarea { resize: vertical; }
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -360,16 +362,7 @@ kbd, .kbd {
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.status-select-wrap select {
-  appearance: none;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 4px 22px 4px 8px;
-  font-family: var(--sans);
-  font-size: 12px;
-  color: var(--text);
-}
+.status-select-wrap select { padding: 4px 22px 4px 8px; font-size: 12px; }
 .issue-owner-meta,
 .issue-posted-meta {
   font-family: var(--mono);
@@ -424,17 +417,6 @@ kbd, .kbd {
 .comment-text { font-size: 12.5px; color: var(--text-mid); line-height: 1.45; }
 .comment-empty { padding: 12px 8px; }
 .comment-form { display: flex; flex-direction: column; gap: 8px; }
-.comment-form textarea {
-  appearance: none;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 8px 10px;
-  font-family: var(--sans);
-  font-size: 13px;
-  color: var(--text);
-  resize: vertical;
-}
 
 /* ── Reset for legacy borders/shadows from halftone era ──────── */
 .btn-primary, .btn-secondary { box-shadow: none; }

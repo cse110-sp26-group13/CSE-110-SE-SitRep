@@ -55,12 +55,3 @@
   line-height: 1.55;
 }
 .activity-text strong { font-weight: 500; color: var(--text); }
-.activity-text .who   { color: var(--accent); }
-.activity-text .ref   { color: var(--text); }
-.activity-text .tag   { color: var(--green); }
-.activity-text .tag.fail { color: var(--red); }
-.activity-text .tag.warn { color: var(--yellow); }
-
-.activity-time.right {
-  text-align: right;
-}

@@ -37,11 +37,6 @@
   color: var(--text);
 }
 
-.button-group {
-  display: flex;
-  gap: 6px;
-}
-
 /* List */
 .blocker-list {
   list-style: none;
@@ -60,7 +55,7 @@
   transition: background 0.08s;
   font-size: 12.5px;
 }
-.blocker-row > .sev-tag { align-self: flex-start; margin-top: 1px; }
+.blocker-row > .sev-badge { align-self: flex-start; margin-top: 1px; }
 .blocker-row:last-child { border-bottom: 0; }
 .blocker-row:hover { background: var(--surface-2); }
 .blocker-row.status-resolved { opacity: 0.55; }
@@ -89,21 +84,7 @@
   color: var(--text-muted);
 }
 
-/* Severity tags — small text labels with tinted bg */
-.sev-tag {
-  font-family: var(--sans);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  padding: 1px 6px;
-  border-radius: 3px;
-  white-space: nowrap;
-  background: var(--surface-3);
-  color: var(--text-mid);
-}
-.sev-critical { background: var(--bad-soft);  color: var(--red); }
-.sev-high     { background: var(--warn-soft); color: var(--orange); }
-.sev-medium   { background: rgba(242, 201, 76, 0.14); color: var(--yellow); }
+/* Severity badge is shared — see .sev-badge in base.css. */
 
 /* Status pill */
 .status-pill {
@@ -161,17 +142,3 @@
 
 /* New-issue button (kept class; styled via .btn-primary now) */
 .new-issue-btn { box-shadow: none; }
-
-/* Issue row leading status dot (added by blockers.js template) */
-.blocker-row .dot {
-  margin-top: 4px;
-  align-self: flex-start;
-}
-
-/* Mono ID rendered inline by blockers.js (e.g. SIT-142) */
-.blocker-id {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-right: 6px;
-}

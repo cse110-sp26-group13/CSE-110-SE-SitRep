@@ -31,17 +31,6 @@
   grid-template-columns: 1.4fr 1fr;
   gap: 14px;
 }
-.grid-2-eq {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-.grid-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 /* Section wrapper (card variant w/ list inside) */
 .section {
   background: var(--surface);
@@ -67,31 +56,6 @@
   font-size: 11px;
   color: var(--text-muted);
 }
-.section-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-/* Pills (status / filter chips in section heads) */
-.pill {
-  font-size: 11px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  color: var(--text-mid);
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: border-color 0.1s, color 0.1s, background 0.1s;
-  font-family: inherit;
-}
-.pill:hover { border-color: var(--line-strong); color: var(--text); }
-.pill.active {
-  background: var(--accent-soft);
-  color: var(--text);
-  border-color: var(--accent-line);
-}
-
 /* Section footer / link out */
 .section-foot {
   padding: 10px 14px;
@@ -130,5 +94,5 @@
   .standup-side { position: static; }
 }
 @media (max-width: 900px) {
-  .grid-2, .grid-2-eq { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
 }

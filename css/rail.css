@@ -181,18 +181,3 @@
   flex-shrink: 0;
 }
 .rail-foot-out:hover { background: var(--surface-2); color: var(--text); }
-
-/* Legacy rail-icon class (halftone HTML may still use it as fallback) */
-.rail-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  color: var(--text-mid);
-  border-radius: 5px;
-  cursor: pointer;
-}
-.rail-icon:hover { background: var(--surface-2); color: var(--text); }
-.rail-icon.active { background: var(--accent-soft); color: var(--text); }
-.rail-icon svg { width: 16px; height: 16px; }

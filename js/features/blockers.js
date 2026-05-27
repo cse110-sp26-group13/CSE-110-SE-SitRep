@@ -60,7 +60,7 @@ function renderBlockers() {
 
       return `
       <li class="blocker-row status-${b.status}" data-open="${escapeHTML(b.id)}">
-        <span class="sev-tag sev-${b.severity}">${b.severity}</span>
+        <span class="sev-badge ${b.severity}">${b.severity}</span>
         <div class="blocker-main">
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
@@ -236,7 +236,7 @@ function openDetailModal(id) {
   openModal(b.title, `
     <div class="issue-detail">
       <div class="issue-meta-row">
-        <span class="sev-tag sev-${b.severity}">${b.severity}</span>
+        <span class="sev-badge ${b.severity}">${b.severity}</span>
         <label class="status-select-wrap">
           <span class="status-select-label">Status</span>
           <select id="issue-status">

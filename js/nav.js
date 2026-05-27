@@ -11,10 +11,6 @@
     document.querySelectorAll(".nav-item[data-route]").forEach((el) => {
       el.classList.toggle("active", el.dataset.route === page);
     });
-    // Back-compat: halftone-era pages used .rail-icon
-    document.querySelectorAll(".rail-icon[data-route]").forEach((el) => {
-      el.classList.toggle("active", el.dataset.route === page);
-    });
   }
 
   function setCount(id, txt) {
