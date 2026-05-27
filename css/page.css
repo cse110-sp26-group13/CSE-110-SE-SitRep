@@ -42,18 +42,6 @@
 }
 @keyframes blink { 0%, 60% { opacity: 1; } 70%, 100% { opacity: 0.35; } }
 
-.owner-badge {
-  margin-left: 6px;
-  padding: 2px 7px;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
 .lede {
   font-family: var(--sans);
   font-size: 15px;

@@ -6,11 +6,9 @@
   const KEY = "sitrep-theme";
 
   function resolve() {
-    const saved = localStorage.getItem(KEY);
-    if (saved === "dark" || saved === "light") return saved;
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    // Default to the canonical light (cream paper) theme; dark is opt-in so a
+    // fresh load is predictable and never surprises with an OS-driven theme.
+    return localStorage.getItem(KEY) === "dark" ? "dark" : "light";
   }
 
   function apply(theme) {

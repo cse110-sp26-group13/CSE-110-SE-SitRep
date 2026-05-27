@@ -1,5 +1,6 @@
 /* Splash page — auth + create/join circle.
-   Consumes CSS vars from base.css; the dark theme cascades for free. */
+   Halftone language: warm paper, hard ink borders, graphic shadow.
+   Consumes the tokens from base.css; dark mode cascades for free. */
 
 .splash {
   min-height: 100vh;
@@ -12,9 +13,9 @@
   width: 100%;
   max-width: 420px;
   background: var(--card);
-  border: 1px solid var(--ink);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--hard-shadow);
   padding: 28px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .splash-head {
@@ -22,45 +23,53 @@
   margin-bottom: 20px;
 }
 
+.splash-head h1,
 .splash-title {
-  margin: 0 0 4px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .splash-sub {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 
 /* Tab strip */
 .splash-tabs {
   display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--border);
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
   margin-bottom: 18px;
 }
 
 .splash-tab {
+  appearance: none;
   flex: 1;
   background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-muted);
-  padding: 10px 8px;
+  border: 0;
+  border-left: 1.5px solid var(--ink);
+  color: var(--ink-2);
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
   font-weight: 500;
-  font-size: 14px;
-  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .12s, color .12s;
 }
 
-.splash-tab:hover { color: var(--text); }
-
-.splash-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
+.splash-tab:first-child { border-left: 0; }
+.splash-tab:hover { background: var(--card-2); }
+.splash-tab.active { background: var(--ink); color: var(--paper); }
 
 /* Forms */
 .splash-form {
@@ -87,40 +96,47 @@
 }
 
 .splash-label {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin: 10px 0 6px;
-  font-weight: 500;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 6px;
 }
 
 .splash-input {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 12px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  letter-spacing: -0.005em;
+  transition: box-shadow .12s;
 }
 
-.splash-input:hover { border-color: var(--border-strong); }
-.splash-input:focus { border-color: var(--accent); background: var(--surface-3); }
-.splash-input::placeholder { color: var(--text-subtle); }
+.splash-input:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -1.5px;
+}
+.splash-input::placeholder { color: var(--subtle); }
 
-/* Invalid field — red border + halo on focus, plus the message under it */
+/* Invalid field — bad-color border + halo on focus, plus the message under it */
 .splash-input--invalid,
-.splash-input--invalid:hover {
-  border-color: var(--bad);
-}
-
+.splash-input--invalid:hover,
 .splash-input--invalid:focus {
   border-color: var(--bad);
-  background: var(--surface-3);
-  box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.18);
+  outline-color: var(--bad);
+}
+.splash-input--invalid:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 22%, transparent);
 }
 
 .splash-field-error {
   display: block;
+  font-family: var(--mono);
   font-size: 11px;
   color: var(--bad);
   margin-top: 4px;
@@ -131,7 +147,7 @@
 
 /* 6-digit join code — bigger, monospace, centered */
 .splash-code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 18px;
   letter-spacing: 0.4em;
   text-align: center;
@@ -152,8 +168,9 @@
 }
 
 .splash-strength-bar {
-  height: 4px;
-  background: var(--surface-3);
+  height: 6px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
   overflow: hidden;
 }
 
@@ -164,16 +181,18 @@
   transition: width 0.25s ease, background-color 0.25s ease;
 }
 
-.splash-strength-fill[data-level="1"] { width: 25%; background: var(--bad); }
-.splash-strength-fill[data-level="2"] { width: 50%; background: #f0a020; }
-.splash-strength-fill[data-level="3"] { width: 75%; background: #d6c12a; }
+.splash-strength-fill[data-level="1"] { width: 25%;  background: var(--bad); }
+.splash-strength-fill[data-level="2"] { width: 50%;  background: var(--warn); }
+.splash-strength-fill[data-level="3"] { width: 75%;  background: #d6c12a; }
 .splash-strength-fill[data-level="4"] { width: 100%; background: var(--good); }
 
 .splash-strength-label {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
   margin-top: 6px;
 }
 
@@ -181,8 +200,8 @@
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .splash-strength-reqs li {
@@ -197,14 +216,12 @@
   content: '○';
   display: inline-block;
   width: 12px;
-  color: var(--text-subtle);
+  color: var(--subtle);
   font-size: 10px;
   transition: color 0.15s, transform 0.15s;
 }
 
-.splash-strength-reqs li.met {
-  color: var(--text);
-}
+.splash-strength-reqs li.met { color: var(--ink); }
 
 .splash-strength-reqs li.met::before {
   content: '✓';
@@ -212,11 +229,12 @@
   transform: scale(1.1);
 }
 
+/* Submit — extends .btn-primary from base.css; just sizes it full-width */
 .splash-submit {
   margin-top: 18px;
   padding: 11px 14px;
-  font-size: 14px;
   width: 100%;
+  justify-content: center;
 }
 
 .splash-submit:disabled {
@@ -224,52 +242,61 @@
   cursor: progress;
 }
 
-/* Messages — error (red) and success (green) variants */
+/* Messages — error (bad) and success (good) variants */
 .splash-message {
+  font-family: var(--mono);
   font-size: 12px;
+  letter-spacing: 0.02em;
   padding: 8px 10px;
   margin-bottom: 14px;
+  border: 1.5px solid var(--ink);
 }
 
 .splash-error {
-  color: var(--bad);
-  background: rgba(255, 69, 58, 0.08);
-  border: 1px solid rgba(255, 69, 58, 0.28);
+  color: var(--ink);
+  background: var(--bad-soft);
+  border-color: var(--bad);
 }
 
 .splash-success {
-  color: var(--good);
-  background: rgba(52, 199, 89, 0.08);
-  border: 1px solid rgba(52, 199, 89, 0.28);
+  color: var(--ink);
+  background: var(--good-soft);
+  border-color: var(--good);
 }
 
 /* Footer: signed-in-as + sign out */
 .splash-foot {
   margin-top: 22px;
   padding-top: 14px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-muted);
+  border-top: 1px dashed var(--hairline);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
-.splash-foot-label { color: var(--text-subtle); }
-.splash-foot-email { color: var(--text); }
+.splash-foot-label { color: var(--subtle); }
+.splash-foot-email { color: var(--ink); }
 
 .splash-link {
+  appearance: none;
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--ink);
   padding: 0;
   margin-left: auto;
-  font-size: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
   font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.splash-link:hover { color: var(--accent-hover); text-decoration: underline; }
+.splash-link:hover { color: var(--bad); }
 
 /* Mobile: full-bleed card */
 @media (max-width: 480px) {
@@ -277,8 +304,8 @@
   .splash-card {
     padding: 20px;
     border: none;
+    box-shadow: none;
     max-width: 100%;
     min-height: 100vh;
-    box-shadow: none;
   }
 }

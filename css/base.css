@@ -40,8 +40,6 @@
 
   /* Hard graphic shadow */
   --hard-shadow: 4px 4px 0 var(--ink);
-
-  --radius: 10px;
 }
 
 /* ───────────────────────────────────────────────────────────
@@ -170,14 +168,12 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border-radius: var(--radius);
 }
 .card-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  border-radius: var(--radius);
 }
 .card-head h2 {
   font-family: var(--display);
@@ -186,7 +182,6 @@ input, textarea, select {
   font-size: 20px;
   letter-spacing: -0.02em;
   margin: 0 0 4px;
-  border-radius: var(--radius);
 }
 .card-sub {
   font-family: var(--mono);
