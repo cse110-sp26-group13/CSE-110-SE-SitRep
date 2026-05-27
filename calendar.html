@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SitRep — Dashboard</title>
+  <title>SitRep — Calendar</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,14 +13,11 @@
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/rail.css" />
   <link rel="stylesheet" href="css/page.css" />
-  <link rel="stylesheet" href="css/kpis.css" />
-  <link rel="stylesheet" href="css/checkins.css" />
-  <link rel="stylesheet" href="css/mood-trend.css" />
-  <link rel="stylesheet" href="css/activity.css" />
+  <link rel="stylesheet" href="css/calendar.css" />
 
   <script src="js/theme.js"></script>
 </head>
-<body data-page="dashboard">
+<body data-page="calendar">
   <div class="app">
     <aside class="rail" aria-label="Primary navigation">
       <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
@@ -52,80 +49,58 @@
             <span class="live-dot"></span>
             <span id="header-sub">loading…</span>
           </div>
-          <h1>Today on the team.</h1>
-          <p class="lede">A live overview pulled from this morning's standup. Dig into a feature to see the detail.</p>
+          <h1>Calendar.</h1>
+          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>personal</em> vs <em>team</em>; click an issue bar to jump into the tracker.</p>
         </div>
         <div class="page-actions">
-          <button class="btn-secondary" id="reset-btn" title="Clear local changes">Reset demo</button>
-          <a class="btn-primary" href="standup.html">+ Post standup</a>
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-primary" id="new-event-btn">+ New event</button>
         </div>
       </header>
 
-      <section class="kpis" id="kpis" aria-label="At-a-glance KPIs"></section>
-
-      <div class="dash-content">
-        <div class="dash-row-snaps">
-          <!-- Standup snapshot -->
-          <section class="snapshot" aria-labelledby="snap-standup-title">
-            <div class="snapshot-head">
-              <div>
-                <h3 id="snap-standup-title">Standup</h3>
-                <div class="snapshot-sub" id="snap-standup-sub">—</div>
-              </div>
-              <div class="snapshot-num" id="snap-standup-num">—</div>
-            </div>
-            <div class="snapshot-body" id="snap-standup-body"></div>
-            <div class="snapshot-foot">
-              <a class="snapshot-link" href="standup.html">See the full standup →</a>
-            </div>
-          </section>
-
-          <!-- Issues snapshot -->
-          <section class="snapshot" aria-labelledby="snap-issues-title">
-            <div class="snapshot-head">
-              <div>
-                <h3 id="snap-issues-title">Issues</h3>
-                <div class="snapshot-sub" id="snap-issues-sub">—</div>
-              </div>
-              <div class="snapshot-num" id="snap-issues-num">—</div>
-            </div>
-            <div class="sev-row" id="snap-issues-sev"></div>
-            <div class="snapshot-body" id="snap-issues-body"></div>
-            <div class="snapshot-foot">
-              <a class="snapshot-link" href="issues.html">Open the issue tracker →</a>
-            </div>
-          </section>
-        </div>
-
-        <div class="dash-row-bottom">
-          <section class="card" aria-labelledby="mood-title">
-            <div class="card-head">
-              <div>
-                <h2 id="mood-title">Team mood — last 7 days</h2>
-                <span class="card-sub" id="mood-card-sub"></span>
-              </div>
-              <a class="snapshot-link" href="standup.html">Standup →</a>
-            </div>
-            <div class="sparkline-wrap" id="sparkline-wrap"></div>
-          </section>
-
-          <section class="card" aria-labelledby="activity-title">
-            <div class="card-head">
-              <div>
-                <h2 id="activity-title">Recent activity</h2>
-                <span class="card-sub" id="activity-sub"></span>
+      <div class="deep-content">
+        <div class="cal-layout">
+          <aside class="cal-side">
+            <div>
+              <h4>View</h4>
+              <div class="cal-toggle" id="cal-toggle" role="tablist">
+                <button class="on" data-view="all">All</button>
+                <button data-view="personal">Personal</button>
+                <button data-view="team">Team</button>
               </div>
             </div>
-            <ul class="activity-list" id="activity-list"></ul>
-          </section>
-        </div>
 
-        <div class="next-up">
-          <div class="next-up-text">
-            <strong>Calendar lands this sprint.</strong>
-            <span>Project timelines + issue due-dates in one view — Stephanie's working on it.</span>
-          </div>
-          <a class="btn-secondary" href="calendar.html">Preview calendar →</a>
+            <div>
+              <h4>Projects</h4>
+              <div class="cal-projects" id="cal-projects"></div>
+            </div>
+
+            <div>
+              <h4>Legend</h4>
+              <div class="cal-legend">
+                <div class="row"><span class="swatch bar-team"></span> Team milestone</div>
+                <div class="row"><span class="swatch bar-personal"></span> Personal due</div>
+                <div class="row"><span class="swatch bar-stretch"></span> At risk</div>
+                <div class="row"><span class="swatch bar-blocked"></span> Blocked</div>
+              </div>
+            </div>
+          </aside>
+
+          <section class="cal-main">
+            <div class="cal-hd">
+              <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
+              <div class="cal-nav">
+                <button id="cal-prev" aria-label="Previous month">‹</button>
+                <button class="today-btn" id="cal-today">Today</button>
+                <button id="cal-next" aria-label="Next month">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="cal-foot">
+              <span id="cal-foot-count">—</span>
+              <span>Drag-to-create &amp; recurring events land in v2</span>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -146,11 +121,8 @@
 
   <!-- Features used on this page -->
   <script src="js/features/header.js"></script>
-  <script src="js/features/kpis.js"></script>
-  <script src="js/features/mood-trend.js"></script>
-  <script src="js/features/activity.js"></script>
 
   <!-- Page orchestrator -->
-  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/calendar.js"></script>
 </body>
 </html>

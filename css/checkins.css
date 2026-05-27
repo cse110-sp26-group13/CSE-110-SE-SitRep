@@ -1,159 +1,162 @@
-.checkin-row {
-  display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: 10px;
-  padding: 10px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  align-items: center;
-}
-.checkin-row.cover { border-color: rgba(255, 69, 58, 0.35); }
-.checkin-row.stale { border-color: rgba(255, 176, 32, 0.3); }
+/* Mood-quick card + daily standup list + checkin form */
 
-.avatar {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-}
-.checkin-name { font-weight: 600; font-size: 13px; }
-.checkin-role { color: var(--text-muted); font-size: 11px; margin-left: 6px; }
-.checkin-meta {
-  display: flex; gap: 8px;
-  align-items: center; flex-wrap: wrap;
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.checkin-note {
-  color: var(--text);
-  font-size: 12px;
-  margin-top: 2px;
-  line-height: 1.35;
-}
-.checkin-actions { display: flex; gap: 6px; flex-direction: column; }
-
-.mood-pill {
-  display: inline-flex; align-items: center;
-  font-size: 15px;
-  line-height: 1;
-}
-.mood-none { color: var(--text-muted); font-size: 11px; }
-
-.cover-badge {
-  display: inline-block;
-  background: rgba(255, 69, 58, 0.15);
-  color: var(--bad);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: 1px solid rgba(255, 69, 58, 0.4);
-}
-.cover-msg-btn, .cover-take-btn {
-  border-radius: 4px;
-  font-size: 11px;
-  padding: 4px 10px;
-  border: 1px solid var(--border-strong);
-  background: transparent;
-  color: var(--text);
-  white-space: nowrap;
-}
-.cover-msg-btn:hover { background: var(--surface-3); }
-.cover-take-btn {
-  background: var(--bad);
-  border-color: var(--bad);
-  color: #fff;
-}
-.cover-take-btn:hover { background: #d63a30; border-color: #d63a30; }
-
-.checkin-form {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  margin-bottom: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex-shrink: 0;
-}
-.checkin-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-.checkin-form input[type="text"] {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 7px 9px;
-  color: var(--text);
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 400;
-  font-size: 13px;
-}
-.checkin-form input[type="text"]:focus {
-  outline: none;
-  border-color: var(--accent);
+/* ── Mood quick (five faces) ─────────────────────────────── */
+.mood-quick-card .card-head h2 {
+  font-size: 18px;
 }
 .mood-faces {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  justify-content: space-around;
 }
 .mood-face {
-  font-size: 22px;
-  line-height: 1;
-  padding: 6px 10px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  font-size: 24px;
+  padding: 10px 0;
   cursor: pointer;
-  filter: grayscale(0.4);
-  opacity: 0.7;
-  transition: transform 0.1s, opacity 0.1s, filter 0.1s, border-color 0.1s;
+  transition: transform .08s, background .12s, box-shadow .12s;
+  display: grid;
+  place-items: center;
+  line-height: 1;
 }
 .mood-face:hover {
-  opacity: 1;
-  filter: none;
+  background: var(--card-2);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 .mood-face.selected {
-  opacity: 1;
-  filter: none;
-  border-color: var(--accent);
-  transform: scale(1.1);
+  background: var(--ink);
+  box-shadow: 3px 3px 0 var(--hairline);
 }
 
-.mood-quick-card .mood-faces {
-  padding: 4px 0 2px;
-}
+/* ── Standup card ────────────────────────────────────────── */
+.standup-card { gap: 12px; }
 
-.standup-column {
+.checkin-form {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 14px 16px;
+  margin-bottom: 4px;
+}
+.checkin-form[hidden] { display: none; }
+
+.checkin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
+}
+
+.checkin-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
   gap: 12px;
-  min-height: 0;
+  padding: 12px 0;
+  border-top: 1px dashed var(--hairline);
+  align-items: start;
 }
-.standup-column .mood-quick-card { flex: 0 0 auto; }
-.standup-column .standup-card {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+.checkin-row:first-child { border-top: 0; }
+.checkin-row.cover {
+  background: linear-gradient(to right, var(--warn-soft) 0%, transparent 80%);
+  margin: 0 -12px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
-.form-actions {
+.checkin-row.stale { opacity: 0.6; }
+
+.checkin-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+.checkin-role {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+.checkin-note {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+.checkin-field-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.checkin-yesterday .checkin-field-label { color: var(--subtle); }
+.checkin-today     .checkin-field-label { color: var(--ink); }
+.checkin-blocker   .checkin-field-label { color: var(--bad); }
+.checkin-blocker { color: var(--ink-2); }
+
+.checkin-meta {
+  margin-top: 6px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mood-pill {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  font-size: 14px;
+  line-height: 1;
+}
+.mood-pill.mood-good { background: var(--good-soft); }
+.mood-pill.mood-ok   { background: var(--card-2); }
+.mood-pill.mood-bad  { background: var(--bad-soft); }
+.mood-pill.mood-none {
+  background: transparent;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.cover-badge {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  background: var(--ink);
+  color: var(--paper);
+  margin-left: 4px;
+}
+
+.checkin-actions {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
+.cover-take-btn,
+.cover-msg-btn {
+  appearance: none;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cover-take-btn { background: var(--ink); color: var(--paper); }
+.cover-take-btn:hover { background: var(--ink-2); }
+.cover-msg-btn:hover { background: var(--card-2); }
