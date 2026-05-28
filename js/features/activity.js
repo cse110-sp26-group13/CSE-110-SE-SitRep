@@ -1,4 +1,4 @@
-const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺" };
+const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" };
 
 function renderActivity() {
   const items = effectiveActivity().slice(0, 10);
