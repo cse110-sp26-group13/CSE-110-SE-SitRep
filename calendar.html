@@ -34,7 +34,7 @@
       </a>
       <div class="rail-spacer"></div>
       <a class="rail-icon" data-route="settings" href="#" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
       <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
@@ -62,45 +62,94 @@
       <div class="deep-content">
         <div class="cal-layout">
           <aside class="cal-side">
-            <div>
-              <h4>View</h4>
-              <div class="cal-toggle" role="tablist">
-                <button class="on" data-view="all">All</button>
-                <button data-view="personal">Personal</button>
-                <button data-view="team">Team</button>
+            <section class="card">
+              <div class="card-head">
+                <div><h4>View & Filters</h4></div>
               </div>
-              <div class="cal-toggle-sep"></div>
-              <div class="cal-toggle" role="tablist">
-                <button data-view="issues">Issues Tracker</button>
+
+              <div class="cal-side-section">
+                <h6>Mode</h6>
+                <div class="cal-toggle" role="tablist">
+                  <button class="on" data-view="all">All</button>
+                  <button data-view="personal">Personal</button>
+                  <button data-view="team">Team</button>
+                </div>
+                <div class="cal-toggle-sep"></div>
+                <div class="cal-toggle" role="tablist">
+                  <button data-view="issues">Issues Tracker</button>
+                </div>
               </div>
-            </div>
 
-            <div id="cal-projects-section">
-              <h4>Projects</h4>
-              <div class="cal-projects" id="cal-projects"></div>
-            </div>
+              <div class="cal-side-section" id="cal-projects-section">
+                <h6>Projects</h6>
+                <div class="cal-projects" id="cal-projects"></div>
+              </div>
 
-            <div id="cal-legend-section">
-              <h4 id="cal-legend-title">Legend</h4>
-              <div class="cal-legend" id="cal-legend"></div>
-            </div>
+              <div class="cal-side-section" id="cal-legend-section">
+                <h6 id="cal-legend-title">Legend</h6>
+                <div class="cal-legend" id="cal-legend"></div>
+              </div>
+            </section>
           </aside>
 
-          <section class="cal-main">
-            <div class="cal-hd">
-              <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
-              <div class="cal-nav">
-                <button id="cal-prev" aria-label="Previous month">‹</button>
-                <button class="today-btn" id="cal-today">Today</button>
-                <button id="cal-next" aria-label="Next month">›</button>
-              </div>
+          <div class="cal-container">
+            <nav class="cal-tabs" role="tablist" aria-label="Calendar modes">
+              <button class="cal-tab active" data-tab="month" role="tab" aria-selected="true">
+                <span class="tab-label">Month View</span>
+              </button>
+              <button class="cal-tab" data-tab="week" role="tab" aria-selected="false">
+                <span class="tab-label">Week View</span>
+              </button>
+              <button class="cal-tab" data-tab="timeline" role="tab" aria-selected="false">
+                <span class="tab-label">Projects Timeline</span>
+              </button>
+              <div class="tab-spacer"></div>
+            </nav>
+
+            <div class="cal-content">
+              <!-- Month View -->
+              <section class="cal-main" id="view-month">
+                <div class="cal-hd">
+                  <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
+                  <div class="cal-nav">
+                    <button id="cal-prev" aria-label="Previous month">‹</button>
+                    <button class="today-btn" id="cal-today">Today</button>
+                    <button id="cal-next" aria-label="Next month">›</button>
+                  </div>
+                </div>
+                <div class="cal-grid" id="cal-grid"></div>
+                <div class="cal-foot">
+                  <span id="cal-foot-count">—</span>
+                </div>
+              </section>
+
+              <!-- Week View -->
+              <section class="cal-main" id="view-week" style="display:none">
+                <div class="cal-hd">
+                  <div class="cal-month" id="week-range-label">Week of May 24<span class="yr">2026</span></div>
+                  <div class="cal-nav">
+                    <button id="week-prev" aria-label="Previous week">‹</button>
+                    <button class="today-btn" id="week-today">Today</button>
+                    <button id="week-next" aria-label="Next week">›</button>
+                  </div>
+                </div>
+                <div class="cal-week-grid" id="cal-week-grid"></div>
+                <div class="cal-foot">
+                  <span id="week-foot-count">—</span>
+                </div>
+              </section>
+
+              <!-- Timeline View -->
+              <section class="cal-timeline-view" id="view-timeline" style="display:none">
+                <div class="cal-hd" id="timeline-hd">
+                  <!-- Timeline header will be rendered here -->
+                </div>
+                <div class="timeline-container" id="timeline-container">
+                  <!-- Timeline grid will be rendered here -->
+                </div>
+              </section>
             </div>
-            <div class="cal-grid" id="cal-grid"></div>
-            <div class="cal-foot">
-              <span id="cal-foot-count">—</span>
-              <span>Drag-to-create &amp; recurring events land in v2</span>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
     </main>

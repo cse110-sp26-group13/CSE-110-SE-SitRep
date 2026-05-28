@@ -16,10 +16,10 @@
 
 // ─── Sample data (replace with real source later) ──────────────────────
 const CAL_PROJECTS = [
-  { id: "onboarding", name: "Onboarding flow", color: "var(--accent)",  on: true },
+  { id: "onboarding", name: "Onboarding flow", color: "var(--ink-2)",  on: true },
   { id: "auth",       name: "Auth refactor",   color: "var(--good)",    on: true },
   { id: "ios",        name: "iOS app",         color: "var(--warn)",    on: true },
-  { id: "design",     name: "Design system",   color: "oklch(60% 0.13 280)", on: false },
+  { id: "design",     name: "Design system",   color: "var(--muted)",   on: false },
 ];
 
 // Each event: { date: "YYYY-MM-DD", title, kind: team|personal|blocked|risk, project }
@@ -61,7 +61,11 @@ const calState = {
   issues: new Set(effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved").map(b => String(b.id))),
   editingEventId: null,
   editingProjectId: null,
+  weekStart: null, // Initialized in bindCalendar or similar
 };
+
+// Initialize weekStart
+calState.weekStart = getStartOfWeek(new Date());
 
 const EVENT_KIND_LABELS = {
   team: "Team milestone",
@@ -150,11 +154,80 @@ function getCalendarEvents() {
   return [...sampleEvents, ...userEvents].filter(event => !deletedIds.has(event.id));
 }
 
+const contrastCache = new Map();
+
+function getContrastColor(color) {
+  if (!color) return "var(--ink)";
+  
+  const isDark = document.documentElement.dataset.theme === "dark";
+  const cacheKey = `${color}-${isDark}`;
+  if (contrastCache.has(cacheKey)) return contrastCache.get(cacheKey);
+
+  // 1. Check our hardcoded semantic map
+  const semanticMap = {
+    "var(--good)":   { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--warn)":   { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--bad)":    { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--ink)":    { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--ink-2)":  { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--muted)":  { light: "var(--paper)", dark: "var(--paper)" },
+  };
+
+  if (semanticMap[color]) {
+    const res = isDark ? semanticMap[color].dark : semanticMap[color].light;
+    contrastCache.set(cacheKey, res);
+    return res;
+  }
+
+  // 2. Resolve unknown colors (like rgb or other vars)
+  let r, g, b;
+  let resolved = color;
+
+  if (color.startsWith("var(") || (!color.startsWith("#") && !color.startsWith("rgb"))) {
+    const temp = document.createElement("div");
+    temp.style.color = color;
+    temp.style.display = "none";
+    document.body.appendChild(temp);
+    resolved = window.getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+  }
+
+  if (resolved.startsWith("#")) {
+    const hex = resolved.length === 4 
+      ? "#" + resolved[1] + resolved[1] + resolved[2] + resolved[2] + resolved[3] + resolved[3]
+      : resolved;
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  } else if (resolved.startsWith("rgb")) {
+    const m = resolved.match(/\d+/g);
+    if (m && m.length >= 3) {
+      r = parseInt(m[0]);
+      g = parseInt(m[1]);
+      b = parseInt(m[2]);
+    }
+  }
+
+  if (r !== undefined) {
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const res = isDark 
+      ? (brightness > 128 ? "var(--paper)" : "var(--ink)")
+      : (brightness > 128 ? "var(--ink)" : "var(--paper)");
+    contrastCache.set(cacheKey, res);
+    return res;
+  }
+
+  // 3. Last resort: use the theme's primary ink color (always visible against paper)
+  const lastResort = "var(--ink)";
+  contrastCache.set(cacheKey, lastResort);
+  return lastResort;
+}
+
 function eventColorStyle(event) {
   const project = getProjectById(event.project);
   const color = project?.color || event.color;
   if (!color) return "";
-  const textColor = isHexColor(color) ? readableTextColor(color) : "var(--ink)";
+  const textColor = getContrastColor(color);
   return ` style="--event-color:${color};--event-text:${textColor}"`;
 }
 
@@ -169,6 +242,73 @@ function eventTooltip(event) {
 
 function findCalendarEvent(id) {
   return getCalendarEvents().find(event => event.id === id);
+}
+
+function getStartOfWeek(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day; // 0 = Sunday
+  return new Date(date.setDate(diff));
+}
+
+function renderCalWeek() {
+  const container = document.getElementById("cal-week-grid");
+  const label = document.getElementById("week-range-label");
+  if (!container || !label) return;
+
+  const today = new Date();
+  const start = calState.weekStart;
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  // Update header label
+  const startM = MONTH_NAMES[start.getMonth()].slice(0, 3);
+  const endM = MONTH_NAMES[end.getMonth()].slice(0, 3);
+  const yearText = start.getFullYear() === end.getFullYear() ? start.getFullYear() : `${start.getFullYear()}-${end.getFullYear()}`;
+  label.innerHTML = `${startM} ${start.getDate()} – ${endM} ${end.getDate()}<span class="yr">${yearText}</span>`;
+
+  const events = filterEvents();
+  const eventsByDay = events.reduce((acc, e) => {
+    (acc[e.date] = acc[e.date] || []).push(e);
+    return acc;
+  }, {});
+
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    weekDays.push(d);
+  }
+
+  const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
+  
+  const gridHTML = weekDays.map(date => {
+    const key = isoDate(date);
+    const dayEvents = eventsByDay[key] || [];
+    const isToday = isSameDay(date, today);
+
+    const dayKinds = new Set(dayEvents.map(e => e.kind));
+    let kindClass = "";
+    if (dayKinds.has("blocked")) kindClass = "kind-blocked";
+    else if (dayKinds.has("risk")) kindClass = "kind-risk";
+    else if (dayKinds.has("team")) kindClass = "kind-team";
+    else if (dayKinds.has("personal")) kindClass = "kind-personal";
+
+    let html = `<div class="cal-cell ${isToday ? "today" : ""} ${kindClass}">
+      <div class="cal-date">${date.getDate()}</div>`;
+    
+    dayEvents.forEach(e => {
+      html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}"${eventColorStyle(e)}>${escapeHTML(e.title)}</button>`;
+    });
+
+    html += `</div>`;
+    return html;
+  }).join("");
+
+  container.innerHTML = dayHeader + gridHTML;
+
+  const countEl = document.getElementById("week-foot-count");
+  if (countEl) countEl.textContent = `${events.length} events in view`;
 }
 
 function renderCalGrid() {
@@ -262,7 +402,14 @@ function renderCalGrid() {
       const dayIssueIds = usedSlotsByDay[key] || [];
       const isToday = isSameDay(date, today);
 
-      let html = `<div class="cal-cell ${muted ? "muted" : ""} ${isToday ? "today" : ""}">
+      const dayKinds = new Set(dayEvents.map(e => e.kind));
+      let kindClass = "";
+      if (dayKinds.has("blocked")) kindClass = "kind-blocked";
+      else if (dayKinds.has("risk")) kindClass = "kind-risk";
+      else if (dayKinds.has("team")) kindClass = "kind-team";
+      else if (dayKinds.has("personal")) kindClass = "kind-personal";
+
+      let html = `<div class="cal-cell ${muted ? "muted" : ""} ${isToday ? "today" : ""} ${kindClass}">
         <div class="cal-date">${date.getDate()}</div>`;
       
       dayEvents.slice(0, 3).forEach(e => {
@@ -413,58 +560,217 @@ function renderCalendar() {
   renderCalHeader();
   renderCalProjects();
   renderCalLegend();
-  renderCalGrid();
+  refreshActiveView();
+}
+
+function refreshActiveView() {
+  const activeTab = document.querySelector(".cal-tab.active");
+  const mode = activeTab ? activeTab.dataset.tab : "month";
+  
+  if (mode === "month") {
+    renderCalGrid();
+  } else if (mode === "week") {
+    renderCalWeek();
+  } else if (mode === "timeline") {
+    renderCalTimeline();
+  }
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────
 function bindCalendar() {
+  const themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    themeBtn.addEventListener("click", () => {
+      // theme.js updates the DOM immediately, but we wait a tick to ensure data-theme is set
+      setTimeout(renderCalendar, 0);
+    });
+  }
+
+  // Month Nav
   document.getElementById("cal-prev").addEventListener("click", () => {
     if (calState.month === 0) { calState.month = 11; calState.year--; }
     else calState.month--;
     renderCalHeader();
-    renderCalGrid();
+    refreshActiveView();
   });
   document.getElementById("cal-next").addEventListener("click", () => {
     if (calState.month === 11) { calState.month = 0; calState.year++; }
     else calState.month++;
     renderCalHeader();
-    renderCalGrid();
+    refreshActiveView();
   });
   document.getElementById("cal-today").addEventListener("click", () => {
     const t = new Date();
     calState.year = t.getFullYear();
     calState.month = t.getMonth();
+    calState.weekStart = getStartOfWeek(t);
     renderCalHeader();
-    renderCalGrid();
+    refreshActiveView();
   });
+
+  // Week Nav
+  document.getElementById("week-prev").addEventListener("click", () => {
+    calState.weekStart.setDate(calState.weekStart.getDate() - 7);
+    refreshActiveView();
+  });
+  document.getElementById("week-next").addEventListener("click", () => {
+    calState.weekStart.setDate(calState.weekStart.getDate() + 7);
+    refreshActiveView();
+  });
+  document.getElementById("week-today").addEventListener("click", () => {
+    calState.weekStart = getStartOfWeek(new Date());
+    refreshActiveView();
+  });
+
   document.querySelectorAll(".cal-toggle button").forEach(b => {
     b.addEventListener("click", () => {
       calState.view = b.dataset.view;
       document.querySelectorAll(".cal-toggle button")
         .forEach(x => x.classList.toggle("on", x === b));
       renderCalLegend();
-      renderCalGrid();
+      refreshActiveView();
     });
   });
+
   document.getElementById("new-event-btn").addEventListener("click", () => {
     openEventModal();
   });
   document.getElementById("new-project-btn").addEventListener("click", () => openProjectModal());
-  document.getElementById("cal-grid").addEventListener("click", e => {
-    const eventButton = e.target.closest("[data-event-id]");
-    if (eventButton) {
-      openEventModal(eventButton.dataset.eventId);
-      return;
-    }
 
-    const issueButton = e.target.closest("[data-issue-id]");
-    if (issueButton) {
-      window.location.href = `issues.html?id=${issueButton.dataset.issueId}`;
-    }
+  // Listen to clicks in both grids
+  [document.getElementById("cal-grid"), document.getElementById("cal-week-grid")].forEach(grid => {
+    if (!grid) return;
+    grid.addEventListener("click", e => {
+      const eventButton = e.target.closest("[data-event-id]");
+      if (eventButton) {
+        openEventModal(eventButton.dataset.eventId);
+        return;
+      }
+
+      const issueButton = e.target.closest("[data-issue-id]");
+      if (issueButton) {
+        window.location.href = `issues.html?id=${issueButton.dataset.issueId}`;
+      }
+    });
+  });
+
+  // Folder tabs
+  document.querySelectorAll(".cal-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      const mode = tab.dataset.tab;
+      
+      // Update tab UI
+      document.querySelectorAll(".cal-tab").forEach(t => {
+        t.classList.toggle("active", t === tab);
+        t.setAttribute("aria-selected", t === tab);
+      });
+
+      // Show/hide sections
+      const viewMonth = document.getElementById("view-month");
+      const viewWeek = document.getElementById("view-week");
+      const viewTimeline = document.getElementById("view-timeline");
+
+      viewMonth.style.display = (mode === "month" ? "flex" : "none");
+      viewWeek.style.display = (mode === "week" ? "flex" : "none");
+      viewTimeline.style.display = (mode === "timeline" ? "block" : "none");
+
+      refreshActiveView();
+    });
   });
 
   bindEventModal();
   bindProjectModal();
+}
+
+function renderCalTimeline() {
+  const container = document.getElementById("timeline-container");
+  const hd = document.getElementById("timeline-hd");
+  const issues = effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved");
+  const teammates = effectiveTeammates();
+
+  // Range: Current month only
+  const startDate = new Date(calState.year, calState.month, 1);
+  const endDate = new Date(calState.year, calState.month + 1, 0);
+  const totalDays = endDate.getDate();
+
+  // Update External Header
+  if (hd) {
+    hd.innerHTML = `<div class="cal-month">${MONTH_NAMES[calState.month]}<span class="yr">${calState.year}</span></div>`;
+  }
+
+  if (issues.length === 0) {
+    container.innerHTML = '<div class="timeline-empty">No active projects or issues found.</div>';
+    return;
+  }
+
+  const daysArr = [];
+  for (let d = 0; d < totalDays; d++) {
+    const day = new Date(calState.year, calState.month, d + 1);
+    daysArr.push(day);
+  }
+
+  let html = `
+    <div class="timeline-grid">
+      <div class="timeline-header">
+        <div class="label-col">Milestones</div>
+        <div class="days-col">
+          ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}" data-day="${d.getDate()}"><span>${d.getDate()}</span></div>`).join("")}
+        </div>
+      </div>
+      <div class="timeline-body">
+  `;
+
+  issues.forEach(issue => {
+    const sStr = issue.startDate || issue.dueDate;
+    const eStr = issue.dueDate || issue.startDate;
+    const iStart = new Date(`${sStr}T00:00:00`);
+    const iEnd = new Date(`${eStr}T00:00:00`);
+
+    if (iStart > endDate || iEnd < startDate) return;
+
+    const visibleStart = iStart < startDate ? startDate : iStart;
+    const visibleEnd = iEnd > endDate ? endDate : iEnd;
+
+    const startIdx = visibleStart.getDate() - 1;
+    const duration = Math.round((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)) + 1;
+
+    const leftPct = (startIdx / totalDays) * 100;
+    const widthPct = (duration / totalDays) * 100;
+
+    const owner = teammates.find(t => t.id === issue.ownerId) || { name: issue.owner, id: "unknown" };
+    const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
+
+    // Formatting date string for bar
+    const barDateRange = duration > 1 
+      ? `${visibleStart.getDate()}–${visibleEnd.getDate()}` 
+      : `${visibleStart.getDate()}`;
+
+    html += `
+      <div class="timeline-row">
+        <div class="label-col">
+          <div class="issue-title" title="${escapeHTML(issue.title)}">${escapeHTML(issue.title)}</div>
+        </div>
+        <div class="days-col">
+          <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
+            <div class="timeline-bar" style="background: ${issue.color || "var(--good-soft)"}; border-color: ${issue.color?.slice(0, 7) || "var(--good)"}">
+              <div class="assignee-pill" title="Assigned to ${escapeHTML(owner.name)}">
+                <span class="avatar">${initials}</span>
+              </div>
+              <span class="bar-title">${escapeHTML(issue.title)}</span>
+              <span class="bar-dates">${barDateRange}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 function getDefaultEventDate() {
@@ -743,16 +1049,7 @@ function isHexColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value);
 }
 
-function readableTextColor(hex) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 150 ? "var(--ink)" : "var(--paper)";
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   renderCalendar();
   bindCalendar();
 });
-;
