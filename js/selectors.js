@@ -35,6 +35,7 @@ function effectiveBlockers() {
       startDate: ov.startDate ?? b.startDate ?? "",
       dueDate: ov.dueDate ?? b.dueDate ?? "",
       category: ov.category ?? b.category ?? "",
+      color: ov.color ?? b.color ?? "#ff453a22", // Default soft red
     };
   });
 }
@@ -60,6 +61,7 @@ function updateBlocker(id, patch) {
     startDate: existing.startDate ?? base?.startDate ?? "",
     dueDate: existing.dueDate ?? base?.dueDate ?? "",
     category: existing.category ?? base?.category ?? "",
+    color: existing.color ?? base?.color ?? "#ff453a22",
     ...patch,
   };
 }
