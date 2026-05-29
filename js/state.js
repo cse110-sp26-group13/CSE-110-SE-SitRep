@@ -5,6 +5,8 @@ function defaultState() {
     githubIssues: [],
     severityFilter: "all",
     statusFilter: "open",
+    slotAvailability: {},
+    aiSessions: [],
   };
 }
 
