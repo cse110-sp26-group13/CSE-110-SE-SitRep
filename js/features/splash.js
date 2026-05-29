@@ -126,47 +126,8 @@
     return null;
   }
 
-  const PASSWORD_REQS = [
-    { key: 'length', test: (p) => p.length >= 8 },
-    { key: 'letter', test: (p) => /[a-zA-Z]/.test(p) },
-    { key: 'number', test: (p) => /\d/.test(p) },
-    { key: 'strong', test: (p) =>
-      (/[a-z]/.test(p) && /[A-Z]/.test(p)) || /[^a-zA-Z0-9]/.test(p) },
-  ];
-  const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  // Minimum bar to submit: length + letter + number. The "strong" req is
-  // a bonus that only affects the meter, not the gate.
-  const REQUIRED_KEYS = ['length', 'letter', 'number'];
-
-  function updatePasswordStrength(password) {
-    const wrap = $('signup-strength');
-    const fill = $('signup-strength-fill');
-    const text = $('signup-strength-text');
-    if (!wrap || !fill || !text) return { score: 0, requiredMet: false };
-
-    if (!password) {
-      wrap.classList.remove('is-active');
-      fill.dataset.level = '0';
-      text.textContent = '';
-      wrap.querySelectorAll('[data-req]').forEach((li) => li.classList.remove('met'));
-      return { score: 0, requiredMet: false };
-    }
-    wrap.classList.add('is-active');
-
-    const met = {};
-    let score = 0;
-    for (const req of PASSWORD_REQS) {
-      const ok = req.test(password);
-      met[req.key] = ok;
-      if (ok) score += 1;
-    }
-    fill.dataset.level = String(score);
-    text.textContent = STRENGTH_LABELS[score] || '';
-    wrap.querySelectorAll('[data-req]').forEach((li) => {
-      li.classList.toggle('met', !!met[li.dataset.req]);
-    });
-    return { score, requiredMet: REQUIRED_KEYS.every((k) => met[k]) };
-  }
+  const updatePasswordStrength = (password) =>
+    window.PwStrength.update('signup', password);
 
   function setBusy(form, isBusy) {
     state.busy = isBusy;

@@ -1,0 +1,343 @@
+/* Settings page — sectioned cards with rows of [label + control]. */
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-card {
+  gap: 0;
+  padding: 22px 24px 8px;
+}
+
+.settings-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  border-top: 1px dashed var(--hairline);
+}
+.settings-row:first-child { border-top: 0; }
+
+.settings-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.settings-row-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.settings-row-help {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+}
+
+.settings-input-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.settings-input {
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  padding: 8px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink);
+  min-width: 240px;
+}
+.settings-input:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -1.5px;
+}
+.settings-input:disabled { opacity: 0.6; }
+.settings-input-status {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-height: 12px;
+}
+
+.settings-static {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 7px 11px;
+  letter-spacing: 0.02em;
+}
+
+/* Segmented control (Light / Dark) — sliding pill indicator. */
+.settings-segmented {
+  display: inline-flex;
+  position: relative;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  overflow: hidden;
+}
+.settings-segmented::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  background: var(--ink);
+  transform: translateX(0);
+  transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+  pointer-events: none;
+}
+.settings-segmented[data-active="dark"]::before {
+  transform: translateX(100%);
+}
+.settings-segmented button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  padding: 7px 14px;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  transition: color .2s ease, transform .08s ease;
+}
+.settings-segmented button.on {
+  color: var(--paper);
+}
+.settings-segmented button:active {
+  transform: scale(0.94);
+}
+
+/* Toggle (checkbox styled as switch) */
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+.settings-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.settings-toggle-track {
+  display: inline-block;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  transition: background .12s ease;
+}
+.settings-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  background: var(--ink);
+  transition: transform .12s ease, background .12s ease;
+}
+.settings-toggle input:checked ~ .settings-toggle-track {
+  background: var(--ink);
+}
+.settings-toggle input:checked ~ .settings-toggle-track .settings-toggle-knob {
+  transform: translateX(20px);
+  background: var(--paper);
+}
+.settings-toggle input:focus-visible ~ .settings-toggle-track {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Change-password form */
+.settings-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 0 14px;
+  border-top: 1px dashed var(--hairline);
+}
+.settings-password-form .field input {
+  max-width: 360px;
+}
+
+/* Password input with reveal (eye) toggle */
+.pw-reveal {
+  position: relative;
+  display: block;
+  max-width: 360px;
+}
+.pw-reveal input {
+  width: 100%;
+  padding-right: 38px;
+}
+.pw-reveal-btn {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+.pw-reveal-btn:hover { color: var(--ink); }
+.pw-reveal-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.pw-reveal-btn svg { width: 18px; height: 18px; display: block; }
+.pw-reveal-btn .icon-eye-off { display: none; }
+.pw-reveal-btn[aria-pressed="true"] .icon-eye { display: none; }
+.pw-reveal-btn[aria-pressed="true"] .icon-eye-off { display: block; }
+
+.settings-password-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--hairline);
+}
+.settings-password-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  min-height: 14px;
+}
+.settings-password-status.error   { color: var(--bad); }
+.settings-password-status.success { color: var(--good); }
+
+/* Circles section — list of memberships + join/create forms. */
+.settings-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.circles-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.circles-item {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  font-family: var(--sans);
+  text-align: left;
+}
+.circles-item:hover { background: var(--card-2); }
+.circles-item.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.circles-item-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid currentColor;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.circles-item-text { display: flex; flex-direction: column; min-width: 0; }
+.circles-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.circles-item-meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: .75;
+}
+.circles-item-code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border: 1.5px solid currentColor;
+}
+.circles-item-state {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.circles-empty {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 2px;
+}
+
+.circles-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.circles-form .settings-input { min-width: 0; }
+.circles-form .settings-input-status { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+  .settings-row { flex-direction: column; align-items: flex-start; }
+  .settings-input { width: 100%; min-width: 0; }
+  .settings-password-form .field input { max-width: none; }
+  .pw-reveal { max-width: none; }
+  .circles-item { grid-template-columns: 32px 1fr auto; }
+  .circles-item-code { display: none; }
+}
