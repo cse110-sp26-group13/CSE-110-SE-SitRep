@@ -256,5 +256,4 @@
 @media (max-width: 900px) {
   .dash-row-snaps, .dash-row-bottom { grid-template-columns: 1fr; }
   .page-intro { flex-direction: column; align-items: flex-start; }
-  .next-up { flex-direction: column; align-items: flex-start; }
 }

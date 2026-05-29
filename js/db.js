@@ -147,6 +147,17 @@
     return data || [];
   }
 
+  /**
+   * Hydrate every global the dashboard reads from — `team`, `teammates`,
+   * `blockers`, `meetingSlots`, `activity`. Each page calls this once
+   * inside its DOMContentLoaded handler before the first render.
+   *
+   * If there's no session or the user has no team, the page redirects
+   * to splash.html instead of returning — callers can `await` and
+   * trust that anything after this line has a populated `team`.
+   *
+   * @returns {Promise<void>}
+   */
   async function loadAll() {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) {
@@ -268,10 +279,22 @@
     if (ie) throw ie;
   }
 
+  /**
+   * Upsert the current user's mood for today.
+   *
+   * @param {number} score - 1–10 mood rating.
+   */
   async function saveMood(score) {
     await _writeStandupPatch({ mood: score });
   }
 
+  /**
+   * Upsert today's check-in prose. Empty strings collapse to NULL in
+   * the DB so a partial check-in doesn't pretend to have answers it
+   * doesn't have.
+   *
+   * @param {{yesterday?: string, today?: string, blockersNote?: string}} args
+   */
   async function saveStandupCompose({ yesterday, today, blockersNote }) {
     await _writeStandupPatch({
       yesterday: yesterday || null,
@@ -280,6 +303,13 @@
     });
   }
 
+  /**
+   * Append a row to the activity feed for the current team and user.
+   *
+   * @param {string} kind - one of: "checkin", "blocker", "mood", …
+   *   (free-form; the feed renders by `kind` class).
+   * @param {string} text - human-readable summary.
+   */
   async function addActivity(kind, text) {
     const { error } = await sb()
       .from('activity_events')
@@ -292,6 +322,19 @@
     if (error) throw error;
   }
 
+  /**
+   * Insert a new blocker for the current team. Required: title and
+   * severity. Optional: description, ownerId, category, startDate,
+   * dueDate. Defaults `status` to "open" and `created_by` to the
+   * caller's id.
+   *
+   * @param {{
+   *   title: string, severity: "critical"|"high"|"medium",
+   *   description?: string, ownerId?: string|null, category?: string|null,
+   *   startDate?: string|null, dueDate?: string|null
+   * }} input
+   * @returns {Promise<object>} the inserted row.
+   */
   async function createBlocker(input) {
     const { data, error } = await sb()
       .from('blockers')
@@ -313,6 +356,18 @@
     return data;
   }
 
+  /**
+   * Apply a partial update to a blocker. Only keys present in `patch`
+   * are sent to the DB — passing `{}` is a no-op. UI-shaped keys are
+   * mapped to their DB column names here (e.g. `ownerId` → `owner_id`).
+   *
+   * @param {string} id
+   * @param {Partial<{
+   *   title: string, description: string, status: string, severity: string,
+   *   ownerId: string|null, startDate: string|null, dueDate: string|null,
+   *   category: string|null
+   * }>} patch
+   */
   async function updateBlocker(id, patch) {
     const dbPatch = {};
     if ('title' in patch)       dbPatch.title       = patch.title;
@@ -328,6 +383,12 @@
     if (error) throw error;
   }
 
+  /**
+   * Append a comment to a blocker, authored by the current user.
+   *
+   * @param {string} blockerId
+   * @param {string} text
+   */
   async function addBlockerComment(blockerId, text) {
     const { error } = await sb()
       .from('blocker_comments')
@@ -339,6 +400,14 @@
     if (error) throw error;
   }
 
+  /**
+   * Set the current user's availability for one meeting slot. Upserts
+   * on (team_id, user_id, slot_id) so toggling repeatedly doesn't
+   * accumulate rows.
+   *
+   * @param {string} slotId - one of the SLOT_DEFS ids.
+   * @param {boolean} isAvailable
+   */
   async function setSlotAvailability(slotId, isAvailable) {
     const { error } = await sb()
       .from('slot_availability')

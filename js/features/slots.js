@@ -1,7 +1,32 @@
+/**
+ * When2meet-style availability grid. Renders a teammate × slot grid
+ * with a "free/busy" cell per pair plus an overlap row showing how
+ * many teammates are available for each slot.
+ *
+ * Only the current user can toggle their own row — other rows render
+ * disabled with aria-disabled so screen readers announce them as
+ * read-only.
+ */
+
+/**
+ * Look up whether `teammateId` is marked available for `slot`.
+ *
+ * @param {{availability: Record<string, boolean>}} slot
+ * @param {string} teammateId
+ * @returns {boolean}
+ */
 function effectiveAvailability(slot, teammateId) {
   return !!slot.availability[teammateId];
 }
 
+/**
+ * Flip the current user's availability for one slot and re-render.
+ * No-op if `teammateId` isn't the current user (defense in depth —
+ * the UI already disables other people's cells).
+ *
+ * @param {string} slotId
+ * @param {string} teammateId
+ */
 async function toggleSlotAvailability(slotId, teammateId) {
   if (teammateId !== team.currentUserId) return;
   const slot = meetingSlots.find(s => s.id === slotId);
@@ -12,6 +37,15 @@ async function toggleSlotAvailability(slotId, teammateId) {
   renderSlots();
 }
 
+/**
+ * Bucket the overlap count into one of five CSS classes driving the
+ * heatmap shading. "most" is total−1 (anyone-but-one), "some" is
+ * majority, "few" is minority, "none" is zero, "all" is unanimous.
+ *
+ * @param {number} count - how many teammates are available.
+ * @param {number} total - total teammates.
+ * @returns {"all"|"most"|"some"|"few"|"none"}
+ */
 function overlapClass(count, total) {
   if (count === total) return "all";
   if (count >= total - 1) return "most";
@@ -20,6 +54,11 @@ function overlapClass(count, total) {
   return "few";
 }
 
+/**
+ * Build and inject the full availability grid (header row of times,
+ * one row per teammate, overlap row at the bottom, legend) and bind
+ * click handlers on the current user's cells.
+ */
 function renderSlots() {
   const list = document.getElementById("slots-list");
   const total = teammates.length;

@@ -1,3 +1,14 @@
+/**
+ * KPI strip — four summary tiles at the top of the dashboard:
+ * check-ins today, team mood average, open blockers, cover-needed
+ * count. Each tile picks a `good`/`warn`/`alert` class to drive its
+ * accent color in [css/kpis.css](../../css/kpis.css).
+ */
+
+/**
+ * Recompute the four KPI tiles from the current globals and re-render
+ * them into `#kpis`. Pure render — no event binding, no I/O.
+ */
 function renderKPIs() {
   const tm = effectiveTeammates();
   const checkedIn = tm.filter(t => t.lastCheckIn).length;

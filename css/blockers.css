@@ -37,11 +37,6 @@
   color: var(--paper);
 }
 
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
 /* List */
 .blocker-list {
   list-style: none;

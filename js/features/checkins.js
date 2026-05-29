@@ -1,3 +1,16 @@
+/**
+ * Check-ins panel — mood quick-picker, everyone's standup cards, and
+ * the compose form for "yesterday / today / blockers". A blocker in
+ * the compose form auto-opens a high-severity issue so it shows up
+ * in the blockers panel without a separate step.
+ */
+
+/**
+ * Snap a 1–10 mood score to one of five emoji buckets (2/4/6/8/10).
+ *
+ * @param {number|null|undefined} score
+ * @returns {2|4|6|8|10|null}
+ */
 function moodBucket(score) {
   if (score == null) return null;
   if (score <= 2) return 2;
@@ -9,16 +22,28 @@ function moodBucket(score) {
 
 const MOOD_FACES = { 2: "😢", 4: "🙁", 6: "😐", 8: "🙂", 10: "😄" };
 
+/**
+ * The emoji face for a mood score, or "—" when no mood is set.
+ *
+ * @param {number|null|undefined} score
+ * @returns {string}
+ */
 function moodFace(score) {
   const b = moodBucket(score);
   return b == null ? "—" : MOOD_FACES[b];
 }
 
+/** @returns {number|null} the current user's mood today, or null if unset. */
 function currentUserMood() {
   const me = teammates.find(t => t.id === team.currentUserId);
   return me?.mood ?? null;
 }
 
+/**
+ * Light-touch render: highlight the selected mood-quick face for the
+ * current user and update the panel subtitle. Called from
+ * renderCheckIns() and from the mood-quick click handler.
+ */
 function renderMoodQuick() {
   const bucket = moodBucket(currentUserMood());
   document.querySelectorAll("#mood-faces .mood-face").forEach(b =>
@@ -27,6 +52,12 @@ function renderMoodQuick() {
   if (sub) sub.textContent = bucket == null ? "Tap a face" : `You · ${MOOD_FACES[bucket]}`;
 }
 
+/**
+ * Render the full check-in list — one row per teammate with their
+ * yesterday/today/blocker notes, mood pill, last-posted timestamp,
+ * and "cover needed" affordances when applicable. Binds the "I'll
+ * cover" and "Message" buttons inline.
+ */
 function renderCheckIns() {
   renderMoodQuick();
 
@@ -90,6 +121,13 @@ function renderCheckIns() {
     b.addEventListener("click", () => handleTakeCover(b.dataset.take)));
 }
 
+/**
+ * Send a quick message to a teammate who needs cover. Prompt-based
+ * for v1 — there's no inbox yet, so the message just lands in the
+ * activity feed as a "cover" event.
+ *
+ * @param {string} id - teammate id.
+ */
 async function handleMessage(id) {
   const t = teammates.find(x => x.id === id);
   if (!t) return;
@@ -102,6 +140,13 @@ async function handleMessage(id) {
   renderActivity();
 }
 
+/**
+ * Claim cover for a teammate's shift — logs an "is covering for X"
+ * activity event and re-renders. No persistent cover assignment yet;
+ * the activity event is the record.
+ *
+ * @param {string} id - teammate id.
+ */
 async function handleTakeCover(id) {
   const t = teammates.find(x => x.id === id);
   if (!t) return;
@@ -110,6 +155,11 @@ async function handleTakeCover(id) {
   renderAll();
 }
 
+/**
+ * One-time setup: clicking a mood-quick face saves the score and
+ * re-renders. Called once per page load — handlers persist for the
+ * lifetime of the page.
+ */
 function bindMoodQuick() {
   document.querySelectorAll("#mood-faces .mood-face").forEach(b =>
     b.addEventListener("click", async () => {
@@ -122,6 +172,12 @@ function bindMoodQuick() {
     }));
 }
 
+/**
+ * One-time setup for the standup compose form. Wires up the open /
+ * cancel buttons plus the submit handler that saves the standup,
+ * appends an activity event, and (if a blocker note was provided)
+ * spawns a high-severity blocker for the current user.
+ */
 function bindComposeForm() {
   const form = document.getElementById("checkin-form");
 
