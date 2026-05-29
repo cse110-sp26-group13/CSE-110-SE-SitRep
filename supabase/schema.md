@@ -4,7 +4,7 @@ Human-readable companion to [schema.sql](schema.sql). If you change the schema, 
 
 **Project:** `HardCoders` (`vbimsbasupcbdxzsazif`)
 **Postgres:** 17.6
-**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`, `add_create_team_rpc`, `fix_membership_rls_recursion`, `add_team_data_tables`
+**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`, `add_create_team_rpc`, `fix_membership_rls_recursion`, `add_team_data_tables`, `grant_handle_new_user_to_auth_admin`
 
 ## Tables
 
@@ -101,7 +101,7 @@ const { data: team, error } = await supabase.rpc('create_team', { p_name: 'Group
 ### `handle_new_user()` *(auth trigger function)*
 Fires `after insert on auth.users` (i.e. on signup). Creates a matching `profiles` row. `security definer` because the calling context is the auth system, not the new user.
 
-EXECUTE revoked from `public / anon / authenticated` — only the trigger should invoke it. (Triggers don't depend on EXECUTE grants.)
+EXECUTE revoked from `public / anon / authenticated` to avoid an unintended `/rest/v1/rpc/handle_new_user` endpoint. **EXECUTE is explicitly granted to `supabase_auth_admin`** — the role GoTrue uses to insert into `auth.users` during signup. Without that grant the trigger is silently skipped, leaving auth users without `profiles` rows and breaking the FK from `memberships.user_id → profiles.id` the moment a user tries to create or join a team. (Triggers in this Supabase setup *do* require EXECUTE on the trigger function for the inserting role.)
 
 ---
 

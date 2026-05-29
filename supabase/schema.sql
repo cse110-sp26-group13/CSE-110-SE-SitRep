@@ -244,8 +244,13 @@ create policy "membership_self_insert" on public.memberships
 -- ============================================================
 -- handle_new_user is trigger-only; revoking from client roles
 -- removes the unintended /rest/v1/rpc/handle_new_user endpoint.
--- The trigger continues to fire regardless of EXECUTE grants.
+-- BUT: supabase_auth_admin (the GoTrue role that inserts into
+-- auth.users during signup) still needs EXECUTE — without it the
+-- trigger is silently skipped on signup, leaving auth.users rows
+-- without matching public.profiles rows, which then breaks any
+-- subsequent FK reference (memberships, etc.).
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
+grant  execute on function public.handle_new_user() to supabase_auth_admin;
 
 -- join_team_by_code must be callable by signed-in users (the whole point),
 -- but not by anonymous clients.
