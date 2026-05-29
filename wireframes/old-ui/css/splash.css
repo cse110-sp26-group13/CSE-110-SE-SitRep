@@ -1,0 +1,290 @@
+/* Splash page — auth + create/join circle.
+   Consumes CSS vars from base.css; the dark theme cascades for free. */
+
+.splash {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.splash-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.splash-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.splash-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.splash-sub {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Tab strip */
+.splash-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+
+.splash-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 10px 8px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.splash-tab:hover { color: var(--text); }
+
+.splash-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Forms */
+.splash-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.splash-form[hidden] { display: none; }
+
+.splash-row {
+  display: flex;
+  gap: 10px;
+}
+
+.splash-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 360px) {
+  .splash-row { flex-direction: column; gap: 0; }
+}
+
+.splash-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 10px 0 6px;
+  font-weight: 500;
+}
+
+.splash-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.splash-input:hover { border-color: var(--border-strong); }
+.splash-input:focus { border-color: var(--accent); background: var(--surface-3); }
+.splash-input::placeholder { color: var(--text-subtle); }
+
+/* Invalid field — red border + halo on focus, plus the message under it */
+.splash-input--invalid,
+.splash-input--invalid:hover {
+  border-color: var(--bad);
+}
+
+.splash-input--invalid:focus {
+  border-color: var(--bad);
+  background: var(--surface-3);
+  box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.18);
+}
+
+.splash-field-error {
+  display: block;
+  font-size: 11px;
+  color: var(--bad);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.splash-field-error[hidden] { display: none; }
+
+/* 6-digit join code — bigger, monospace, centered */
+.splash-code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+/* Password strength meter — hidden until user types */
+.splash-strength {
+  margin-top: 10px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.25s ease;
+}
+
+.splash-strength.is-active {
+  opacity: 1;
+  max-height: 200px;
+}
+
+.splash-strength-bar {
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.splash-strength-fill {
+  height: 100%;
+  width: 0;
+  background: var(--bad);
+  border-radius: 999px;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.splash-strength-fill[data-level="1"] { width: 25%; background: var(--bad); }
+.splash-strength-fill[data-level="2"] { width: 50%; background: #f0a020; }
+.splash-strength-fill[data-level="3"] { width: 75%; background: #d6c12a; }
+.splash-strength-fill[data-level="4"] { width: 100%; background: var(--good); }
+
+.splash-strength-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.splash-strength-reqs {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.splash-strength-reqs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  transition: color 0.15s;
+}
+
+.splash-strength-reqs li::before {
+  content: '○';
+  display: inline-block;
+  width: 12px;
+  color: var(--text-subtle);
+  font-size: 10px;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.splash-strength-reqs li.met {
+  color: var(--text);
+}
+
+.splash-strength-reqs li.met::before {
+  content: '✓';
+  color: var(--good);
+  transform: scale(1.1);
+}
+
+.splash-submit {
+  margin-top: 18px;
+  padding: 11px 14px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.splash-submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Messages — error (red) and success (green) variants */
+.splash-message {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+
+.splash-error {
+  color: var(--bad);
+  background: rgba(255, 69, 58, 0.08);
+  border: 1px solid rgba(255, 69, 58, 0.28);
+}
+
+.splash-success {
+  color: var(--good);
+  background: rgba(52, 199, 89, 0.08);
+  border: 1px solid rgba(52, 199, 89, 0.28);
+}
+
+/* Footer: signed-in-as + sign out */
+.splash-foot {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.splash-foot-label { color: var(--text-subtle); }
+.splash-foot-email { color: var(--text); }
+
+.splash-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  padding: 0;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.splash-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* Mobile: full-bleed card */
+@media (max-width: 480px) {
+  .splash { padding: 0; }
+  .splash-card {
+    padding: 20px;
+    border: none;
+    border-radius: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    box-shadow: none;
+  }
+}
