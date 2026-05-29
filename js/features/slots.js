@@ -1,17 +1,14 @@
 function effectiveAvailability(slot, teammateId) {
-  const override = state.slotAvailability?.[slot.id]?.[teammateId];
-  if (typeof override === "boolean") return override;
   return !!slot.availability[teammateId];
 }
 
-function toggleSlotAvailability(slotId, teammateId) {
+async function toggleSlotAvailability(slotId, teammateId) {
   if (teammateId !== team.currentUserId) return;
   const slot = meetingSlots.find(s => s.id === slotId);
   if (!slot) return;
-  if (!state.slotAvailability) state.slotAvailability = {};
-  if (!state.slotAvailability[slotId]) state.slotAvailability[slotId] = {};
-  state.slotAvailability[slotId][teammateId] = !effectiveAvailability(slot, teammateId);
-  saveState();
+  const next = !effectiveAvailability(slot, teammateId);
+  await db.setSlotAvailability(slotId, next);
+  await db.loadAll();
   renderSlots();
 }
 
