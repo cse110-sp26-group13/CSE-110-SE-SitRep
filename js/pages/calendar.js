@@ -203,7 +203,8 @@ function bindCalendar() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();
   renderCalendar();
   bindCalendar();
 });

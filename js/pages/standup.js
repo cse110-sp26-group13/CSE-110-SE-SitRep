@@ -11,7 +11,8 @@ function renderStandup() {
 
 window.renderAll = renderStandup;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();
   renderStandup();
   bindMoodQuick();
   bindComposeForm();

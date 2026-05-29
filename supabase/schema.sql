@@ -257,6 +257,173 @@ revoke execute on function public.create_team(text) from public, anon;
 grant  execute on function public.create_team(text) to authenticated;
 
 -- ============================================================
+-- Team-scoped data: standups, blockers, comments, availability,
+-- activity. All gated by current_user_team_ids() so RLS doesn't
+-- recurse through the memberships policies.
+-- ============================================================
+
+-- ---------------- standups -----------------------------------
+create table if not exists public.standups (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  day date not null default current_date,
+  mood int check (mood is null or (mood >= 1 and mood <= 10)),
+  yesterday text,
+  today text,
+  blockers_note text,
+  cover_needed boolean not null default false,
+  cover_note text,
+  posted_at timestamptz not null default now(),
+  unique (team_id, user_id, day)
+);
+create index if not exists standups_team_day_idx
+  on public.standups (team_id, day desc);
+create index if not exists standups_team_user_day_idx
+  on public.standups (team_id, user_id, day desc);
+alter table public.standups enable row level security;
+
+drop policy if exists "standups_team_read" on public.standups;
+create policy "standups_team_read" on public.standups
+  for select using (team_id in (select public.current_user_team_ids()));
+drop policy if exists "standups_self_insert" on public.standups;
+create policy "standups_self_insert" on public.standups
+  for insert with check (
+    user_id = auth.uid()
+    and team_id in (select public.current_user_team_ids())
+  );
+drop policy if exists "standups_self_update" on public.standups;
+create policy "standups_self_update" on public.standups
+  for update using (
+    user_id = auth.uid()
+    and team_id in (select public.current_user_team_ids())
+  );
+drop policy if exists "standups_self_delete" on public.standups;
+create policy "standups_self_delete" on public.standups
+  for delete using (
+    user_id = auth.uid()
+    and team_id in (select public.current_user_team_ids())
+  );
+
+-- ---------------- blockers -----------------------------------
+create table if not exists public.blockers (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  title text not null,
+  description text not null default '',
+  severity text not null check (severity in ('critical','high','medium','low')),
+  status text not null default 'open'
+    check (status in ('open','in-progress','resolved')),
+  owner_id uuid references public.profiles(id) on delete set null,
+  category text check (category is null or category in ('ui','swe','backend')),
+  start_date date,
+  due_date date,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists blockers_team_status_idx
+  on public.blockers (team_id, status);
+alter table public.blockers enable row level security;
+
+drop policy if exists "blockers_team_read" on public.blockers;
+create policy "blockers_team_read" on public.blockers
+  for select using (team_id in (select public.current_user_team_ids()));
+drop policy if exists "blockers_team_insert" on public.blockers;
+create policy "blockers_team_insert" on public.blockers
+  for insert with check (
+    team_id in (select public.current_user_team_ids())
+    and (created_by is null or created_by = auth.uid())
+  );
+drop policy if exists "blockers_team_update" on public.blockers;
+create policy "blockers_team_update" on public.blockers
+  for update using (team_id in (select public.current_user_team_ids()));
+drop policy if exists "blockers_team_delete" on public.blockers;
+create policy "blockers_team_delete" on public.blockers
+  for delete using (team_id in (select public.current_user_team_ids()));
+
+-- ---------------- blocker_comments ---------------------------
+create table if not exists public.blocker_comments (
+  id uuid primary key default gen_random_uuid(),
+  blocker_id uuid not null references public.blockers(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  text text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists blocker_comments_blocker_idx
+  on public.blocker_comments (blocker_id, created_at);
+alter table public.blocker_comments enable row level security;
+
+drop policy if exists "blocker_comments_team_read" on public.blocker_comments;
+create policy "blocker_comments_team_read" on public.blocker_comments
+  for select using (
+    exists (
+      select 1 from public.blockers b
+      where b.id = blocker_id
+        and b.team_id in (select public.current_user_team_ids())
+    )
+  );
+drop policy if exists "blocker_comments_self_insert" on public.blocker_comments;
+create policy "blocker_comments_self_insert" on public.blocker_comments
+  for insert with check (
+    author_id = auth.uid()
+    and exists (
+      select 1 from public.blockers b
+      where b.id = blocker_id
+        and b.team_id in (select public.current_user_team_ids())
+    )
+  );
+
+-- ---------------- slot_availability --------------------------
+create table if not exists public.slot_availability (
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  slot_id text not null,
+  is_available boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (team_id, user_id, slot_id)
+);
+alter table public.slot_availability enable row level security;
+
+drop policy if exists "slot_availability_team_read" on public.slot_availability;
+create policy "slot_availability_team_read" on public.slot_availability
+  for select using (team_id in (select public.current_user_team_ids()));
+drop policy if exists "slot_availability_self_upsert" on public.slot_availability;
+create policy "slot_availability_self_upsert" on public.slot_availability
+  for insert with check (
+    user_id = auth.uid()
+    and team_id in (select public.current_user_team_ids())
+  );
+drop policy if exists "slot_availability_self_update" on public.slot_availability;
+create policy "slot_availability_self_update" on public.slot_availability
+  for update using (
+    user_id = auth.uid()
+    and team_id in (select public.current_user_team_ids())
+  );
+
+-- ---------------- activity_events ----------------------------
+create table if not exists public.activity_events (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid references public.profiles(id) on delete set null,
+  kind text not null check (kind in ('checkin','blocker','cover')),
+  text text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists activity_events_team_time_idx
+  on public.activity_events (team_id, created_at desc);
+alter table public.activity_events enable row level security;
+
+drop policy if exists "activity_events_team_read" on public.activity_events;
+create policy "activity_events_team_read" on public.activity_events
+  for select using (team_id in (select public.current_user_team_ids()));
+drop policy if exists "activity_events_self_insert" on public.activity_events;
+create policy "activity_events_self_insert" on public.activity_events
+  for insert with check (
+    team_id in (select public.current_user_team_ids())
+    and (user_id is null or user_id = auth.uid())
+  );
+
+-- ============================================================
 -- Dev convenience
 -- ============================================================
 -- For local development, turn off email confirmation in
