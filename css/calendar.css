@@ -130,6 +130,29 @@
 .swatch-picker::-webkit-color-swatch-wrapper { padding: 0; }
 .swatch-picker::-webkit-color-swatch { border: none; }
 
+/* Specificity boost to override base.css .field input */
+.field input.project-color-picker {
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0.1rem solid var(--ink);
+  background: var(--paper);
+  cursor: pointer;
+  align-self: flex-start;
+  flex-shrink: 0;
+  display: block;
+}
+.project-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0.2rem;
+}
+.project-color-picker::-webkit-color-swatch {
+  border: none;
+}
+.project-color-picker::-moz-color-swatch {
+  border: 0.2rem solid var(--paper);
+}
+
 .cal-legend .swatch.bar-team     { background: var(--ink); }
 .cal-legend .swatch.bar-personal { background: var(--muted); }
 .cal-legend .swatch.bar-risk     { background: var(--warn); }
@@ -229,6 +252,7 @@
   border: 0.1rem solid var(--ink);
   background: var(--paper);
   flex: 1;
+  overflow: hidden;
 }
 
 .cal-dayname {
@@ -239,12 +263,20 @@
 .cal-dayname:last-of-type { border-right: 0; }
 
 .cal-cell {
-  min-height: 6rem; padding: 0.5rem; border-right: 0.0625rem solid var(--hairline-2);
-  border-bottom: 0.0625rem solid var(--hairline-2); display: flex; flex-direction: column;
-  gap: 0.25rem; background: var(--paper); position: relative;
+  border-right: 0.0625rem solid var(--hairline-2);
+  border-bottom: 0.0625rem solid var(--hairline-2); background: var(--paper); position: relative;
 }
 .cal-cell.muted { background: var(--card-2); opacity: 0.6; }
 .cal-cell.today { box-shadow: inset 0 0 0 0.125rem var(--ink); z-index: 1; }
+
+.cal-cell-header {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  pointer-events: none;
+}
+.cal-cell-header * { pointer-events: auto; }
 
 .cal-week-grid .cal-cell { flex: 1; min-height: 31.25rem; }
 

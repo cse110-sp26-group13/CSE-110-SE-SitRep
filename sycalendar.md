@@ -23,10 +23,18 @@ This document tracks the development and features of the SitRep Calendar.
 - **Strict Boundary Clipping:** Applied `overflow: hidden` to the timeline grid to ensure that projects spanning multiple months are perfectly clipped at the month boundaries and do not run off the tab.
 
 ### Month View Enhancements
+- **Implemented Spanning Issue Bars:** Re-engineered the Issue Tracker to use `grid-column` spanning. Multi-day issues now appear as a single continuous bar with a centered title, providing a professional and highly readable timeline within the grid.
+- **Anti-Overlap Grid Architecture:** Implemented a dedicated row-indexing system that separates day headers (dates and month events) from issue slots. This ensures multi-day bars never overlap with calendar dates or daily markers.
+- **Global Overflow Control:** Applied `overflow: hidden` to all calendar grids to ensure that connection indicators and long-running bars are strictly clipped at the grid borders.
 - **Color-Coded Legend Borders:** Implemented a system of visual indicators where calendar cells display color-coded top borders (using `box-shadow`) to represent team, personal, risk, or blocked milestones at a glance.
 - **Implemented Theme-Aware Contrast:** Implemented a dynamic contrast system (`getContrastColor`) that automatically adjusts text color based on the background project color and the active theme (light/dark), ensuring maximum readability across all visual states.
 
 ## Implementation History
+
+### Phase 5: Grid Re-engineering & Data Clarity
+- **Spanning Logic Implementation:** Refactored the month view from a cell-nested architecture to a grid-spanning architecture to support continuous multi-day bars.
+- **Vertical Slot Management:** Implemented dynamic week-height calculation to align background cells perfectly with variable numbers of issue slots.
+- **Readability Optimization:** Resolved collisions between calendar dates and issue bars through explicit row separation in the CSS grid.
 
 ### Phase 4: UI Polish & Responsive Refactoring
 - **Unit Modernization:** Moved away from `px` at all costs to adopt a fully relative unit system across the calendar interface.
@@ -37,12 +45,12 @@ This document tracks the development and features of the SitRep Calendar.
 ## Technical Details
 
 ### Files Modified
-- `css/calendar.css`: Complete refactor to `rem`/`em` units. Added folder tab structure, uniform sizing, custom kind indicator borders, and timeline clipping.
-- `js/pages/calendar.js`: Refactored to remove duplicate logic, updated timeline rendering for date labels, and improved state initialization.
+- `css/calendar.css`: Complete refactor to `rem`/`em` units. Added folder tab structure, uniform sizing, custom kind indicator borders, and global grid overflow clipping. Added styling for `.cal-cell-header`.
+- `js/pages/calendar.js`: Major refactor to support grid-column/row spanning for issue bars. Removed duplicate logic, updated timeline rendering for date labels, and improved state initialization.
 - `calendar.html`: Structure for the calendar grid, folder tabs, and various view sections.
 
 ### Verification
 - Manual verification of layout stability across multiple zoom levels.
 - Visual check of tab folder symmetry and text centering.
-- Confirmation of timeline bar clipping and date label accuracy.
-- Successful audit for redundant code and function duplicates.
+- Confirmation of multi-day bar continuity and date-clipping in Month view.
+- Success check for zero-overlap between calendar dates and issue tracker bars.

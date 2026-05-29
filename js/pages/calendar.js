@@ -16,10 +16,10 @@
 
 // ─── Sample data (replace with real source later) ──────────────────────
 const CAL_PROJECTS = [
-  { id: "onboarding", name: "Onboarding flow", color: "var(--ink-2)",  on: true },
-  { id: "auth",       name: "Auth refactor",   color: "var(--good)",    on: true },
-  { id: "ios",        name: "iOS app",         color: "var(--warn)",    on: true },
-  { id: "design",     name: "Design system",   color: "var(--muted)",   on: false },
+  { id: "onboarding", name: "Onboarding flow", color: "#39352e",  on: true },
+  { id: "auth",       name: "Auth refactor",   color: "#2f6b3a",    on: true },
+  { id: "ios",        name: "iOS app",         color: "#b56a14",    on: true },
+  { id: "design",     name: "Design system",   color: "#6e6655",   on: false },
 ];
 
 // Each event: { date: "YYYY-MM-DD", title, kind: team|personal|blocked|risk, project }
@@ -328,13 +328,15 @@ function renderCalGrid() {
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
   
-  // Group cells into weeks
   const weeks = [];
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7));
   }
 
-  const weekHTML = weeks.map(weekCells => {
+  let currentRow = 2; // Row 1 is DAY_NAMES
+  let gridHTML = dayHeader;
+
+  weeks.forEach(weekCells => {
     const weekStart = weekCells[0].date;
     const weekEnd = weekCells[6].date;
 
@@ -363,7 +365,6 @@ function renderCalGrid() {
       const itemStart = new Date(`${startStr}T00:00:00`);
       const itemEnd = new Date(`${endStr}T00:00:00`);
       
-      // We only care about days that are IN this week
       const actualStart = itemStart < weekStart ? weekStart : itemStart;
       const actualEnd = itemEnd > weekEnd ? weekEnd : itemEnd;
 
@@ -387,7 +388,6 @@ function renderCalGrid() {
       }
     });
 
-    // Determine the max slot index used across this specific week
     let weekMaxSlot = -1;
     weekCells.forEach(cell => {
       const key = isoDate(cell.date);
@@ -396,11 +396,14 @@ function renderCalGrid() {
       if (cellMax > weekMaxSlot) weekMaxSlot = cellMax;
     });
 
-    return weekCells.map(({ date, muted }) => {
-      const key = isoDate(date);
+    const numSlots = weekMaxSlot + 1;
+    const weekSpan = 1 + numSlots;
+
+    // 1. Background Cells & Day Headers
+    weekCells.forEach((cell, colIndex) => {
+      const key = isoDate(cell.date);
       const dayEvents = eventsByDay[key] || [];
-      const dayIssueIds = usedSlotsByDay[key] || [];
-      const isToday = isSameDay(date, today);
+      const isToday = isSameDay(cell.date, today);
 
       const dayKinds = new Set(dayEvents.map(e => e.kind));
       let kindClass = "";
@@ -409,42 +412,68 @@ function renderCalGrid() {
       else if (dayKinds.has("team")) kindClass = "kind-team";
       else if (dayKinds.has("personal")) kindClass = "kind-personal";
 
-      let html = `<div class="cal-cell ${muted ? "muted" : ""} ${isToday ? "today" : ""} ${kindClass}">
-        <div class="cal-date">${date.getDate()}</div>`;
-      
-      dayEvents.slice(0, 3).forEach(e => {
-        html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}"${eventColorStyle(e)}>${escapeHTML(e.title)}</button>`;
-      });
+      // The background cell (borders, today shadow, kind borders)
+      gridHTML += `<div class="cal-cell ${cell.muted ? "muted" : ""} ${isToday ? "today" : ""} ${kindClass}" 
+                        style="grid-column: ${colIndex + 1}; grid-row: ${currentRow} / span ${weekSpan}"></div>`;
 
-      // Render slots consistently up to the week's max to ensure vertical alignment
-      for (let i = 0; i <= weekMaxSlot; i++) {
-        const issueId = dayIssueIds[i];
-        const item = weekIssues.find(b => String(b.id) === issueId);
-        
-        if (item) {
-          const isStart = key === item.startDate;
-          const isEnd = key === item.dueDate;
-          const isStartOfWeek = date.getDay() === 0;
-          const isEndOfWeek = date.getDay() === 6;
-          
-          const classes = ["cal-bar", "issue"];
-          if (item.startDate && item.dueDate) {
-            if (!isStart && !isStartOfWeek) classes.push("connect-left");
-            if (!isEnd && !isEndOfWeek) classes.push("connect-right");
+      // The header content (date + small events) - strictly in the first row of the week
+      gridHTML += `<div class="cal-cell-header" style="grid-column: ${colIndex + 1}; grid-row: ${currentRow}; z-index: 5;">
+        <div class="cal-date">${cell.date.getDate()}</div>
+        <div class="cal-day-events">
+          ${dayEvents.slice(0, 3).map(e => `
+            <button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}"${eventColorStyle(e)}>${escapeHTML(e.title)}</button>
+          `).join("")}
+        </div>
+      </div>`;
+    });
+
+    // 2. Multi-day Issue Bars
+    const weekIssueIds = new Set(Object.values(usedSlotsByDay).flat().filter(Boolean));
+    weekIssueIds.forEach(id => {
+      const item = weekIssues.find(b => String(b.id) === id);
+      if (!item) return;
+
+      let startCol = -1;
+      let endCol = -1;
+      let slotIndex = -1;
+
+      for (let c = 0; c < 7; c++) {
+        const key = isoDate(weekCells[c].date);
+        const slots = usedSlotsByDay[key] || [];
+        const s = slots.indexOf(id);
+        if (s !== -1) {
+          if (startCol === -1) {
+            startCol = c;
+            slotIndex = s;
           }
-          
-          html += `<button class="${classes.join(" ")}" type="button" data-issue-id="${escapeHTML(item.id)}" title="${escapeHTML(item.title)}" style="background-color: ${item.color}; z-index: ${5 + i}">${escapeHTML(item.title)}</button>`;
-        } else {
-          html += `<div class="cal-bar-spacer"></div>`;
+          endCol = c;
         }
       }
 
-      html += `</div>`;
-      return html;
-    }).join("");
-  }).join("");
+      if (startCol !== -1) {
+        const span = endCol - startCol + 1;
+        const itemStartStr = item.startDate || item.dueDate;
+        const itemEndStr = item.dueDate || item.startDate;
+        const isStart = isoDate(weekCells[startCol].date) === itemStartStr;
+        const isEnd = isoDate(weekCells[endCol].date) === itemEndStr;
+        
+        const classes = ["cal-bar", "issue"];
+        if (itemStartStr !== itemEndStr) {
+          if (!isStart) classes.push("connect-left");
+          if (!isEnd) classes.push("connect-right");
+        }
 
-  grid.innerHTML = dayHeader + weekHTML;
+        gridHTML += `<button class="${classes.join(" ")}" type="button" data-issue-id="${escapeHTML(item.id)}" title="${escapeHTML(item.title)}" 
+                        style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${currentRow + 1 + slotIndex}; background-color: ${item.color}; z-index: ${10 + slotIndex}">
+          ${escapeHTML(item.title)}
+        </button>`;
+      }
+    });
+
+    currentRow += weekSpan;
+  });
+
+  grid.innerHTML = gridHTML;
 
   // Footer count
   const count = calState.view === "issues" ? allIssues.length : events.length;
@@ -924,7 +953,20 @@ function openProjectModal(projectId = null) {
   calState.editingProjectId = projectId;
   title.textContent = project ? "Edit project" : "New project";
   nameInput.value = project?.name || "";
-  colorInput.value = project?.color || "#4f8cff";
+  
+  // Normalize color for <input type="color"> which only accepts #RRGGBB
+  let displayColor = project?.color || "#4f8cff";
+  if (displayColor.startsWith("var(")) {
+    const map = {
+      "var(--ink)": "#000000", "var(--ink-2)": "#39352e",
+      "var(--good)": "#2f6b3a", "var(--warn)": "#b56a14",
+      "var(--bad)": "#b3261e", "var(--muted)": "#6e6655"
+    };
+    displayColor = map[displayColor] || "#4f8cff";
+  }
+  if (displayColor.length === 9) displayColor = displayColor.slice(0, 7);
+  colorInput.value = displayColor;
+
   deleteButton.hidden = !project;
   submitButton.textContent = project ? "Save changes" : "Create project";
   error.hidden = true;
