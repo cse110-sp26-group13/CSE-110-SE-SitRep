@@ -4,7 +4,7 @@ Human-readable companion to [schema.sql](schema.sql). If you change the schema, 
 
 **Project:** `HardCoders` (`vbimsbasupcbdxzsazif`)
 **Postgres:** 17.6
-**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`, `add_create_team_rpc`
+**Migrations applied:** `initial_schema`, `harden_function_security`, `revoke_definer_grants_from_client_roles`, `add_create_team_rpc`, `fix_membership_rls_recursion`, `add_team_data_tables`, `grant_handle_new_user_to_auth_admin`
 
 ## Tables
 
@@ -101,7 +101,7 @@ const { data: team, error } = await supabase.rpc('create_team', { p_name: 'Group
 ### `handle_new_user()` *(auth trigger function)*
 Fires `after insert on auth.users` (i.e. on signup). Creates a matching `profiles` row. `security definer` because the calling context is the auth system, not the new user.
 
-EXECUTE revoked from `public / anon / authenticated` — only the trigger should invoke it. (Triggers don't depend on EXECUTE grants.)
+EXECUTE revoked from `public / anon / authenticated` to avoid an unintended `/rest/v1/rpc/handle_new_user` endpoint. **EXECUTE is explicitly granted to `supabase_auth_admin`** — the role GoTrue uses to insert into `auth.users` during signup. Without that grant the trigger is silently skipped, leaving auth users without `profiles` rows and breaking the FK from `memberships.user_id → profiles.id` the moment a user tries to create or join a team. (Triggers in this Supabase setup *do* require EXECUTE on the trigger function for the inserting role.)
 
 ---
 
@@ -159,15 +159,105 @@ const { data: team, error } = await supabase.rpc('create_team', { p_name: 'Sprin
 
 ---
 
+### `standups`
+
+One row per `(team_id, user_id, day)`. Holds daily mood + check-in text + cover flag.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | `uuid` | no | `gen_random_uuid()` | **PK** |
+| `team_id` | `uuid` | no | — | FK to `teams(id)` on delete cascade. |
+| `user_id` | `uuid` | no | — | FK to `profiles(id)` on delete cascade. |
+| `day` | `date` | no | `current_date` | One standup per user per team per day. |
+| `mood` | `int` | yes | — | 1–10 score. Null means no mood logged. |
+| `yesterday` | `text` | yes | — | "What I did yesterday." |
+| `today` | `text` | yes | — | "What I'm doing today." |
+| `blockers_note` | `text` | yes | — | Free-text blocker description from the standup form. |
+| `cover_needed` | `boolean` | no | `false` | "I'm out — need someone to cover." |
+| `cover_note` | `text` | yes | — | Optional context for the cover request. |
+| `posted_at` | `timestamptz` | no | `now()` | Updated on every write. |
+
+**Unique:** `(team_id, user_id, day)` — quick-tapping a mood and later submitting a full standup updates the same row.
+
+**Why a single table for mood + notes:** A standup *is* the daily snapshot. Splitting mood into its own table doubled the writes for no win — mood-only updates just patch the `mood` column on today's row.
+
+### `blockers`
+
+Issue tracker entries. Team-scoped — every team has its own list.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | `uuid` | no | `gen_random_uuid()` | **PK** |
+| `team_id` | `uuid` | no | — | FK to `teams(id)` on delete cascade. |
+| `title` | `text` | no | — | |
+| `description` | `text` | no | `''` | |
+| `severity` | `text` | no | — | Check: `'critical' \| 'high' \| 'medium' \| 'low'`. |
+| `status` | `text` | no | `'open'` | Check: `'open' \| 'in-progress' \| 'resolved'`. |
+| `owner_id` | `uuid` | yes | — | FK to `profiles(id)` on delete set null. |
+| `category` | `text` | yes | — | Check: `'ui' \| 'swe' \| 'backend'` or null. |
+| `start_date` | `date` | yes | — | |
+| `due_date` | `date` | yes | — | |
+| `created_by` | `uuid` | yes | — | FK to `profiles(id)` on delete set null. |
+| `created_at` | `timestamptz` | no | `now()` | |
+
+### `blocker_comments`
+
+Comment thread per blocker. Cascades on blocker delete.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | `uuid` | no | `gen_random_uuid()` | **PK** |
+| `blocker_id` | `uuid` | no | — | FK to `blockers(id)` on delete cascade. |
+| `author_id` | `uuid` | no | — | FK to `profiles(id)` on delete cascade. |
+| `text` | `text` | no | — | |
+| `created_at` | `timestamptz` | no | `now()` | |
+
+### `slot_availability`
+
+When2meet-style availability grid. Slot definitions (`s1`–`s4`) live in the client (`js/db.js`); this table just tracks each user's yes/no per slot.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `team_id` | `uuid` | no | — | **PK part**. FK to `teams(id)` on delete cascade. |
+| `user_id` | `uuid` | no | — | **PK part**. FK to `profiles(id)` on delete cascade. |
+| `slot_id` | `text` | no | — | **PK part**. Stable key like `'s1'` matching the client's slot defs. |
+| `is_available` | `boolean` | no | `false` | |
+| `updated_at` | `timestamptz` | no | `now()` | |
+
+### `activity_events`
+
+Append-only team activity feed. Powers the dashboard's "Recent activity" card.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | `uuid` | no | `gen_random_uuid()` | **PK** |
+| `team_id` | `uuid` | no | — | FK to `teams(id)` on delete cascade. |
+| `user_id` | `uuid` | yes | — | FK to `profiles(id)` on delete set null. Null for system events. |
+| `kind` | `text` | no | — | Check: `'checkin' \| 'blocker' \| 'cover'`. |
+| `text` | `text` | no | — | Display text (already-formatted line for the feed). |
+| `created_at` | `timestamptz` | no | `now()` | |
+
+---
+
+## Row-Level Security on team data
+
+All team-scoped tables (`standups`, `blockers`, `blocker_comments`, `slot_availability`, `activity_events`) gate access through `current_user_team_ids()` — a `SECURITY DEFINER` SQL function that returns the team IDs the caller belongs to. Going through this helper avoids the recursive-policy trap of referencing `memberships` from within an RLS policy.
+
+Per-table summary:
+- **`standups`**: team read; self insert/update/delete (a user can only edit their own row).
+- **`blockers`**: team read; team insert (with `created_by = auth.uid()` enforced); team update/delete (any member can edit any issue — small-team app stance).
+- **`blocker_comments`**: team read via parent blocker; self insert.
+- **`slot_availability`**: team read; self insert/update.
+- **`activity_events`**: team read; self insert.
+
+---
+
 ## Deferred / not yet modeled
 
 | Concept | Where it'll live | Why later |
 |---|---|---|
 | User tiers (group_project / startup / business) | `teams.tier` column | Week 8 — visibility model not finalized. |
-| Standups | `standups` table | Coming with the daily-standup feature work. |
-| Blockers | `blockers` table | Currently in `data.js` mock — promote when standup feature lands. |
-| Moods | `moods` table | Same as blockers. |
-| Slot availability | `availability` table | When2meet grid; currently mock. |
+| Cover-taken state | Currently inferred from `activity_events` | A teammate clicking "I'll cover" inserts an activity event; clearing the target's `cover_needed` flag would require either an RPC or relaxed RLS. Deferred — original poster updates their own standup when they're back. |
 | Slack integration | (no DB) | Outbound only, no persistence needed initially. |
 
 ---

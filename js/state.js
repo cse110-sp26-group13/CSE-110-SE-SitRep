@@ -1,13 +1,8 @@
-const STORAGE_KEY = "sitrep_state_v2";
+const STORAGE_KEY = "sitrep_state_v3";
 
 function defaultState() {
   return {
-    extraCheckIns: {},
-    extraActivity: [],
-    coveredFor: [],
-    extraBlockers: [],
     githubIssues: [],
-    blockerOverrides: {},
     severityFilter: "all",
     statusFilter: "open",
     slotAvailability: {},

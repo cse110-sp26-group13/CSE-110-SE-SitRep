@@ -163,14 +163,13 @@ function openCreateModal() {
   `);
   document.getElementById("issue-title").focus();
 
-  document.getElementById("issue-create-form").addEventListener("submit", e => {
+  document.getElementById("issue-create-form").addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("issue-title").value.trim();
     if (!title) return;
     const description = document.getElementById("issue-desc").value.trim();
     const severity = document.getElementById("issue-sev").value;
     const ownerId = document.getElementById("issue-owner").value;
-    const ownerObj = teammates.find(t => t.id === ownerId);
     const startDate = document.getElementById("issue-start").value;
     const dueDate = document.getElementById("issue-due").value;
     const category = document.getElementById("issue-category").value;
@@ -183,29 +182,11 @@ function openCreateModal() {
     }
     dateError.hidden = true;
 
-    const newId = `u${Date.now()}`;
-    state.extraBlockers.unshift({
-      id: newId,
-      title,
-      description,
-      severity,
-      status: "open",
-      ownerId,
-      owner: ownerObj?.name ?? "Unassigned",
-      postedAt: nowTime(),
-      startDate,
-      dueDate,
-      category,
-      comments: [],
+    await db.createBlocker({
+      title, description, severity, ownerId, startDate, dueDate, category,
     });
-
-    pushActivity({
-      type: "blocker",
-      who: teammates.find(t => t.id === team.currentUserId)?.name ?? "You",
-      text: `opened a ${severity} issue — ${title}`,
-    });
-
-    saveState();
+    await db.addActivity("blocker", `opened a ${severity} issue — ${title}`);
+    await db.loadAll();
     closeModal();
     renderAll();
   });
@@ -217,10 +198,9 @@ function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
-  const ov = state.blockerOverrides[id] || {};
-  const currentStartDate = ov.startDate ?? b.startDate ?? "";
-  const currentDueDate = ov.dueDate ?? b.dueDate ?? "";
-  const currentCategory = ov.category ?? b.category ?? "swe";
+  const currentStartDate = b.startDate ?? "";
+  const currentDueDate = b.dueDate ?? "";
+  const currentCategory = b.category ?? "swe";
 
   const commentsHTML = b.comments.length
     ? b.comments.map(c => `
@@ -284,52 +264,52 @@ function openDetailModal(id) {
     </div>
   `);
 
-  document.getElementById("issue-status").addEventListener("change", e => {
+  // GitHub-synced issues live in localStorage, not Postgres — guard those.
+  const isGithubIssue = String(id).startsWith("gh-");
+
+  document.getElementById("issue-status").addEventListener("change", async e => {
     const newStatus = e.target.value;
     if (newStatus === b.status) return;
-    updateBlocker(id, { status: newStatus });
-    pushActivity({
-      type: "blocker",
-      who: teammates.find(t => t.id === team.currentUserId)?.name ?? "You",
-      text: `set "${b.title}" to ${STATUS_LABEL[newStatus]}`,
-    });
-    saveState();
+    if (isGithubIssue) return;
+    await db.updateBlocker(id, { status: newStatus });
+    await db.addActivity("blocker", `set "${b.title}" to ${STATUS_LABEL[newStatus]}`);
+    await db.loadAll();
     renderAll();
     openDetailModal(id);
   });
 
-  document.getElementById("detail-start").addEventListener("change", e => {
-    updateBlocker(id, { startDate: e.target.value });
-    saveState();
+  document.getElementById("detail-start").addEventListener("change", async e => {
+    if (isGithubIssue) return;
+    await db.updateBlocker(id, { startDate: e.target.value });
+    await db.loadAll();
     renderAll();
   });
 
-  document.getElementById("detail-due").addEventListener("change", e => {
-    updateBlocker(id, { dueDate: e.target.value });
-    saveState();
-    renderAll(); 
-  });
-
-  document.getElementById("detail-category").addEventListener("change", e => {
-    updateBlocker(id, { category: e.target.value });
-    saveState();
+  document.getElementById("detail-due").addEventListener("change", async e => {
+    if (isGithubIssue) return;
+    await db.updateBlocker(id, { dueDate: e.target.value });
+    await db.loadAll();
     renderAll();
   });
 
-  document.getElementById("comment-form").addEventListener("submit", e => {
+  document.getElementById("detail-category").addEventListener("change", async e => {
+    if (isGithubIssue) return;
+    await db.updateBlocker(id, { category: e.target.value });
+    await db.loadAll();
+    renderAll();
+  });
+
+  document.getElementById("comment-form").addEventListener("submit", async e => {
     e.preventDefault();
     const input = document.getElementById("comment-input");
     const text = input.value.trim();
     if (!text) return;
-    const me = teammates.find(t => t.id === team.currentUserId);
-    const newComments = [...b.comments, {
-      id: `c${Date.now()}`,
-      who: me?.name ?? "You",
-      text,
-      time: nowTime(),
-    }];
-    updateBlocker(id, { comments: newComments });
-    saveState();
+    if (isGithubIssue) {
+      alert("Comments on GitHub-synced issues aren't persisted yet.");
+      return;
+    }
+    await db.addBlockerComment(id, text);
+    await db.loadAll();
     renderAll();
     openDetailModal(id);
   });
@@ -414,13 +394,9 @@ function openGitHubSyncModal() {
       const issues = await fetchGitHubIssues(repo, token);
       sessionStorage.setItem("sitrep_gh_repo", repo);
       setGithubIssues(issues);
-      
-      pushActivity({
-        type: "checkin",
-        who: "System",
-        text: `Synced ${issues.length} issues from GitHub (${repo})`,
-      });
 
+      await db.addActivity("checkin", `Synced ${issues.length} issues from GitHub (${repo})`);
+      await db.loadAll();
       closeModal();
       renderAll();
     } catch (err) {
