@@ -4,6 +4,18 @@ This document tracks the development and features of the SitRep Calendar.
 
 ## Latest Enhancements (May 2026)
 
+### Database Integration & Visibility Control
+- **Supabase Persistence:** Transitioned from `localStorage` to a centralized Supabase database. All calendar events are now stored in the `calendar_events` table, ensuring data persists across different devices and users.
+- **Granular Visibility:** Implemented a visibility model for events:
+    - **Team Events:** Visible to everyone on the team. Tied to a `team_id` in the database.
+    - **Personal Events:** Private to the creator. `team_id` is set to NULL, and Row-Level Security (RLS) ensures only the owner can access them.
+- **Terminology Update:** Renamed "Global" events to **"Team"** events in the UI for better clarity within the team collaboration context.
+
+### Performance & UI Responsiveness
+- **Instant UI Updates:** Refactored the event handling logic to use a unified `refreshActiveView()` function. All views (Month, Week, and Timeline) now update instantly upon event creation, modification, or deletion without requiring a tab switch.
+- **Synchronized View State:** Linked the internal date context (Year, Month, and Week Start) across all navigation controls. Navigating in Month view now correctly positions the Week view and vice-versa.
+- **Clean Slate:** Removed all hard-coded sample events. The calendar now relies entirely on dynamic data from the database and the issues tracker.
+
 ### Visual Timeline Optimization
 - **Seamless Multi-day Bars:** Fixed visual gaps and truncation in timeline bars. Issues now use precise negative margins and calculated widths to connect perfectly across day cells.
 - **Weekly Slot Management:** Refactored the rendering logic to calculate vertical slots on a **per-week basis**. This ensures visual stability within a single week while allowing issues to automatically "move up" to the highest available row at the start of a new week if space has been vacated.

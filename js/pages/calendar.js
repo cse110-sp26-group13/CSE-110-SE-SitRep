@@ -23,24 +23,7 @@ const CAL_PROJECTS = [
 ];
 
 // Each event: { date: "YYYY-MM-DD", title, kind: team|personal|blocked|risk, project }
-const CAL_EVENTS = [
-  { date: "2026-05-01", title: "Sprint 4 kickoff",        kind: "team",     project: "onboarding" },
-  { date: "2026-05-05", title: "Auth refactor — PR open", kind: "team",     project: "auth" },
-  { date: "2026-05-08", title: "Empty-state illos due",   kind: "personal", project: "design" },
-  { date: "2026-05-12", title: "Design review",           kind: "team",     project: "onboarding" },
-  { date: "2026-05-14", title: "Onboarding flow demo",    kind: "team",     project: "onboarding" },
-  { date: "2026-05-15", title: "QA pass",                 kind: "personal", project: "onboarding" },
-  { date: "2026-05-18", title: "Sprint 4 mid-sync",       kind: "team",     project: "onboarding" },
-  { date: "2026-05-20", title: "Auth tokens — ETA",       kind: "blocked",  project: "auth" },
-  { date: "2026-05-21", title: "iOS cert renewal",        kind: "risk",  project: "ios" },
-  { date: "2026-05-22", title: "Sprint 4 retro",          kind: "team",     project: "onboarding" },
-  { date: "2026-05-25", title: "Sprint 5 kickoff",        kind: "team",     project: "onboarding" },
-  { date: "2026-05-26", title: "Stakeholder demo",        kind: "personal", project: "onboarding" },
-  { date: "2026-05-28", title: "Mobile cert deadline",    kind: "risk",  project: "ios" },
-  // a few from adjacent months so prev/next show something
-  { date: "2026-04-28", title: "Sprint 3 retro",          kind: "team",     project: "onboarding" },
-  { date: "2026-06-02", title: "Q3 planning",             kind: "team",     project: "onboarding" },
-];
+const CAL_EVENTS = [];
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
@@ -66,7 +49,7 @@ const calState = {
 calState.weekStart = getStartOfWeek(new Date());
 
 const EVENT_KIND_LABELS = {
-  global: "Global",
+  global: "Team",
   personal: "Personal",
 };
 
@@ -122,19 +105,7 @@ function getCalendarProjects() {
 }
 
 function getCalendarEvents() {
-  const customEvents = Array.isArray(state.extraCalendarEvents) ? state.extraCalendarEvents : [];
-  const deletedIds = new Set(Array.isArray(state.deletedCalendarEventIds) ? state.deletedCalendarEventIds : []);
-  const overrides = state.calendarEventOverrides && typeof state.calendarEventOverrides === "object"
-    ? state.calendarEventOverrides
-    : {};
-  const sampleEvents = CAL_EVENTS.map((event, index) => {
-    const id = `sample-${index}`;
-    // Map old 'kind' to new 'group' for samples
-    const group = event.kind === "personal" ? "personal" : "global";
-    return { ...event, id, group, source: "sample", ...(overrides[id] || {}) };
-  });
-  const userEvents = customEvents.map(event => ({ ...event, source: "custom" }));
-  return [...sampleEvents, ...userEvents].filter(event => !deletedIds.has(event.id));
+  return Array.isArray(window.calendarEvents) ? window.calendarEvents : [];
 }
 
 const contrastCache = new Map();
@@ -492,7 +463,7 @@ function renderCalLegend() {
       const kind = cb.dataset.kind;
       if (cb.checked) calState.kinds.add(kind);
       else calState.kinds.delete(kind);
-      renderCalGrid();
+      refreshActiveView();
     });
   });
 
@@ -503,10 +474,6 @@ function renderCalLegend() {
       state.calendarGroupColors[kind] = picker.value;
       saveState();
       refreshActiveView();
-      // Also update timeline if visible
-      if (document.getElementById("view-timeline").style.display !== "none") {
-        renderCalTimeline();
-      }
     });
   });
 }
@@ -545,12 +512,14 @@ function bindCalendar() {
   document.getElementById("cal-prev").addEventListener("click", () => {
     if (calState.month === 0) { calState.month = 11; calState.year--; }
     else calState.month--;
+    calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
     renderCalHeader();
     refreshActiveView();
   });
   document.getElementById("cal-next").addEventListener("click", () => {
     if (calState.month === 11) { calState.month = 0; calState.year++; }
     else calState.month++;
+    calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
     renderCalHeader();
     refreshActiveView();
   });
@@ -566,14 +535,24 @@ function bindCalendar() {
   // Week Nav
   document.getElementById("week-prev").addEventListener("click", () => {
     calState.weekStart.setDate(calState.weekStart.getDate() - 7);
+    calState.year = calState.weekStart.getFullYear();
+    calState.month = calState.weekStart.getMonth();
+    renderCalHeader();
     refreshActiveView();
   });
   document.getElementById("week-next").addEventListener("click", () => {
     calState.weekStart.setDate(calState.weekStart.getDate() + 7);
+    calState.year = calState.weekStart.getFullYear();
+    calState.month = calState.weekStart.getMonth();
+    renderCalHeader();
     refreshActiveView();
   });
   document.getElementById("week-today").addEventListener("click", () => {
-    calState.weekStart = getStartOfWeek(new Date());
+    const t = new Date();
+    calState.weekStart = getStartOfWeek(t);
+    calState.year = t.getFullYear();
+    calState.month = t.getMonth();
+    renderCalHeader();
     refreshActiveView();
   });
 
@@ -852,7 +831,7 @@ function bindEventModal() {
   form.addEventListener("submit", createCalendarEvent);
 }
 
-function createCalendarEvent(e) {
+async function createCalendarEvent(e) {
   e.preventDefault();
 
   const title = document.getElementById("calendar-event-name").value.trim();
@@ -873,64 +852,52 @@ function createCalendarEvent(e) {
     return;
   }
 
-  const eventData = { date, endDate, title, group };
-
-  if (calState.editingEventId) updateCalendarEvent(calState.editingEventId, eventData);
-  else {
-    if (!Array.isArray(state.extraCalendarEvents)) state.extraCalendarEvents = [];
-    state.extraCalendarEvents.push({
-      id: `cal-${Date.now()}`,
-      ...eventData,
-    });
-  }
-  saveState();
-
-  const selectedDate = new Date(`${date}T00:00:00`);
-  calState.year = selectedDate.getFullYear();
-  calState.month = selectedDate.getMonth();
-  renderCalHeader();
-  renderCalGrid();
-  closeEventModal();
-}
-
-function updateCalendarEvent(id, eventData) {
-  if (!Array.isArray(state.extraCalendarEvents)) state.extraCalendarEvents = [];
-  const customIndex = state.extraCalendarEvents.findIndex(event => event.id === id);
-
-  if (customIndex >= 0) {
-    state.extraCalendarEvents[customIndex] = {
-      ...state.extraCalendarEvents[customIndex],
-      ...eventData,
-    };
-    return;
-  }
-
-  if (!state.calendarEventOverrides || typeof state.calendarEventOverrides !== "object") {
-    state.calendarEventOverrides = {};
-  }
-  state.calendarEventOverrides[id] = {
-    ...(state.calendarEventOverrides[id] || {}),
-    ...eventData,
+  const eventData = { 
+    date, 
+    endDate: endDate || null, 
+    title, 
+    group,
+    teamId: group === 'global' ? window.team.id : null
   };
+
+  try {
+    if (calState.editingEventId) {
+      await db.updateCalendarEvent(calState.editingEventId, eventData);
+    } else {
+      await db.createCalendarEvent(eventData);
+    }
+
+    await db.loadAll(); // Refresh global state from DB
+
+    const selectedDate = new Date(`${date}T00:00:00`);
+    calState.year = selectedDate.getFullYear();
+    calState.month = selectedDate.getMonth();
+    calState.weekStart = getStartOfWeek(selectedDate);
+    
+    renderCalHeader();
+    refreshActiveView();
+    closeEventModal();
+  } catch (err) {
+    error.textContent = "Failed to save event. Please try again.";
+    error.hidden = false;
+    console.error(err);
+  }
 }
 
-function deleteCalendarEvent() {
+async function deleteCalendarEvent() {
   const id = calState.editingEventId;
   if (!id) return;
 
-  if (!Array.isArray(state.extraCalendarEvents)) state.extraCalendarEvents = [];
-  const customCount = state.extraCalendarEvents.length;
-  state.extraCalendarEvents = state.extraCalendarEvents.filter(event => event.id !== id);
-
-  if (state.extraCalendarEvents.length === customCount) {
-    if (!Array.isArray(state.deletedCalendarEventIds)) state.deletedCalendarEventIds = [];
-    if (!state.deletedCalendarEventIds.includes(id)) state.deletedCalendarEventIds.push(id);
-    if (state.calendarEventOverrides) delete state.calendarEventOverrides[id];
+  try {
+    await db.deleteCalendarEvent(id);
+    await db.loadAll();
+    
+    refreshActiveView();
+    closeEventModal();
+  } catch (err) {
+    alert("Failed to delete event.");
+    console.error(err);
   }
-
-  saveState();
-  renderCalGrid();
-  closeEventModal();
 }
 
 function isHexColor(value) {

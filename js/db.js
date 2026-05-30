@@ -27,6 +27,7 @@
   window.blockers = [];
   window.meetingSlots = SLOT_DEFS.map(s => ({ ...s, availability: {} }));
   window.activity = [];
+  window.calendarEvents = [];
 
   const sb = () => window.sbClient;
 
@@ -124,6 +125,16 @@
     return data || [];
   }
 
+  async function loadCalendarEvents(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_events')
+      .select('*')
+      .or(`team_id.is.null,team_id.eq.${teamId}`)
+      .order('date', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
   async function loadAll() {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) {
@@ -140,12 +151,13 @@
       id: t.id, name: t.name, joinCode: t.join_code, currentUserId: userId,
     };
 
-    const [members, standups, blockerData, slotAvail, activityRows] = await Promise.all([
+    const [members, standups, blockerData, slotAvail, activityRows, calendarRows] = await Promise.all([
       loadTeamMembers(t.id),
       loadRecentStandups(t.id),
       loadBlockers(t.id),
       loadSlotAvailability(t.id),
       loadActivity(t.id),
+      loadCalendarEvents(t.id),
     ]);
 
     const days = last7Days();
@@ -218,6 +230,17 @@
       type: a.kind,
       who: a.profiles?.display_name || 'System',
       text: a.text,
+    }));
+
+    window.calendarEvents = (calendarRows || []).map(e => ({
+      id: e.id,
+      ownerId: e.owner_id,
+      teamId: e.team_id,
+      title: e.title,
+      description: e.description || '',
+      date: e.date,
+      endDate: e.end_date || '',
+      group: e.group || 'personal',
     }));
   }
 
@@ -329,6 +352,42 @@
     if (error) throw error;
   }
 
+  async function createCalendarEvent(input) {
+    const { data, error } = await sb()
+      .from('calendar_events')
+      .insert({
+        owner_id: team.currentUserId,
+        team_id: input.teamId || null,
+        title: input.title,
+        description: input.description || '',
+        date: input.date,
+        end_date: input.endDate || null,
+        group: input.group || 'personal',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateCalendarEvent(id, patch) {
+    const dbPatch = {};
+    if ('title' in patch)       dbPatch.title       = patch.title;
+    if ('description' in patch) dbPatch.description = patch.description;
+    if ('date' in patch)        dbPatch.date        = patch.date;
+    if ('endDate' in patch)     dbPatch.end_date    = patch.endDate || null;
+    if ('group' in patch)       dbPatch.group       = patch.group;
+    if ('teamId' in patch)      dbPatch.team_id     = patch.teamId || null;
+    if (Object.keys(dbPatch).length === 0) return;
+    const { error } = await sb().from('calendar_events').update(dbPatch).eq('id', id);
+    if (error) throw error;
+  }
+
+  async function deleteCalendarEvent(id) {
+    const { error } = await sb().from('calendar_events').delete().eq('id', id);
+    if (error) throw error;
+  }
+
   window.db = {
     loadAll,
     saveMood,
@@ -338,5 +397,8 @@
     updateBlocker,
     addBlockerComment,
     setSlotAvailability,
+    createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
   };
 })();
