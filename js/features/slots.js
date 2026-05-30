@@ -2,8 +2,6 @@ let isDraggingAvailability = false;
 let dragAvailabilityValue = null;
 
 function effectiveAvailability(slot, teammateId) {
-  const override = state.slotAvailability?.[slot.id]?.[teammateId];
-  if (typeof override === "boolean") return override;
   return !!slot.availability[teammateId];
 }
 

@@ -156,32 +156,23 @@ function renderCheckIns() {
     b.addEventListener("click", () => handleDeleteCheckin(b.dataset.delete)));
 }
 
-function handleMessage(id) {
+async function handleMessage(id) {
   const t = teammates.find(x => x.id === id);
   if (!t) return;
   const note = t.coverNote ? `\n\nTheir note: "${t.coverNote}"` : "";
   const msg = prompt(`Quick message to ${t.name}:${note}`,
     `Hey ${t.name.split(" ")[0]}, I can take that.`);
   if (!msg) return;
-  pushActivity({
-    type: "cover",
-    who: "You",
-    text: `messaged ${t.name}: "${msg}"`,
-  });
-  saveState();
+  await db.addActivity("cover", `messaged ${t.name}: "${msg}"`);
+  await db.loadAll();
   renderActivity();
 }
 
-function handleTakeCover(id) {
+async function handleTakeCover(id) {
   const t = teammates.find(x => x.id === id);
   if (!t) return;
-  if (!state.coveredFor.includes(id)) state.coveredFor.push(id);
-  pushActivity({
-    type: "cover",
-    who: "You",
-    text: `is covering for ${t.name} today`,
-  });
-  saveState();
+  await db.addActivity("cover", `is covering for ${t.name} today`);
+  await db.loadAll();
   renderAll();
 }
 
@@ -197,7 +188,7 @@ function renderMoodSelector() {
 function bindMoodQuick() {
   renderMoodSelector();
   document.querySelectorAll("#mood-faces .mood-face").forEach(b =>
-    b.addEventListener("click", () => {
+    b.addEventListener("click", async () => {
       const me = teammates.find(t => t.id === team.currentUserId);
       if (!me) return;
       const score = Number(b.dataset.mood);
@@ -234,10 +225,10 @@ function bindComposeForm() {
     form.reset();
   });
 
-  form.addEventListener("submit", e => {
+  form.addEventListener("submit", async e => {
     e.preventDefault();
     const yesterday = document.getElementById("yesterday-input").value.trim();
-    const today = document.getElementById("today-input").value.trim();
+    const todayText = document.getElementById("today-input").value.trim();
     const blockerNote = document.getElementById("blockers-input").value.trim();
     const me = teammates.find(t => t.id === team.currentUserId);
     if (!me) return;
@@ -254,7 +245,7 @@ function bindComposeForm() {
       blockers: blockerNote,
     };
 
-    // Single activity entry combining mood, yesterday, and today
+    const mood = me.mood;
     const parts = [];
     if (mood != null)   parts.push(`mood: ${MOOD_LABELS[moodBucket(mood)] ?? mood}`);
     if (yesterday)      parts.push(`yesterday: ${yesterday}`);
@@ -269,25 +260,17 @@ function bindComposeForm() {
     }
 
     if (blockerNote) {
-      state.extraBlockers.unshift({
-        id: `u${Date.now()}`,
+      await db.createBlocker({
         title: blockerNote,
         description: "",
         severity: "high",
-        status: "open",
         ownerId: me.id,
-        owner: me.name,
-        postedAt: nowTime(),
-        comments: [],
+        category: null,
       });
-      pushActivity({
-        type: "blocker",
-        who: me.name,
-        text: `opened a high issue — ${blockerNote}`,
-      });
+      await db.addActivity("blocker", `opened a high issue — ${blockerNote}`);
     }
 
-    saveState();
+    await db.loadAll();
     form.hidden = true;
     form.reset();
     delete form.dataset.editing;
