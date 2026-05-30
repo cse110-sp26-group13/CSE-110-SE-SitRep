@@ -49,16 +49,14 @@ const MONTH_NAMES = [
 ];
 
 // ─── State ────────────────────────────────────────────────────────────
-const CAL_KINDS = ["team", "personal", "risk", "blocked"];
+const CAL_KINDS = ["global", "personal"];
 
 const calState = {
   // Default to today (page loads on current month). Easy to override for demo.
   year: new Date().getFullYear(),
   month: new Date().getMonth(),
-  view: "all", // all | personal | team | issues
   projects: new Set(getCalendarProjects().filter(p => p.on).map(p => p.id)),
   kinds: new Set(CAL_KINDS),
-  issues: new Set(effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved").map(b => String(b.id))),
   editingEventId: null,
   editingProjectId: null,
   weekStart: null, // Initialized in bindCalendar or similar
@@ -68,10 +66,8 @@ const calState = {
 calState.weekStart = getStartOfWeek(new Date());
 
 const EVENT_KIND_LABELS = {
-  team: "Team milestone",
-  personal: "Personal due",
-  risk: "Risk",
-  blocked: "Blocked",
+  global: "Global",
+  personal: "Personal",
 };
 
 // ─── Rendering ───────────────────────────────────────────────────────
@@ -109,16 +105,11 @@ function isSameDay(a, b) {
 }
 
 function filterEvents() {
-  if (calState.view === "issues") return [];
-
   return getCalendarEvents().filter(e => {
-    if (calState.view !== "all") {
-      // Map view → matching kinds: personal = personal only, team = team/blocked/risk
-      if (calState.view === "personal" && e.kind !== "personal") return false;
-      if (calState.view === "team" && e.kind === "personal") return false;
-    }
-    if (e.project && !calState.projects.has(e.project)) return false;
-    if (e.kind && !calState.kinds.has(e.kind)) return false;
+    // Map event group to our UI kinds: default to global if not specified
+    const uiKind = e.group === "personal" ? "personal" : "global";
+    
+    if (!calState.kinds.has(uiKind)) return false;
     return true;
   });
 }
@@ -130,16 +121,6 @@ function getCalendarProjects() {
   return [...samples, ...customProjects];
 }
 
-function getProjectById(id) {
-  return getCalendarProjects().find(project => project.id === id);
-}
-
-function projectOptions(selectedId) {
-  return getCalendarProjects().map(project =>
-    `<option value="${escapeHTML(project.id)}"${project.id === selectedId ? " selected" : ""}>${escapeHTML(project.name)}</option>`
-  ).join("");
-}
-
 function getCalendarEvents() {
   const customEvents = Array.isArray(state.extraCalendarEvents) ? state.extraCalendarEvents : [];
   const deletedIds = new Set(Array.isArray(state.deletedCalendarEventIds) ? state.deletedCalendarEventIds : []);
@@ -148,7 +129,9 @@ function getCalendarEvents() {
     : {};
   const sampleEvents = CAL_EVENTS.map((event, index) => {
     const id = `sample-${index}`;
-    return { ...event, id, source: "sample", ...(overrides[id] || {}) };
+    // Map old 'kind' to new 'group' for samples
+    const group = event.kind === "personal" ? "personal" : "global";
+    return { ...event, id, group, source: "sample", ...(overrides[id] || {}) };
   });
   const userEvents = customEvents.map(event => ({ ...event, source: "custom" }));
   return [...sampleEvents, ...userEvents].filter(event => !deletedIds.has(event.id));
@@ -224,20 +207,20 @@ function getContrastColor(color) {
 }
 
 function eventColorStyle(event) {
-  const project = getProjectById(event.project);
-  const color = project?.color || event.color;
-  if (!color) return "";
+  const groupColors = state.calendarGroupColors || {};
+  const color = groupColors[event.group] || (event.group === "personal" ? "var(--muted)" : "var(--ink)");
+  
   const textColor = getContrastColor(color);
-  return ` style="--event-color:${color};--event-text:${textColor}"`;
+  return `--event-color:${color};--event-text:${textColor};`;
 }
 
 function eventBarClasses(event) {
-  return ["cal-bar", event.kind, event.project || event.color ? "custom-color" : ""].filter(Boolean).join(" ");
+  return ["cal-bar", event.group, "custom-color"].filter(Boolean).join(" ");
 }
 
 function eventTooltip(event) {
-  const kind = EVENT_KIND_LABELS[event.kind] || "Event";
-  return `${event.title} - ${kind}`;
+  const group = EVENT_KIND_LABELS[event.group] || "Event";
+  return `${event.title} - ${group}`;
 }
 
 function findCalendarEvent(id) {
@@ -268,11 +251,6 @@ function renderCalWeek() {
   label.innerHTML = `${startM} ${start.getDate()} – ${endM} ${end.getDate()}<span class="yr">${yearText}</span>`;
 
   const events = filterEvents();
-  const eventsByDay = events.reduce((acc, e) => {
-    (acc[e.date] = acc[e.date] || []).push(e);
-    return acc;
-  }, {});
-
   const weekDays = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
@@ -284,21 +262,19 @@ function renderCalWeek() {
   
   const gridHTML = weekDays.map(date => {
     const key = isoDate(date);
-    const dayEvents = eventsByDay[key] || [];
+    // Find events that overlap this day
+    const dayEvents = events.filter(e => {
+      const s = e.date;
+      const end = e.endDate || e.date;
+      return key >= s && key <= end;
+    });
     const isToday = isSameDay(date, today);
 
-    const dayKinds = new Set(dayEvents.map(e => e.kind));
-    let kindClass = "";
-    if (dayKinds.has("blocked")) kindClass = "kind-blocked";
-    else if (dayKinds.has("risk")) kindClass = "kind-risk";
-    else if (dayKinds.has("team")) kindClass = "kind-team";
-    else if (dayKinds.has("personal")) kindClass = "kind-personal";
-
-    let html = `<div class="cal-cell ${isToday ? "today" : ""} ${kindClass}">
+    let html = `<div class="cal-cell ${isToday ? "today" : ""}">
       <div class="cal-date">${date.getDate()}</div>`;
     
     dayEvents.forEach(e => {
-      html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}"${eventColorStyle(e)}>${escapeHTML(e.title)}</button>`;
+      html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}" style="${eventColorStyle(e)}">${escapeHTML(e.title)}</button>`;
     });
 
     html += `</div>`;
@@ -317,14 +293,6 @@ function renderCalGrid() {
   const cells = buildMonthCells(calState.year, calState.month);
   
   const events = filterEvents();
-  const allIssues = calState.view === "issues" 
-    ? effectiveBlockers().filter(b => calState.issues.has(String(b.id)) && b.status?.toLowerCase() !== "resolved")
-    : [];
-
-  const eventsByDay = events.reduce((acc, e) => {
-    (acc[e.date] = acc[e.date] || []).push(e);
-    return acc;
-  }, {});
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
   
@@ -339,136 +307,146 @@ function renderCalGrid() {
   weeks.forEach(weekCells => {
     const weekStart = weekCells[0].date;
     const weekEnd = weekCells[6].date;
+    const weekStartStr = isoDate(weekStart);
+    const weekEndStr = isoDate(weekEnd);
 
-    // Filter issues active in THIS week
-    const weekIssues = allIssues.filter(issue => {
-      const s = new Date(`${issue.startDate || issue.dueDate}T00:00:00`);
-      const e = new Date(`${issue.dueDate || issue.startDate}T00:00:00`);
-      return s <= weekEnd && e >= weekStart;
+    // Filter events active in THIS week
+    const weekEvents = events.filter(e => {
+      const s = e.date;
+      const end = e.endDate || e.date;
+      return s <= weekEndStr && end >= weekStartStr;
     });
 
-    // Calculate slots JUST for this week
-    const usedSlotsByDay = {}; // dateKey -> [issueId, null, issueId]
-    const sortedWeekIssues = [...weekIssues].sort((a, b) => {
-      const aStart = a.startDate || a.dueDate || "0000-00-00";
-      const bStart = b.startDate || b.dueDate || "0000-00-00";
-      if (aStart !== bStart) return aStart.localeCompare(bStart);
-      const aDur = (new Date(a.dueDate) - new Date(a.startDate)) || 0;
-      const bDur = (new Date(b.dueDate) - new Date(b.startDate)) || 0;
-      return bDur - aDur;
-    });
+    // Calculate slots day-by-day for this week
+    const usedSlotsByDay = {}; // dateKey -> [eventId, null, eventId]
+    const dayOverflowCounts = {}; // dateKey -> count
 
-    sortedWeekIssues.forEach(issue => {
-      let slot = 0;
-      const startStr = issue.startDate || issue.dueDate;
-      const endStr = issue.dueDate || issue.startDate;
-      const itemStart = new Date(`${startStr}T00:00:00`);
-      const itemEnd = new Date(`${endStr}T00:00:00`);
+    for (let c = 0; c < 7; c++) {
+      const dayDate = weekCells[c].date;
+      const key = isoDate(dayDate);
+      // Find all events active on this specific day
+      const dayEvents = weekEvents.filter(e => key >= e.date && key <= (e.endDate || e.date));
       
-      const actualStart = itemStart < weekStart ? weekStart : itemStart;
-      const actualEnd = itemEnd > weekEnd ? weekEnd : itemEnd;
+      // Standard priority sort (earlier start, then longer duration)
+      dayEvents.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        const aEnd = a.endDate || a.date;
+        const bEnd = b.endDate || b.date;
+        const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
+        const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
+        return bDur - aDur;
+      });
 
-      let foundSlot = false;
-      while (!foundSlot) {
-        foundSlot = true;
-        for (let d = new Date(actualStart); d <= actualEnd; d.setDate(d.getDate() + 1)) {
-          const key = isoDate(d);
-          if (usedSlotsByDay[key]?.[slot]) {
-            foundSlot = false;
+      const daySlots = [];
+      const prevKey = c > 0 ? isoDate(weekCells[c - 1].date) : null;
+      const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
+
+      // Pass 1: Maintain continuity (prefer same slot as previous day)
+      for (let s = 0; s < 3; s++) {
+        const prevId = prevSlots[s];
+        if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
+          daySlots[s] = prevId;
+        }
+      }
+
+      // Pass 2: Fill remaining visible slots (0, 1, 2)
+      let overflowCount = 0;
+      dayEvents.forEach(event => {
+        const id = String(event.id);
+        if (daySlots.includes(id)) return; // Already assigned continuity
+
+        let assigned = false;
+        for (let s = 0; s < 3; s++) {
+          if (!daySlots[s]) {
+            daySlots[s] = id;
+            assigned = true;
             break;
           }
         }
-        if (!foundSlot) slot++;
-      }
-      
-      for (let d = new Date(actualStart); d <= actualEnd; d.setDate(d.getDate() + 1)) {
-        const key = isoDate(d);
-        if (!usedSlotsByDay[key]) usedSlotsByDay[key] = [];
-        usedSlotsByDay[key][slot] = String(issue.id);
-      }
+        if (!assigned) overflowCount++;
+      });
+
+      usedSlotsByDay[key] = daySlots;
+      dayOverflowCounts[key] = overflowCount;
+    }
+
+    // Determine if any day in this week has overflow
+    const hasWeekOverflow = Object.keys(dayOverflowCounts).some(dateKey => {
+      return dateKey >= weekStartStr && dateKey <= weekEndStr && dayOverflowCounts[dateKey] > 0;
     });
 
-    let weekMaxSlot = -1;
-    weekCells.forEach(cell => {
-      const key = isoDate(cell.date);
-      const daySlots = usedSlotsByDay[key] || [];
-      const cellMax = Math.max(-1, ...daySlots.map((id, index) => id ? index : -1));
-      if (cellMax > weekMaxSlot) weekMaxSlot = cellMax;
-    });
-
-    const numSlots = weekMaxSlot + 1;
-    const weekSpan = 1 + numSlots;
+    const weekSpan = hasWeekOverflow ? 5 : 4;
 
     // 1. Background Cells & Day Headers
     weekCells.forEach((cell, colIndex) => {
       const key = isoDate(cell.date);
-      const dayEvents = eventsByDay[key] || [];
       const isToday = isSameDay(cell.date, today);
 
-      const dayKinds = new Set(dayEvents.map(e => e.kind));
-      let kindClass = "";
-      if (dayKinds.has("blocked")) kindClass = "kind-blocked";
-      else if (dayKinds.has("risk")) kindClass = "kind-risk";
-      else if (dayKinds.has("team")) kindClass = "kind-team";
-      else if (dayKinds.has("personal")) kindClass = "kind-personal";
-
-      // The background cell (borders, today shadow, kind borders)
-      gridHTML += `<div class="cal-cell ${cell.muted ? "muted" : ""} ${isToday ? "today" : ""} ${kindClass}" 
+      // The background cell - clickable to open day modal
+      gridHTML += `<div class="cal-cell ${cell.muted ? "muted" : ""} ${isToday ? "today" : ""}" 
+                        data-date="${key}"
                         style="grid-column: ${colIndex + 1}; grid-row: ${currentRow} / span ${weekSpan}"></div>`;
 
-      // The header content (date + small events) - strictly in the first row of the week
-      gridHTML += `<div class="cal-cell-header" style="grid-column: ${colIndex + 1}; grid-row: ${currentRow}; z-index: 5;">
+      // The header content (date)
+      gridHTML += `<div class="cal-cell-header" data-date="${key}" style="grid-column: ${colIndex + 1}; grid-row: ${currentRow}; z-index: 5;">
         <div class="cal-date">${cell.date.getDate()}</div>
-        <div class="cal-day-events">
-          ${dayEvents.slice(0, 3).map(e => `
-            <button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}"${eventColorStyle(e)}>${escapeHTML(e.title)}</button>
-          `).join("")}
-        </div>
       </div>`;
+
+      // Overflow indicator
+      const overflow = dayOverflowCounts[key];
+      if (overflow > 0) {
+        gridHTML += `<div class="cal-more-indicator" data-date="${key}" 
+                          style="grid-column: ${colIndex + 1}; grid-row: ${currentRow + 4}; z-index: 10;">
+          +${overflow} more
+        </div>`;
+      }
     });
 
-    // 2. Multi-day Issue Bars
-    const weekIssueIds = new Set(Object.values(usedSlotsByDay).flat().filter(Boolean));
-    weekIssueIds.forEach(id => {
-      const item = weekIssues.find(b => String(b.id) === id);
-      if (!item) return;
-
+    // 2. Event Bars (Iterate by slot to find contiguous segments)
+    for (let slot = 0; slot < 3; slot++) {
+      let currentEventId = null;
       let startCol = -1;
-      let endCol = -1;
-      let slotIndex = -1;
 
-      for (let c = 0; c < 7; c++) {
-        const key = isoDate(weekCells[c].date);
-        const slots = usedSlotsByDay[key] || [];
-        const s = slots.indexOf(id);
-        if (s !== -1) {
-          if (startCol === -1) {
-            startCol = c;
-            slotIndex = s;
+      for (let c = 0; c <= 7; c++) {
+        const key = c < 7 ? isoDate(weekCells[c].date) : null;
+        const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
+
+        if (eventIdAtSlot !== currentEventId) {
+          if (currentEventId) {
+            // Render the segment from startCol to c-1
+            const event = weekEvents.find(e => String(e.id) === currentEventId);
+            if (event) {
+              const span = c - startCol;
+              
+              // Check if this event actually continues from the previous day in this specific week
+              const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
+              const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === currentEventId;
+              
+              // Check if this event actually continues to the next day in this specific week
+              const nextDayKey = c < 7 ? isoDate(weekCells[c].date) : null;
+              const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === currentEventId;
+
+              const classes = [eventBarClasses(event)];
+              if (event.endDate && event.endDate !== event.date) {
+                if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
+                  classes.push("connect-left");
+                }
+                if (continuesToNextDay || (c === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
+                  classes.push("connect-right");
+                }
+              }
+
+              gridHTML += `<button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}" 
+                              style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${currentRow + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
+                ${escapeHTML(event.title)}
+              </button>`;
+            }
           }
-          endCol = c;
+          currentEventId = eventIdAtSlot;
+          startCol = c;
         }
       }
-
-      if (startCol !== -1) {
-        const span = endCol - startCol + 1;
-        const itemStartStr = item.startDate || item.dueDate;
-        const itemEndStr = item.dueDate || item.startDate;
-        const isStart = isoDate(weekCells[startCol].date) === itemStartStr;
-        const isEnd = isoDate(weekCells[endCol].date) === itemEndStr;
-        
-        const classes = ["cal-bar", "issue"];
-        if (itemStartStr !== itemEndStr) {
-          if (!isStart) classes.push("connect-left");
-          if (!isEnd) classes.push("connect-right");
-        }
-
-        gridHTML += `<button class="${classes.join(" ")}" type="button" data-issue-id="${escapeHTML(item.id)}" title="${escapeHTML(item.title)}" 
-                        style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${currentRow + 1 + slotIndex}; background-color: ${item.color}; z-index: ${10 + slotIndex}">
-          ${escapeHTML(item.title)}
-        </button>`;
-      }
-    });
+    }
 
     currentRow += weekSpan;
   });
@@ -476,9 +454,8 @@ function renderCalGrid() {
   grid.innerHTML = gridHTML;
 
   // Footer count
-  const count = calState.view === "issues" ? allIssues.length : events.length;
   document.getElementById("cal-foot-count").textContent =
-    `${count} ${calState.view === "issues" ? "issues" : "events"} in view`;
+    `${events.length} events in view`;
 }
 
 function renderCalHeader() {
@@ -486,53 +463,29 @@ function renderCalHeader() {
     `${MONTH_NAMES[calState.month]}<span class="yr">${calState.year}</span>`;
 }
 
-function renderCalProjects() {
-  const container = document.getElementById("cal-projects");
-  container.innerHTML = getCalendarProjects().map(p => `
-    <div class="cal-project-row">
-      <label class="cal-project">
-        <input type="checkbox" data-project="${p.id}" ${calState.projects.has(p.id) ? "checked" : ""} />
-        <span class="swatch" style="background:${p.color}"></span>
-      </label>
-      <button class="cal-project-name" data-project-id="${p.id}">${escapeHTML(p.name)}</button>
-    </div>
-  `).join("");
-
-  container.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    cb.addEventListener("change", () => {
-      const id = cb.dataset.project;
-      if (cb.checked) calState.projects.add(id);
-      else calState.projects.delete(id);
-      renderCalGrid();
-    });
-  });
-
-  container.querySelectorAll(".cal-project-name").forEach(btn => {
-    btn.addEventListener("click", () => openProjectModal(btn.dataset.projectId));
-  });
-}
-
 function renderCalLegend() {
-  const isIssuesView = calState.view === "issues";
-  const projectsSection = document.getElementById("cal-projects-section");
-  const legendTitle = document.getElementById("cal-legend-title");
-
-  if (projectsSection) projectsSection.hidden = isIssuesView;
-  if (legendTitle) legendTitle.textContent = isIssuesView ? "Issues" : "Legend";
-
-  if (isIssuesView) {
-    renderCalIssuesLegend();
-    return;
-  }
-
   const container = document.getElementById("cal-legend");
-  container.innerHTML = CAL_KINDS.map(kind => `
-    <label class="cal-project">
-      <input type="checkbox" data-kind="${kind}" ${calState.kinds.has(kind) ? "checked" : ""} />
-      <span class="swatch bar-${kind}"></span>
-      <span>${EVENT_KIND_LABELS[kind]}</span>
-    </label>
-  `).join("");
+  if (!container) return;
+
+  const groupColors = state.calendarGroupColors || {};
+
+  container.innerHTML = CAL_KINDS.map(kind => {
+    const currentColor = groupColors[kind] || (kind === "personal" ? "var(--muted)" : "var(--ink)");
+    let pickerValue = currentColor;
+    
+    // If it's a variable, we need a hex fallback for the <input type="color">
+    if (currentColor.startsWith("var(")) {
+      pickerValue = (kind === "personal" ? "#6e6655" : "#39352e");
+    }
+
+    return `
+      <label class="cal-project">
+        <input type="checkbox" data-kind="${kind}" ${calState.kinds.has(kind) ? "checked" : ""} />
+        <input type="color" class="swatch-picker" data-kind-color="${kind}" value="${pickerValue}" title="Change ${kind} color" />
+        <span>${EVENT_KIND_LABELS[kind]}</span>
+      </label>
+    `;
+  }).join("");
 
   container.querySelectorAll("input[type=checkbox]").forEach(cb => {
     cb.addEventListener("change", () => {
@@ -542,44 +495,18 @@ function renderCalLegend() {
       renderCalGrid();
     });
   });
-}
-
-function renderCalIssuesLegend() {
-  const container = document.getElementById("cal-legend");
-  const issues = effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved");
-  
-  if (issues.length === 0) {
-    container.innerHTML = '<p class="empty-msg">No active issues found.</p>';
-    return;
-  }
-
-  container.innerHTML = issues.map(b => `
-    <div class="cal-project-row">
-      <label class="cal-project">
-        <input type="checkbox" data-issue="${b.id}" ${calState.issues.has(String(b.id)) ? "checked" : ""} />
-        <input type="color" class="swatch-picker" data-issue-color="${b.id}" value="${b.color.length === 9 ? b.color.slice(0, 7) : b.color}" />
-      </label>
-      <span class="cal-project-name" title="${escapeHTML(b.title)}">${escapeHTML(b.title)}</span>
-    </div>
-  `).join("");
-
-  container.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    cb.addEventListener("change", () => {
-      const id = String(cb.dataset.issue);
-      if (cb.checked) calState.issues.add(id);
-      else calState.issues.delete(id);
-      renderCalGrid();
-    });
-  });
 
   container.querySelectorAll("input[type=color]").forEach(picker => {
     picker.addEventListener("change", () => {
-      const id = picker.dataset.issueColor;
-      // Use 22 alpha for the background but keep the picker solid for UI
-      const color = picker.value + "22"; 
-      updateBlocker(id, { color });
+      const kind = picker.dataset.kindColor;
+      if (!state.calendarGroupColors) state.calendarGroupColors = {};
+      state.calendarGroupColors[kind] = picker.value;
       saveState();
-      renderCalGrid();
+      refreshActiveView();
+      // Also update timeline if visible
+      if (document.getElementById("view-timeline").style.display !== "none") {
+        renderCalTimeline();
+      }
     });
   });
 }
@@ -587,7 +514,6 @@ function renderCalIssuesLegend() {
 function renderCalendar() {
   renderHeader();
   renderCalHeader();
-  renderCalProjects();
   renderCalLegend();
   refreshActiveView();
 }
@@ -651,20 +577,9 @@ function bindCalendar() {
     refreshActiveView();
   });
 
-  document.querySelectorAll(".cal-toggle button").forEach(b => {
-    b.addEventListener("click", () => {
-      calState.view = b.dataset.view;
-      document.querySelectorAll(".cal-toggle button")
-        .forEach(x => x.classList.toggle("on", x === b));
-      renderCalLegend();
-      refreshActiveView();
-    });
-  });
-
   document.getElementById("new-event-btn").addEventListener("click", () => {
     openEventModal();
   });
-  document.getElementById("new-project-btn").addEventListener("click", () => openProjectModal());
 
   // Listen to clicks in both grids
   [document.getElementById("cal-grid"), document.getElementById("cal-week-grid")].forEach(grid => {
@@ -673,12 +588,21 @@ function bindCalendar() {
       const eventButton = e.target.closest("[data-event-id]");
       if (eventButton) {
         openEventModal(eventButton.dataset.eventId);
+        e.stopPropagation();
         return;
       }
 
-      const issueButton = e.target.closest("[data-issue-id]");
-      if (issueButton) {
-        window.location.href = `issues.html?id=${issueButton.dataset.issueId}`;
+      const moreButton = e.target.closest(".cal-more-indicator");
+      if (moreButton) {
+        openDayModal(moreButton.dataset.date);
+        e.stopPropagation();
+        return;
+      }
+
+      const cell = e.target.closest(".cal-cell");
+      if (cell && cell.dataset.date) {
+        openDayModal(cell.dataset.date);
+        return;
       }
     });
   });
@@ -708,7 +632,65 @@ function bindCalendar() {
   });
 
   bindEventModal();
-  bindProjectModal();
+  bindDayModal();
+}
+
+function openDayModal(dateStr) {
+  const modal = document.getElementById("calendar-day-modal");
+  const title = document.getElementById("calendar-day-modal-title");
+  const list = document.getElementById("calendar-day-events-list");
+  
+  const d = new Date(`${dateStr}T00:00:00`);
+  title.textContent = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  
+  const allEvents = filterEvents();
+  const dayEvents = allEvents.filter(e => {
+    const s = e.date;
+    const end = e.endDate || e.date;
+    return dateStr >= s && dateStr <= end;
+  });
+
+  if (dayEvents.length === 0) {
+    list.innerHTML = '<p class="empty-msg">No events for this day.</p>';
+  } else {
+    list.innerHTML = dayEvents.map(e => {
+      const style = eventColorStyle(e);
+      return `
+        <div class="cal-day-event-item" data-event-id="${e.id}">
+          <span class="swatch bar-${e.group}" style="${style} background: var(--event-color)"></span>
+          <span class="title">${escapeHTML(e.title)}</span>
+          <span class="group-tag" style="${style} border-color: var(--event-color); color: var(--event-color)">${e.group}</span>
+        </div>
+      `;
+    }).join("");
+    
+    list.querySelectorAll(".cal-day-event-item").forEach(item => {
+      item.addEventListener("click", () => {
+        closeDayModal();
+        openEventModal(item.dataset.eventId);
+      });
+    });
+  }
+
+  // Quick add button
+  const addBtn = document.getElementById("calendar-day-add-btn");
+  addBtn.onclick = () => {
+    closeDayModal();
+    openEventModal(null, dateStr);
+  };
+
+  modal.hidden = false;
+}
+
+function closeDayModal() {
+  document.getElementById("calendar-day-modal").hidden = true;
+}
+
+function bindDayModal() {
+  const modal = document.getElementById("calendar-day-modal");
+  document.getElementById("calendar-day-modal-close").addEventListener("click", closeDayModal);
+  document.getElementById("calendar-day-close-btn").addEventListener("click", closeDayModal);
+  modal.addEventListener("click", e => { if (e.target === modal) closeDayModal(); });
 }
 
 function renderCalTimeline() {
@@ -728,7 +710,7 @@ function renderCalTimeline() {
   }
 
   if (issues.length === 0) {
-    container.innerHTML = '<div class="timeline-empty">No active projects or issues found.</div>';
+    container.innerHTML = '<div class="timeline-empty">No active issues found in tracker.</div>';
     return;
   }
 
@@ -741,7 +723,7 @@ function renderCalTimeline() {
   let html = `
     <div class="timeline-grid">
       <div class="timeline-header">
-        <div class="label-col">Milestones</div>
+        <div class="label-col">Issue Timelines</div>
         <div class="days-col">
           ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}" data-day="${d.getDate()}"><span>${d.getDate()}</span></div>`).join("")}
         </div>
@@ -752,6 +734,8 @@ function renderCalTimeline() {
   issues.forEach(issue => {
     const sStr = issue.startDate || issue.dueDate;
     const eStr = issue.dueDate || issue.startDate;
+    if (!sStr) return;
+
     const iStart = new Date(`${sStr}T00:00:00`);
     const iEnd = new Date(`${eStr}T00:00:00`);
 
@@ -774,6 +758,8 @@ function renderCalTimeline() {
       ? `${visibleStart.getDate()}–${visibleEnd.getDate()}` 
       : `${visibleStart.getDate()}`;
 
+    const color = issue.color || "var(--ink)";
+
     html += `
       <div class="timeline-row">
         <div class="label-col">
@@ -781,12 +767,12 @@ function renderCalTimeline() {
         </div>
         <div class="days-col">
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" style="background: ${issue.color || "var(--good-soft)"}; border-color: ${issue.color?.slice(0, 7) || "var(--good)"}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${color}; cursor: pointer;">
               <div class="assignee-pill" title="Assigned to ${escapeHTML(owner.name)}">
                 <span class="avatar">${initials}</span>
               </div>
-              <span class="bar-title">${escapeHTML(issue.title)}</span>
-              <span class="bar-dates">${barDateRange}</span>
+              <span class="bar-title" style="color: var(--paper)">${escapeHTML(issue.title)}</span>
+              <span class="bar-dates" style="color: var(--paper); opacity: 0.8">${barDateRange}</span>
             </div>
           </div>
         </div>
@@ -800,6 +786,14 @@ function renderCalTimeline() {
   `;
 
   container.innerHTML = html;
+
+  // Add click listeners to timeline bars
+  container.querySelectorAll(".timeline-bar").forEach(bar => {
+    bar.addEventListener("click", () => {
+      const issueId = bar.dataset.issueId;
+      window.location.href = `issues.html?id=${issueId}`;
+    });
+  });
 }
 
 function getDefaultEventDate() {
@@ -809,29 +803,26 @@ function getDefaultEventDate() {
   return isoDate(isViewingCurrentMonth ? today : new Date(calState.year, calState.month, 1));
 }
 
-function openEventModal(eventId = null) {
+function openEventModal(eventId = null, defaultDate = null) {
   const event = eventId ? findCalendarEvent(eventId) : null;
   const modal = document.getElementById("calendar-event-modal");
   const form = document.getElementById("calendar-event-form");
   const title = document.getElementById("calendar-event-modal-title");
   const name = document.getElementById("calendar-event-name");
   const date = document.getElementById("calendar-event-date");
-  const project = document.getElementById("calendar-event-project");
-  const kind = document.getElementById("calendar-event-kind");
+  const endDate = document.getElementById("calendar-event-end-date");
+  const group = document.getElementById("calendar-event-group");
   const error = document.getElementById("calendar-event-error");
   const deleteButton = document.getElementById("calendar-event-delete");
   const submitButton = document.getElementById("calendar-event-submit");
-  const projects = getCalendarProjects();
-  const selectedProject = event?.project || projects[0]?.id || "";
 
   form.reset();
   calState.editingEventId = event?.id || null;
   title.textContent = event ? "Edit event" : "New event";
   name.value = event?.title || "";
-  date.value = event?.date || getDefaultEventDate();
-  project.innerHTML = projectOptions(selectedProject);
-  project.value = selectedProject;
-  kind.value = event?.kind || "team";
+  date.value = event?.date || defaultDate || getDefaultEventDate();
+  endDate.value = event?.endDate || "";
+  group.value = event?.group || "global";
   deleteButton.hidden = !event;
   submitButton.textContent = event ? "Save changes" : "Create event";
   error.hidden = true;
@@ -866,17 +857,23 @@ function createCalendarEvent(e) {
 
   const title = document.getElementById("calendar-event-name").value.trim();
   const date = document.getElementById("calendar-event-date").value;
-  const project = document.getElementById("calendar-event-project").value;
-  const kind = document.getElementById("calendar-event-kind").value;
+  const endDate = document.getElementById("calendar-event-end-date").value;
+  const group = document.getElementById("calendar-event-group").value;
   const error = document.getElementById("calendar-event-error");
 
-  if (!title || !date || !project || !getProjectById(project) || !EVENT_KIND_LABELS[kind]) {
+  if (!title || !date || !group) {
     error.textContent = "Please complete every field before creating the event.";
     error.hidden = false;
     return;
   }
 
-  const eventData = { date, title, kind, project };
+  if (endDate && endDate < date) {
+    error.textContent = "End date cannot be before start date.";
+    error.hidden = false;
+    return;
+  }
+
+  const eventData = { date, endDate, title, group };
 
   if (calState.editingEventId) updateCalendarEvent(calState.editingEventId, eventData);
   else {
@@ -934,157 +931,6 @@ function deleteCalendarEvent() {
   saveState();
   renderCalGrid();
   closeEventModal();
-}
-
-function openProjectModal(projectId = null) {
-  const project = projectId ? getProjectById(projectId) : null;
-  const modal = document.getElementById("calendar-project-modal");
-  const form = document.getElementById("calendar-project-form");
-  const title = document.getElementById("calendar-project-modal-title");
-  const nameInput = document.getElementById("calendar-project-name");
-  const colorInput = document.getElementById("calendar-project-color");
-  const error = document.getElementById("calendar-project-error");
-  const deleteButton = document.getElementById("calendar-project-delete");
-  const submitButton = document.getElementById("calendar-project-submit");
-  const eventsSection = document.getElementById("calendar-project-events-section");
-  const eventsList = document.getElementById("calendar-project-events-list");
-
-  form.reset();
-  calState.editingProjectId = projectId;
-  title.textContent = project ? "Edit project" : "New project";
-  nameInput.value = project?.name || "";
-  
-  // Normalize color for <input type="color"> which only accepts #RRGGBB
-  let displayColor = project?.color || "#4f8cff";
-  if (displayColor.startsWith("var(")) {
-    const map = {
-      "var(--ink)": "#000000", "var(--ink-2)": "#39352e",
-      "var(--good)": "#2f6b3a", "var(--warn)": "#b56a14",
-      "var(--bad)": "#b3261e", "var(--muted)": "#6e6655"
-    };
-    displayColor = map[displayColor] || "#4f8cff";
-  }
-  if (displayColor.length === 9) displayColor = displayColor.slice(0, 7);
-  colorInput.value = displayColor;
-
-  deleteButton.hidden = !project;
-  submitButton.textContent = project ? "Save changes" : "Create project";
-  error.hidden = true;
-  error.textContent = "";
-
-  if (project) {
-    eventsSection.hidden = false;
-    const projectEvents = getCalendarEvents()
-      .filter(e => e.project === projectId)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    if (projectEvents.length > 0) {
-      eventsList.innerHTML = projectEvents.map(e => `
-        <div class="cal-project-event-item">
-          <span class="date">${e.date}</span>
-          <span class="title">${escapeHTML(e.title)}</span>
-          <span class="kind-tag ${e.kind}">${e.kind}</span>
-        </div>
-      `).join("");
-    } else {
-      eventsList.innerHTML = "<p class=\"empty-msg\">No events for this project yet.</p>";
-    }
-  } else {
-    eventsSection.hidden = true;
-  }
-
-  modal.hidden = false;
-  nameInput.focus();
-}
-
-function closeProjectModal() {
-  document.getElementById("calendar-project-modal").hidden = true;
-  calState.editingProjectId = null;
-}
-
-function bindProjectModal() {
-  const modal = document.getElementById("calendar-project-modal");
-  const form = document.getElementById("calendar-project-form");
-
-  document.getElementById("calendar-project-modal-close").addEventListener("click", closeProjectModal);
-  document.getElementById("calendar-project-cancel").addEventListener("click", closeProjectModal);
-  document.getElementById("calendar-project-delete").addEventListener("click", deleteCalendarProject);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeProjectModal();
-  });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && !modal.hidden) closeProjectModal();
-  });
-  form.addEventListener("submit", handleProjectSubmit);
-}
-
-function handleProjectSubmit(e) {
-  e.preventDefault();
-
-  const name = document.getElementById("calendar-project-name").value.trim();
-  const color = document.getElementById("calendar-project-color").value;
-  const error = document.getElementById("calendar-project-error");
-
-  if (!name || !isHexColor(color)) {
-    error.textContent = "Please add a project name and color.";
-    error.hidden = false;
-    return;
-  }
-
-  if (calState.editingProjectId) {
-    updateCalendarProject(calState.editingProjectId, { name, color });
-  } else {
-    if (!Array.isArray(state.extraCalendarProjects)) state.extraCalendarProjects = [];
-    const id = `project-${Date.now()}`;
-    state.extraCalendarProjects.push({ id, name, color, on: true });
-    calState.projects.add(id);
-  }
-
-  saveState();
-  renderCalProjects();
-  renderCalGrid();
-  closeProjectModal();
-}
-
-function updateCalendarProject(id, data) {
-  if (!Array.isArray(state.extraCalendarProjects)) state.extraCalendarProjects = [];
-  const customIndex = state.extraCalendarProjects.findIndex(p => p.id === id);
-  
-  if (customIndex >= 0) {
-    state.extraCalendarProjects[customIndex] = {
-      ...state.extraCalendarProjects[customIndex],
-      ...data
-    };
-  } else {
-    const sample = CAL_PROJECTS.find(p => p.id === id);
-    if (sample) {
-      state.extraCalendarProjects.push({ ...sample, ...data });
-      if (!Array.isArray(state.deletedSampleProjectIds)) state.deletedSampleProjectIds = [];
-      state.deletedSampleProjectIds.push(id);
-    }
-  }
-}
-
-function deleteCalendarProject() {
-  const id = calState.editingProjectId;
-  if (!id) return;
-  
-  if (!confirm("Are you sure you want to delete this project? This will NOT delete associated events, but they will no longer have a project color.")) return;
-
-  if (!Array.isArray(state.extraCalendarProjects)) state.extraCalendarProjects = [];
-  state.extraCalendarProjects = state.extraCalendarProjects.filter(p => p.id !== id);
-  
-  const sample = CAL_PROJECTS.find(p => p.id === id);
-  if (sample) {
-    if (!Array.isArray(state.deletedSampleProjectIds)) state.deletedSampleProjectIds = [];
-    if (!state.deletedSampleProjectIds.includes(id)) state.deletedSampleProjectIds.push(id);
-  }
-
-  calState.projects.delete(id);
-  saveState();
-  renderCalProjects();
-  renderCalGrid();
-  closeProjectModal();
 }
 
 function isHexColor(value) {

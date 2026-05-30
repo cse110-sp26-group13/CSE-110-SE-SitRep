@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/rail.css" />
   <link rel="stylesheet" href="css/page.css" />
-  <link rel="stylesheet" href="css/calendar.css?v=3" />
+  <link rel="stylesheet" href="css/calendar.css?v=5" />
 
   <script src="js/theme.js"></script>
 </head>
@@ -50,7 +50,7 @@
             <span id="header-sub">loading…</span>
           </div>
           <h1>Calendar.</h1>
-          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>personal</em> vs <em>team</em>; click an issue bar to jump into the tracker.</p>
+          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>Personal</em> vs <em>Global</em>; click an issue bar to jump into the tracker.</p>
         </div>
         <div class="page-actions">
           <a class="btn-secondary" href="index.html">← Dashboard</a>
@@ -67,26 +67,8 @@
                 <div><h4>View & Filters</h4></div>
               </div>
 
-              <div class="cal-side-section">
-                <h6>Mode</h6>
-                <div class="cal-toggle" role="tablist">
-                  <button class="on" data-view="all">All</button>
-                  <button data-view="personal">Personal</button>
-                  <button data-view="team">Team</button>
-                </div>
-                <div class="cal-toggle-sep"></div>
-                <div class="cal-toggle" role="tablist">
-                  <button data-view="issues">Issues Tracker</button>
-                </div>
-              </div>
-
-              <div class="cal-side-section" id="cal-projects-section">
-                <h6>Projects</h6>
-                <div class="cal-projects" id="cal-projects"></div>
-              </div>
-
               <div class="cal-side-section" id="cal-legend-section">
-                <h6 id="cal-legend-title">Legend</h6>
+                <h6 id="cal-legend-title">GROUPS</h6>
                 <div class="cal-legend" id="cal-legend"></div>
               </div>
             </section>
@@ -167,21 +149,21 @@
             <span>Name</span>
             <input type="text" id="calendar-event-name" required maxlength="80" placeholder="Event name" />
           </label>
+          <div class="field-row">
+            <label class="field">
+              <span>Start Date</span>
+              <input type="date" id="calendar-event-date" required />
+            </label>
+            <label class="field">
+              <span>End Date (Optional)</span>
+              <input type="date" id="calendar-event-end-date" />
+            </label>
+          </div>
           <label class="field">
-            <span>Date</span>
-            <input type="date" id="calendar-event-date" required />
-          </label>
-          <label class="field">
-            <span>Project</span>
-            <select id="calendar-event-project" required></select>
-          </label>
-          <label class="field">
-            <span>Criteria</span>
-            <select id="calendar-event-kind" required>
-              <option value="team">Team milestone</option>
-              <option value="personal">Personal due</option>
-              <option value="risk">Risk</option>
-              <option value="blocked">Blocked</option>
+            <span>Group</span>
+            <select id="calendar-event-group" required>
+              <option value="global">Global</option>
+              <option value="personal">Personal</option>
             </select>
           </label>
           <p id="calendar-event-error" class="field-error" hidden></p>
@@ -228,6 +210,22 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="calendar-day-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-day-modal-title">
+      <div class="modal-head">
+        <h3 id="calendar-day-modal-title">May 24, 2026</h3>
+        <button class="modal-close" id="calendar-day-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="calendar-day-events-list" class="cal-day-events-list"></div>
+        <div class="form-actions">
+          <button type="button" class="btn-primary" id="calendar-day-add-btn">+ Add event for this day</button>
+          <button type="button" class="btn-secondary" id="calendar-day-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Auth + Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
@@ -245,6 +243,6 @@
   <script src="js/features/header.js"></script>
 
   <!-- Page orchestrator -->
-  <script src="js/pages/calendar.js?v=4"></script>
+  <script src="js/pages/calendar.js?v=5"></script>
 </body>
 </html>
