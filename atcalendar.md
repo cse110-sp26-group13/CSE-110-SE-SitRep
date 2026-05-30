@@ -4,6 +4,20 @@ This document tracks the development and features of the SitRep Calendar.
 
 ## Latest Enhancements (May 2026)
 
+### Shared Group Management System
+- **Custom Groups:** Replaced the legacy "Project" button with a robust **"+ New group"** system.
+    - **Group Creation:** Creators can define a group name, pick a custom color, and invite specific teammates from their circle.
+    - **Implicit Membership:** Creators are automatically added as members of their own groups.
+    - **Member UI:** Improved teammate selection with a visual list featuring avatars, roles, and interactive row toggling.
+- **Strict Privacy Model:**
+    - **Membership-Based Visibility:** Group metadata (name/color) and events are strictly invisible to anyone not in the group.
+    - **Event Redaction:** Once a user leaves a group, they immediately lose access to all its events, even if they were the original author.
+    - **Sidebar Integration:** Groups only appear in the sidebar legend for active members/creators.
+- **Administrative Permissions:**
+    - **Group Leaders:** Group creators act as "leaders" with the ability to edit or delete any event posted within their group, regardless of ownership.
+    - **Promotion Logic:** Group events can be promoted to "Global (Team)" visibility but cannot be downgraded to "Personal".
+    - **Secure Exit:** Implemented a secure database function (`leave_calendar_group`) to handle member self-removal while bypassing standard RLS update restrictions.
+
 ### Database Integration & Visibility Control
 - **Supabase Persistence:** Transitioned from `localStorage` to a centralized Supabase database. All calendar events are now stored in the `calendar_events` table, ensuring data persists across different devices and users.
 - **Granular Visibility:** Implemented a visibility model for events:
@@ -55,11 +69,12 @@ This document tracks the development and features of the SitRep Calendar.
 ## Technical Details
 
 ### Files Modified
-- `calendar.html`: Structure for the calendar grid, view toggles, and modals.
-- `js/pages/calendar.js`: Orchestration logic for rendering (weekly slots), filtering, and modal management.
+- `calendar.html`: Structure for the calendar grid, group modals, and header buttons.
+- `js/pages/calendar.js`: Orchestration logic for groups, visibility transitions, and leader permissions.
+- `js/db.js`: Database layer for shared groups and RPC calls.
+- `css/calendar.css`: Layout and visual styling for groups, visual member lists, and interactive rows.
+- `supabase/migrations/`: New migrations for `calendar_groups` table, RLS policies, and `leave_calendar_group` function.
 - `js/pages/issues.js`: Deep linking support via URL parameters.
-- `css/calendar.css`: Layout and visual styling for seamless bars, standard heights, and modal lists.
-- `js/state.js`: Global state management and persistence.
 - `js/selectors.js`: Blocker data aggregation and color override support.
 
 ### Verification

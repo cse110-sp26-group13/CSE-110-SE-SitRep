@@ -28,6 +28,7 @@
   window.meetingSlots = SLOT_DEFS.map(s => ({ ...s, availability: {} }));
   window.activity = [];
   window.calendarEvents = [];
+  window.calendarGroups = [];
 
   const sb = () => window.sbClient;
 
@@ -135,30 +136,60 @@
     return data || [];
   }
 
+  async function loadCalendarGroups(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_groups')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
   async function loadAll() {
+    console.log('db.loadAll starting...');
     const { data: { session } } = await sb().auth.getSession();
     if (!session) {
+      console.log('No session, redirecting to splash');
       window.location.replace('splash.html');
       return;
     }
     const userId = session.user.id;
+    console.log('User authenticated:', userId);
     const t = await loadCurrentTeam(userId);
     if (!t) {
+      console.log('No team found for user, redirecting to splash');
       window.location.replace('splash.html');
       return;
     }
+    console.log('Team loaded:', t.id, t.name);
     window.team = {
       id: t.id, name: t.name, joinCode: t.join_code, currentUserId: userId,
     };
 
-    const [members, standups, blockerData, slotAvail, activityRows, calendarRows] = await Promise.all([
-      loadTeamMembers(t.id),
-      loadRecentStandups(t.id),
-      loadBlockers(t.id),
-      loadSlotAvailability(t.id),
-      loadActivity(t.id),
-      loadCalendarEvents(t.id),
+    async function safeLoad(fn, fallback = []) {
+      try {
+        const res = await fn();
+        return res;
+      } catch (err) {
+        console.error('Data load error for table:', err);
+        return fallback;
+      }
+    }
+
+    console.log('Loading all data tables...');
+    const [members, standups, blockerDataRows, slotAvail, activityRows, calendarRows, groupRows] = await Promise.all([
+      safeLoad(() => loadTeamMembers(t.id)),
+      safeLoad(() => loadRecentStandups(t.id)),
+      safeLoad(() => loadBlockers(t.id), { rows: [], comments: [] }),
+      safeLoad(() => loadSlotAvailability(t.id)),
+      safeLoad(() => loadActivity(t.id)),
+      safeLoad(() => loadCalendarEvents(t.id)),
+      safeLoad(() => loadCalendarGroups(t.id)),
     ]);
+    console.log('All data tables loaded.');
+
+    const blockerData = blockerDataRows;
 
     const days = last7Days();
     const todayKey = days[6];
@@ -241,6 +272,15 @@
       date: e.date,
       endDate: e.end_date || '',
       group: e.group || 'personal',
+    }));
+
+    window.calendarGroups = (groupRows || []).map(g => ({
+      id: g.id,
+      teamId: g.team_id,
+      creatorId: g.creator_id,
+      name: g.name,
+      color: g.color,
+      members: g.members || [],
     }));
   }
 
@@ -388,6 +428,42 @@
     if (error) throw error;
   }
 
+  async function createCalendarGroup(input) {
+    const { data, error } = await sb()
+      .from('calendar_groups')
+      .insert({
+        team_id: team.id,
+        creator_id: team.currentUserId,
+        name: input.name,
+        color: input.color,
+        members: input.members || [],
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateCalendarGroup(id, patch) {
+    const dbPatch = {};
+    if ('name' in patch)    dbPatch.name    = patch.name;
+    if ('color' in patch)   dbPatch.color   = patch.color;
+    if ('members' in patch) dbPatch.members = patch.members;
+    if (Object.keys(dbPatch).length === 0) return;
+    const { error } = await sb().from('calendar_groups').update(dbPatch).eq('id', id);
+    if (error) throw error;
+  }
+
+  async function deleteCalendarGroup(id) {
+    const { error } = await sb().from('calendar_groups').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async function leaveCalendarGroup(id) {
+    const { error } = await sb().rpc('leave_calendar_group', { group_uuid: id });
+    if (error) throw error;
+  }
+
   window.db = {
     loadAll,
     saveMood,
@@ -400,5 +476,9 @@
     createCalendarEvent,
     updateCalendarEvent,
     deleteCalendarEvent,
+    createCalendarGroup,
+    updateCalendarGroup,
+    deleteCalendarGroup,
+    leaveCalendarGroup,
   };
 })();

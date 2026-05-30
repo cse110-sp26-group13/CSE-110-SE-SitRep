@@ -238,10 +238,9 @@ Append-only team activity feed. Powers the dashboard's "Recent activity" card.
 | `created_at` | `timestamptz` | no | `now()` | |
 
 ---
-
 ### `calendar_events`
 
-Personal and team-scoped events.
+Personal and team-scoped events. Events with a custom `group` (a UUID) are only visible to members/creator of that group.
 
 | Column | Type | Nullable | Default | Notes |
 |---|---|---|---|---|
@@ -252,11 +251,28 @@ Personal and team-scoped events.
 | `description` | `text` | yes | — | |
 | `date` | `date` | no | — | |
 | `end_date` | `date` | yes | — | |
-| `group` | `text` | no | `'personal'` | UI labeling (usually 'personal' or 'global'). |
+| `group` | `text` | no | `'personal'` | Visibility: `'global'`, `'personal'`, or a `calendar_groups.id`. |
 | `created_at` | `timestamptz` | no | `now()` | |
 
 ---
 
+### `calendar_groups`
+
+Shared custom groupings for calendar events. Allows subsetting the team into focus groups.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| `id` | `uuid` | no | `gen_random_uuid()` | **PK** |
+| `team_id` | `uuid` | no | — | FK to `teams(id)` on delete cascade. |
+| `creator_id` | `uuid` | no | — | FK to `profiles(id)` on delete cascade. |
+| `name` | `text` | no | — | |
+| `color` | `text` | no | — | Hex color. |
+| `members` | `uuid[]` | no | `'{}'` | List of profile IDs. |
+| `created_at` | `timestamptz` | no | `now()` | |
+
+---
+
+### `activity_events`
 ## Row-Level Security on team data
 
 All team-scoped tables (`standups`, `blockers`, `blocker_comments`, `slot_availability`, `activity_events`, `calendar_events`) gate access through `current_user_team_ids()` — a `SECURITY DEFINER` SQL function that returns the team IDs the caller belongs to. Going through this helper avoids the recursive-policy trap of referencing `memberships` from within an RLS policy.

@@ -68,6 +68,114 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+.legend-divider {
+  height: 0.0625rem;
+  border-top: 0.0625rem dashed var(--hairline);
+  margin: 0.25rem 0;
+}
+.swatch-btn {
+  appearance: none;
+  width: 1.125rem;
+  height: 0.5rem;
+  padding: 0;
+  border: 0.1rem solid var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.cal-people-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 0.1rem solid var(--ink);
+  background: var(--paper);
+  padding: 0.25rem;
+}
+.people-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border: 0.1rem solid transparent;
+  transition: all 0.1s ease;
+  position: relative;
+}
+.people-row:hover {
+  background: var(--card-2);
+}
+.people-row.active {
+  background: var(--card);
+  border-color: var(--ink);
+}
+.people-row input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+.people-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+.people-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.people-meta .name {
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.people-meta .role {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.people-row .avatar {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.65rem;
+}
+.check-mark {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0.1rem solid var(--ink);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  flex-shrink: 0;
+}
+.people-row.active .check-mark {
+  background: var(--ink);
+  color: var(--paper);
+}
+.check-mark svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
 .cal-project-row {
   display: flex;
   align-items: center;

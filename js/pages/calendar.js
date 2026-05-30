@@ -33,20 +33,29 @@ const MONTH_NAMES = [
 
 // ─── State ────────────────────────────────────────────────────────────
 const CAL_KINDS = ["global", "personal"];
+let calState = {};
 
-const calState = {
-  // Default to today (page loads on current month). Easy to override for demo.
-  year: new Date().getFullYear(),
-  month: new Date().getMonth(),
-  projects: new Set(getCalendarProjects().filter(p => p.on).map(p => p.id)),
-  kinds: new Set(CAL_KINDS),
-  editingEventId: null,
-  editingProjectId: null,
-  weekStart: null, // Initialized in bindCalendar or similar
-};
+function initCalState() {
+  calState = {
+    // Default to today (page loads on current month). Easy to override for demo.
+    year: new Date().getFullYear(),
+    month: new Date().getMonth(),
+    projects: new Set(getCalendarProjects().filter(p => p.on).map(p => p.id)),
+    kinds: new Set(CAL_KINDS),
+    customGroups: new Set(),
+    editingEventId: null,
+    editingGroupId: null,
+    weekStart: getStartOfWeek(new Date()),
+  };
+  
+  // Initialize customGroups to show all by default
+  getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
+}
 
-// Initialize weekStart
-calState.weekStart = getStartOfWeek(new Date());
+function getCustomGroupIds() {
+  const groups = Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
+  return groups.map(g => g.id);
+}
 
 const EVENT_KIND_LABELS = {
   global: "Team",
@@ -90,9 +99,14 @@ function isSameDay(a, b) {
 function filterEvents() {
   return getCalendarEvents().filter(e => {
     // Map event group to our UI kinds: default to global if not specified
-    const uiKind = e.group === "personal" ? "personal" : "global";
+    const uiKind = e.group === "personal" ? "personal" : (e.group === "global" ? "global" : e.group);
     
-    if (!calState.kinds.has(uiKind)) return false;
+    if (CAL_KINDS.includes(uiKind)) {
+      if (!calState.kinds.has(uiKind)) return false;
+    } else {
+      // It's a custom group
+      if (!calState.customGroups.has(uiKind)) return false;
+    }
     return true;
   });
 }
@@ -102,6 +116,10 @@ function getCalendarProjects() {
   const deletedSampleIds = new Set(Array.isArray(state.deletedSampleProjectIds) ? state.deletedSampleProjectIds : []);
   const samples = CAL_PROJECTS.filter(p => !deletedSampleIds.has(p.id));
   return [...samples, ...customProjects];
+}
+
+function getCalendarGroups() {
+  return Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
 }
 
 function getCalendarEvents() {
@@ -179,7 +197,14 @@ function getContrastColor(color) {
 
 function eventColorStyle(event) {
   const groupColors = state.calendarGroupColors || {};
-  const color = groupColors[event.group] || (event.group === "personal" ? "var(--muted)" : "var(--ink)");
+  let color = groupColors[event.group] || (event.group === "personal" ? "var(--muted)" : "var(--ink)");
+  
+  // Check if it's a custom group
+  const customGroups = getCalendarGroups();
+  const customGroup = customGroups.find(g => g.id === event.group);
+  if (customGroup) {
+    color = customGroup.color;
+  }
   
   const textColor = getContrastColor(color);
   return `--event-color:${color};--event-text:${textColor};`;
@@ -190,12 +215,18 @@ function eventBarClasses(event) {
 }
 
 function eventTooltip(event) {
-  const group = EVENT_KIND_LABELS[event.group] || "Event";
-  return `${event.title} - ${group}`;
+  const customGroups = getCalendarGroups();
+  const customGroup = customGroups.find(g => g.id === event.group);
+  const groupLabel = customGroup ? customGroup.name : (EVENT_KIND_LABELS[event.group] || "Event");
+  return `${event.title} - ${groupLabel}`;
 }
 
 function findCalendarEvent(id) {
   return getCalendarEvents().find(event => event.id === id);
+}
+
+function findCalendarGroup(id) {
+  return getCalendarGroups().find(g => g.id === id);
 }
 
 function getStartOfWeek(d) {
@@ -439,12 +470,12 @@ function renderCalLegend() {
   if (!container) return;
 
   const groupColors = state.calendarGroupColors || {};
+  const customGroups = getCalendarGroups();
 
-  container.innerHTML = CAL_KINDS.map(kind => {
+  let html = CAL_KINDS.map(kind => {
     const currentColor = groupColors[kind] || (kind === "personal" ? "var(--muted)" : "var(--ink)");
     let pickerValue = currentColor;
     
-    // If it's a variable, we need a hex fallback for the <input type="color">
     if (currentColor.startsWith("var(")) {
       pickerValue = (kind === "personal" ? "#6e6655" : "#39352e");
     }
@@ -458,7 +489,22 @@ function renderCalLegend() {
     `;
   }).join("");
 
-  container.querySelectorAll("input[type=checkbox]").forEach(cb => {
+  if (customGroups.length > 0) {
+    html += '<div class="legend-divider"></div>';
+    html += customGroups.map(group => {
+      return `
+        <label class="cal-project">
+          <input type="checkbox" data-group-id="${group.id}" ${calState.customGroups.has(group.id) ? "checked" : ""} />
+          <button type="button" class="swatch-btn" data-edit-group="${group.id}" style="background: ${group.color}" title="Edit group"></button>
+          <span class="truncate" title="${escapeHTML(group.name)}">${escapeHTML(group.name)}</span>
+        </label>
+      `;
+    }).join("");
+  }
+
+  container.innerHTML = html;
+
+  container.querySelectorAll("input[data-kind]").forEach(cb => {
     cb.addEventListener("change", () => {
       const kind = cb.dataset.kind;
       if (cb.checked) calState.kinds.add(kind);
@@ -467,13 +513,28 @@ function renderCalLegend() {
     });
   });
 
-  container.querySelectorAll("input[type=color]").forEach(picker => {
+  container.querySelectorAll("input[data-group-id]").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const id = cb.dataset.groupId;
+      if (cb.checked) calState.customGroups.add(id);
+      else calState.customGroups.delete(id);
+      refreshActiveView();
+    });
+  });
+
+  container.querySelectorAll("input[data-kind-color]").forEach(picker => {
     picker.addEventListener("change", () => {
       const kind = picker.dataset.kindColor;
       if (!state.calendarGroupColors) state.calendarGroupColors = {};
       state.calendarGroupColors[kind] = picker.value;
       saveState();
       refreshActiveView();
+    });
+  });
+
+  container.querySelectorAll("[data-edit-group]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      openGroupModal(btn.dataset.editGroup);
     });
   });
 }
@@ -556,6 +617,10 @@ function bindCalendar() {
     refreshActiveView();
   });
 
+  document.getElementById("new-group-btn").addEventListener("click", () => {
+    openGroupModal();
+  });
+
   document.getElementById("new-event-btn").addEventListener("click", () => {
     openEventModal();
   });
@@ -611,6 +676,7 @@ function bindCalendar() {
   });
 
   bindEventModal();
+  bindGroupModal();
   bindDayModal();
 }
 
@@ -790,24 +856,267 @@ function openEventModal(eventId = null, defaultDate = null) {
   const name = document.getElementById("calendar-event-name");
   const date = document.getElementById("calendar-event-date");
   const endDate = document.getElementById("calendar-event-end-date");
-  const group = document.getElementById("calendar-event-group");
+  const groupSelect = document.getElementById("calendar-event-group");
   const error = document.getElementById("calendar-event-error");
   const deleteButton = document.getElementById("calendar-event-delete");
   const submitButton = document.getElementById("calendar-event-submit");
 
   form.reset();
+
+  // Enforce Visibility Transition Rules
+  const currentGroup = event?.group || "personal";
+  let groupOptions = "";
+
+  if (!event || currentGroup === "personal") {
+    // New event or current Personal: Can go anywhere
+    groupOptions += `<option value="personal">Personal</option>`;
+    groupOptions += `<option value="global">Team</option>`;
+    getCalendarGroups().forEach(g => {
+      groupOptions += `<option value="${g.id}">${escapeHTML(g.name)}</option>`;
+    });
+    groupSelect.disabled = false;
+  } else if (currentGroup === "global") {
+    // Current Global: Locked
+    groupOptions += `<option value="global">Team</option>`;
+    groupSelect.disabled = true;
+  } else {
+    // Current Custom Group: Can go to Global, but not back to Personal
+    const customGroup = findCalendarGroup(currentGroup);
+    groupOptions += `<option value="${currentGroup}">${escapeHTML(customGroup?.name || "Current Group")}</option>`;
+    groupOptions += `<option value="global">Team</option>`;
+    groupSelect.disabled = false;
+  }
+
+  groupSelect.innerHTML = groupOptions;
+
   calState.editingEventId = event?.id || null;
   title.textContent = event ? "Edit event" : "New event";
   name.value = event?.title || "";
   date.value = event?.date || defaultDate || getDefaultEventDate();
   endDate.value = event?.endDate || "";
-  group.value = event?.group || "global";
-  deleteButton.hidden = !event;
+  groupSelect.value = currentGroup;
+  
+  // Permissions: Owner OR Group Leader can edit
+  const currentUserId = window.team.currentUserId;
+  const isOwner = !event || event.ownerId === currentUserId;
+  
+  let isGroupLeader = false;
+  if (event && currentGroup !== 'global' && currentGroup !== 'personal') {
+    const group = findCalendarGroup(currentGroup);
+    if (group && group.creatorId === currentUserId) {
+      isGroupLeader = true;
+    }
+  }
+
+  const canEdit = isOwner || isGroupLeader;
+
+  name.disabled = !canEdit;
+  date.disabled = !canEdit;
+  endDate.disabled = !canEdit;
+  if (!canEdit) groupSelect.disabled = true;
+
+  deleteButton.hidden = !event || !canEdit;
   submitButton.textContent = event ? "Save changes" : "Create event";
+  submitButton.hidden = !canEdit && currentGroup === 'global';
+
   error.hidden = true;
   error.textContent = "";
   modal.hidden = false;
-  name.focus();
+  if (canEdit) name.focus();
+}
+
+function openGroupModal(groupId = null) {
+  const group = groupId ? findCalendarGroup(groupId) : null;
+  const modal = document.getElementById("calendar-group-modal");
+  const form = document.getElementById("calendar-group-form");
+  const title = document.getElementById("calendar-group-modal-title");
+  const name = document.getElementById("calendar-group-name");
+  const color = document.getElementById("calendar-group-color");
+  const peopleList = document.getElementById("calendar-group-people-list");
+  const error = document.getElementById("calendar-group-error");
+  const deleteButton = document.getElementById("calendar-group-delete");
+  const leaveButton = document.getElementById("calendar-group-leave");
+  const submitButton = document.getElementById("calendar-group-submit");
+
+  form.reset();
+  calState.editingGroupId = group?.id || null;
+  title.textContent = group ? "Edit group" : "New group";
+  name.value = group?.name || "";
+  color.value = group?.color || "#4f8cff";
+  
+  const currentUserId = window.team.currentUserId;
+  const isCreator = !group || group.creatorId === currentUserId;
+
+  deleteButton.hidden = !group || !isCreator;
+  leaveButton.hidden = !group || isCreator;
+  submitButton.textContent = group ? "Save changes" : "Create group";
+  
+  // Disable fields if not creator
+  name.disabled = !isCreator;
+  color.disabled = !isCreator;
+
+  // Populate people list (excluding the current user)
+  const teammates = effectiveTeammates();
+  
+  peopleList.innerHTML = teammates
+    .filter(t => t.id !== currentUserId)
+    .map(t => {
+      const isChecked = group?.members?.includes(t.id);
+      return `
+        <label class="people-row ${isChecked ? "active" : ""} ${!isCreator ? "disabled" : ""}">
+          <input type="checkbox" name="members" value="${t.id}" ${isChecked ? "checked" : ""} ${!isCreator ? "disabled" : ""}>
+          <div class="people-info">
+            ${avatar(t.name, t.id)}
+            <div class="people-meta">
+              <span class="name">${escapeHTML(t.name)}</span>
+              <span class="role">${escapeHTML(t.role || "")}</span>
+            </div>
+          </div>
+          <div class="check-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+        </label>
+      `;
+    }).join("");
+
+  // Add listener for visual toggle
+  peopleList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.people-row').classList.toggle('active', cb.checked);
+    });
+  });
+
+  error.hidden = true;
+  error.textContent = "";
+  modal.hidden = false;
+  if (isCreator) name.focus();
+}
+
+function closeGroupModal() {
+  document.getElementById("calendar-group-modal").hidden = true;
+  calState.editingGroupId = null;
+}
+
+function bindGroupModal() {
+  const modal = document.getElementById("calendar-group-modal");
+  const form = document.getElementById("calendar-group-form");
+
+  document.getElementById("calendar-group-modal-close").addEventListener("click", closeGroupModal);
+  document.getElementById("calendar-group-cancel").addEventListener("click", closeGroupModal);
+  document.getElementById("calendar-group-delete").addEventListener("click", deleteCalendarGroup);
+  document.getElementById("calendar-group-leave").addEventListener("click", leaveCalendarGroup);
+  modal.addEventListener("click", e => {
+    if (e.target === modal) closeGroupModal();
+  });
+  form.addEventListener("submit", saveGroup);
+}
+
+async function saveGroup(e) {
+  e.preventDefault();
+  const name = document.getElementById("calendar-group-name").value.trim();
+  const color = document.getElementById("calendar-group-color").value;
+  const checkboxes = document.querySelectorAll('#calendar-group-people-list input[name="members"]:checked');
+  const members = Array.from(checkboxes).map(cb => cb.value);
+  const error = document.getElementById("calendar-group-error");
+
+  const currentUserId = window.team.currentUserId;
+  const group = calState.editingGroupId ? findCalendarGroup(calState.editingGroupId) : null;
+  const isCreator = !group || group.creatorId === currentUserId;
+
+  if (!isCreator) {
+    error.textContent = "Only the creator can edit group details.";
+    error.hidden = false;
+    return;
+  }
+
+  if (!name) {
+    error.textContent = "Please enter a group name.";
+    error.hidden = false;
+    return;
+  }
+
+  // Creator is always in the group
+  if (!members.includes(currentUserId)) {
+    members.push(currentUserId);
+  }
+
+  const groupData = {
+    name,
+    color,
+    members
+  };
+
+  try {
+    if (calState.editingGroupId) {
+      await db.updateCalendarGroup(calState.editingGroupId, groupData);
+    } else {
+      await db.createCalendarGroup(groupData);
+    }
+
+    await db.loadAll(); // Refresh groups and events from DB
+    
+    // Ensure all groups are in the local visibility set if they were newly created
+    getCalendarGroups().forEach(g => {
+      if (!calState.customGroups.has(g.id)) calState.customGroups.add(g.id);
+    });
+
+    renderCalLegend();
+    refreshActiveView();
+    closeGroupModal();
+  } catch (err) {
+    error.textContent = "Failed to save group. Please try again.";
+    error.hidden = false;
+    console.error(err);
+  }
+}
+
+async function deleteCalendarGroup() {
+  const id = calState.editingGroupId;
+  if (!id) return;
+
+  if (!confirm("Are you sure you want to delete this group? All shared events in this group will be hidden for everyone.")) return;
+
+  try {
+    await db.deleteCalendarGroup(id);
+    await db.loadAll();
+    
+    calState.customGroups.delete(id);
+    
+    renderCalLegend();
+    refreshActiveView();
+    closeGroupModal();
+  } catch (err) {
+    alert("Failed to delete group.");
+    console.error(err);
+  }
+}
+
+async function leaveCalendarGroup() {
+  const id = calState.editingGroupId;
+  if (!id) return;
+
+  const group = findCalendarGroup(id);
+  if (!group) return;
+
+  if (!confirm("Are you sure you want to leave this group? You will no longer see its events.")) return;
+
+  console.log("Leaving group via RPC:", id);
+
+  try {
+    await db.leaveCalendarGroup(id);
+    console.log("Leave group successful");
+    await db.loadAll();
+    
+    calState.customGroups.delete(id);
+    
+    renderCalLegend();
+    refreshActiveView();
+    closeGroupModal();
+  } catch (err) {
+    console.error("Leave group failed:", err);
+    const msg = err.message || "Unknown error";
+    alert(`Failed to leave group: ${msg}`);
+  }
 }
 
 function closeEventModal() {
@@ -857,7 +1166,7 @@ async function createCalendarEvent(e) {
     endDate: endDate || null, 
     title, 
     group,
-    teamId: group === 'global' ? window.team.id : null
+    teamId: (group === 'global' || group !== 'personal') ? window.team.id : null
   };
 
   try {
@@ -905,7 +1214,14 @@ function isHexColor(value) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await db.loadAll();
-  renderCalendar();
-  bindCalendar();
+  try {
+    await db.loadAll();
+    initCalState(); // Ensure state is ready before rendering
+    renderCalendar();
+    bindCalendar();
+  } catch (err) {
+    console.error("Initialization failed:", err);
+    const header = document.getElementById("header-sub");
+    if (header) header.textContent = "Error loading data. Please check your connection.";
+  }
 });
