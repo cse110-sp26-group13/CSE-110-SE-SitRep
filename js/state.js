@@ -1,22 +1,21 @@
 /**
  * Client-only state that doesn't belong in Supabase.
  *
- * Anything per-team and persistent (teammates, blockers, slots, …)
- * lives in Postgres and is loaded via db.loadAll(). This module owns
- * the leftover bits: GitHub-synced issues (kept in localStorage so
- * the sync survives reloads without re-hitting the API) and the
- * Blockers panel's filter chips.
+ * Anything per-team and persistent (teammates, blockers, slots,
+ * GitHub-synced issues, …) lives in Postgres and is loaded via
+ * db.loadAll(). This module owns the leftover bits: the Blockers
+ * panel's filter chips.
  *
- * Bumped to v3 when the GitHub sync was added — old keys are ignored
- * rather than migrated.
+ * Bumped to v4 when the GitHub sync moved into Supabase — old keys
+ * are ignored rather than migrated, and the localStorage `githubIssues`
+ * cache from v3 is dropped (the rows now live in `public.blockers`).
  */
 
-const STORAGE_KEY = "sitrep_state_v3";
+const STORAGE_KEY = "sitrep_state_v4";
 
-/** @returns {{githubIssues: object[], severityFilter: string, statusFilter: string}} */
+/** @returns {{severityFilter: string, statusFilter: string}} */
 function defaultState() {
   return {
-    githubIssues: [],
     severityFilter: "all",
     statusFilter: "open",
   };
@@ -43,18 +42,6 @@ function loadState() {
 /** Write the current `state` global back to localStorage. */
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-/**
- * Replace the cached GitHub issues with a fresh sync result and
- * persist immediately.
- *
- * @param {object[]} issues - normalized issue objects as returned by
- *   fetchGitHubIssues (see [js/features/github-api.js](github-api.js)).
- */
-function setGithubIssues(issues) {
-  state.githubIssues = issues;
-  saveState();
 }
 
 let state = loadState();

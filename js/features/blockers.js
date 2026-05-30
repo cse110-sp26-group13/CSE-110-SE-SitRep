@@ -1,11 +1,13 @@
 /**
  * Blockers panel — issue list, create/detail modals, and the GitHub
- * sync dialog. Reads from effectiveBlockers() (Supabase + GH-synced)
- * and writes to Supabase through db.* helpers.
+ * sync dialog. Reads from effectiveBlockers() and writes to Supabase
+ * through db.* helpers.
  *
- * GitHub-synced rows have ids prefixed `gh-` and live in localStorage;
- * status/comment edits on those are blocked because there's no
- * persistence target yet.
+ * GitHub-synced rows live in the same `public.blockers` table as
+ * native rows, tagged with `externalSource: 'github'`. They're fully
+ * editable here (status / comments / severity all persist normally);
+ * the only visible difference is a small "GitHub" badge with a
+ * click-through to `externalUrl`.
  */
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
@@ -100,6 +102,10 @@ function renderBlockers() {
           </span>`
         : "";
 
+      const ghBadge = b.externalSource === "github" && b.externalUrl
+        ? `<a class="cat-badge cat-github" href="${escapeHTML(b.externalUrl)}" target="_blank" rel="noopener" title="Open on GitHub" onclick="event.stopPropagation()">GITHUB ↗</a>`
+        : "";
+
       return `
       <li class="blocker-row status-${b.status}" data-open="${escapeHTML(b.id)}">
         <span class="sev-tag sev-${b.severity}">${b.severity}</span>
@@ -107,9 +113,10 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
-            
+
             ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
-            
+            ${ghBadge}
+
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
             ${dueBadge}
             ${commentBadge}
@@ -274,12 +281,8 @@ function openCreateModal() {
 /**
  * Open the issue detail modal for a blocker. Lets the user edit
  * status / start / due / category and post comments inline; each
- * change persists to Supabase and re-renders.
- *
- * GitHub-synced issues (id prefixed `gh-`) are read-only here —
- * edits are no-ops and comments show an alert, because there's no
- * place to persist the change ([state.js](../state.js)'s
- * `state.githubIssues` is rewritten wholesale on next sync).
+ * change persists to Supabase and re-renders. Works the same for
+ * native and GitHub-synced rows — both live in `public.blockers` now.
  *
  * @param {string} id - blocker id from effectiveBlockers().
  */
@@ -302,6 +305,10 @@ function openDetailModal(id) {
         </li>`).join("")
     : `<li class="empty comment-empty">No comments yet.</li>`;
 
+  const ghLink = b.externalSource === "github" && b.externalUrl
+    ? `<a class="issue-gh-link" href="${escapeHTML(b.externalUrl)}" target="_blank" rel="noopener">View on GitHub ↗</a>`
+    : "";
+
   openModal(b.title, `
     <div class="issue-detail">
       <div class="issue-meta-row">
@@ -316,6 +323,7 @@ function openDetailModal(id) {
         </label>
         <span class="issue-owner-meta">Assigned to <strong>${escapeHTML(b.owner)}</strong></span>
         <span class="issue-posted-meta">Opened ${escapeHTML(b.postedAt)}</span>
+        ${ghLink}
       </div>
 
       <div class="field-row issue-dates-row">
@@ -353,13 +361,9 @@ function openDetailModal(id) {
     </div>
   `);
 
-  // GitHub-synced issues live in localStorage, not Postgres — guard those.
-  const isGithubIssue = String(id).startsWith("gh-");
-
   document.getElementById("issue-status").addEventListener("change", async e => {
     const newStatus = e.target.value;
     if (newStatus === b.status) return;
-    if (isGithubIssue) return;
     await db.updateBlocker(id, { status: newStatus });
     await db.addActivity("blocker", `set "${b.title}" to ${STATUS_LABEL[newStatus]}`);
     await db.loadAll();
@@ -368,21 +372,18 @@ function openDetailModal(id) {
   });
 
   document.getElementById("detail-start").addEventListener("change", async e => {
-    if (isGithubIssue) return;
     await db.updateBlocker(id, { startDate: e.target.value });
     await db.loadAll();
     renderAll();
   });
 
   document.getElementById("detail-due").addEventListener("change", async e => {
-    if (isGithubIssue) return;
     await db.updateBlocker(id, { dueDate: e.target.value });
     await db.loadAll();
     renderAll();
   });
 
   document.getElementById("detail-category").addEventListener("change", async e => {
-    if (isGithubIssue) return;
     await db.updateBlocker(id, { category: e.target.value });
     await db.loadAll();
     renderAll();
@@ -393,10 +394,6 @@ function openDetailModal(id) {
     const input = document.getElementById("comment-input");
     const text = input.value.trim();
     if (!text) return;
-    if (isGithubIssue) {
-      alert("Comments on GitHub-synced issues aren't persisted yet.");
-      return;
-    }
     await db.addBlockerComment(id, text);
     await db.loadAll();
     renderAll();
@@ -456,17 +453,22 @@ function bindBlockerControls() {
 
 /**
  * Show the GitHub sync dialog. On submit, fetch every issue for the
- * given `owner/repo` (optionally with a PAT for higher rate limits or
- * private repos), drop them into state.githubIssues, log an activity
- * event, and re-render. The chosen repo is remembered in
- * sessionStorage so the next sync defaults to it.
+ * given `owner/repo` (optionally with a PAT for higher rate limits,
+ * private repos, or the create-issue mirror flow) and upsert into the
+ * team's `blockers` table via [db.syncGithubIssues](../db.js). The
+ * repo is persisted on `teams.github_repo` so every member's modal
+ * prefills the same default; the PAT is cached in localStorage on
+ * this device only.
  *
  * @see fetchGitHubIssues in [./github-api.js](github-api.js)
+ * @see db.syncGithubIssues in [../db.js](../db.js)
  */
 function openGitHubSyncModal() {
-  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
-  
-  openModal("Sync with GitHub (v2)", `
+  const savedRepo = (team.githubRepo || "").trim()
+    || "cse110-sp26-group13/CSE-110-SE-SitRep";
+  const savedToken = db.readGithubToken();
+
+  openModal("Sync with GitHub", `
     <form id="gh-sync-form" class="issue-form">
       <div class="field-row">
         <label class="field">
@@ -476,10 +478,11 @@ function openGitHubSyncModal() {
       </div>
       <div class="field-row">
         <label class="field">
-          <span>Personal Access Token (Optional for public repos)</span>
-          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
+          <span>Personal Access Token (optional for public repos; required to mirror new issues to GitHub)</span>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" value="${escapeHTML(savedToken)}" />
         </label>
       </div>
+      <p class="field-help">The repo is shared with your circle. The token stays on this device.</p>
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
@@ -500,11 +503,12 @@ function openGitHubSyncModal() {
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const issues = await fetchGitHubIssues(repo, token);
-      sessionStorage.setItem("sitrep_gh_repo", repo);
-      setGithubIssues(issues);
+      const { added, updated, total } = await db.syncGithubIssues({ repo, token });
 
-      await db.addActivity("checkin", `Synced ${issues.length} issues from GitHub (${repo})`);
+      await db.addActivity(
+        "blocker",
+        `synced ${total} issues from GitHub (${repo}) — ${added} new, ${updated} updated`,
+      );
       await db.loadAll();
       closeModal();
       renderAll();

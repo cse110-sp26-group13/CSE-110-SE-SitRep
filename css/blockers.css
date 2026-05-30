@@ -128,6 +128,23 @@
 .cat-ui      { color: var(--ink); border-color: var(--ink); }
 .cat-swe     { color: var(--ink); border-color: var(--ink); background: var(--card-2); }
 .cat-backend { color: var(--paper); background: var(--ink-2); border-color: var(--ink); }
+.cat-github  {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--paper);
+  text-decoration: none;
+}
+.cat-github:hover { background: var(--card-2); }
+
+.issue-gh-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-decoration: none;
+  margin-left: auto;
+}
+.issue-gh-link:hover { color: var(--ink); }
 
 /* Due date */
 .blocker-due {

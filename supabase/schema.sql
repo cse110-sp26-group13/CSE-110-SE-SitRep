@@ -24,11 +24,17 @@ create table if not exists public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   join_code text not null unique,
+  github_repo text,
   created_at timestamptz not null default now()
 );
 -- For schemas that pre-date join_code, add the column if missing.
 alter table public.teams
   add column if not exists join_code text;
+-- Remembered "owner/repo" for the team's GitHub issue sync. Set when
+-- any member completes a sync; prefills the sync modal for the next
+-- teammate who opens it.
+alter table public.teams
+  add column if not exists github_repo text;
 
 -- memberships: many-to-many between profiles and teams.
 create table if not exists public.memberships (
@@ -223,6 +229,18 @@ drop policy if exists "team_authed_insert" on public.teams;
 create policy "team_authed_insert" on public.teams
   for insert with check (auth.uid() is not null);
 
+-- A team member can update their team's row. Matches the "small-team
+-- app" stance: any member can edit shared team settings (e.g. the
+-- github_repo used by issue sync). Tighten to leads later if needed.
+drop policy if exists "team_member_update" on public.teams;
+create policy "team_member_update" on public.teams
+  for update using (
+    exists (
+      select 1 from public.memberships
+      where team_id = teams.id and user_id = auth.uid()
+    )
+  );
+
 -- ---- memberships -------------------------------------------
 -- A user can read their own memberships and those of their teammates.
 drop policy if exists "membership_self_read" on public.memberships;
@@ -324,10 +342,29 @@ create table if not exists public.blockers (
   start_date date,
   due_date date,
   created_by uuid references public.profiles(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  external_source text check (external_source is null or external_source in ('github')),
+  external_id text,
+  external_url text
 );
+-- For schemas that pre-date the external_* columns, add them.
+alter table public.blockers add column if not exists external_source text;
+alter table public.blockers add column if not exists external_id text;
+alter table public.blockers add column if not exists external_url text;
+-- Constrain external_source values. Drop-then-add so it's safe to re-run.
+alter table public.blockers drop constraint if exists blockers_external_source_check;
+alter table public.blockers add  constraint blockers_external_source_check
+  check (external_source is null or external_source in ('github'));
+
 create index if not exists blockers_team_status_idx
   on public.blockers (team_id, status);
+-- Partial unique index — one row per (team, external source, external id).
+-- Powers idempotent re-sync: an UPSERT on these three keys updates the
+-- existing row instead of duplicating it. Partial so native (non-external)
+-- rows aren't constrained.
+create unique index if not exists blockers_external_unique_idx
+  on public.blockers (team_id, external_source, external_id)
+  where external_source is not null;
 alter table public.blockers enable row level security;
 
 drop policy if exists "blockers_team_read" on public.blockers;

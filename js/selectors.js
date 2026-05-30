@@ -1,8 +1,8 @@
 /**
  * Read-only derived views over the globals db.loadAll() populates
- * (window.team, teammates, blockers, activity). GitHub-synced issues
- * stay in localStorage (state.githubIssues) and are merged in here so
- * the rest of the UI doesn't need to know they live in two places.
+ * (window.team, teammates, blockers, activity). Everything — including
+ * GitHub-synced issues — lives in Supabase now, so these selectors
+ * stay paper-thin.
  *
  * Selectors must stay pure — no mutation, no I/O.
  */
@@ -13,19 +13,17 @@ function effectiveTeammates() {
 }
 
 /**
- * Supabase blockers + GitHub-synced issues merged into one list. The
- * GitHub ones go first so they appear at the top of the panel before
- * sorting; everything else is keyed by `id` (the GH ones are prefixed
- * `gh-` so they never collide with Postgres uuids).
+ * Blockers as loaded from Supabase. Native and GitHub-synced rows live
+ * in the same table now, distinguished by `externalSource`.
  *
  * @returns {object[]}
  */
 function effectiveBlockers() {
-  return [...(state.githubIssues || []), ...blockers];
+  return blockers;
 }
 
 /**
- * Look up a blocker by id across both Supabase and GitHub-synced rows.
+ * Look up a blocker by id.
  *
  * @param {string} id
  * @returns {object|undefined}

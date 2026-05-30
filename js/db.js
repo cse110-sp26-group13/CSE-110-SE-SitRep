@@ -22,11 +22,26 @@
     { id: 's4', time: '4:30',  label: '4:30 – 5:00 PM' },
   ];
 
-  window.team = { id: null, name: '', joinCode: '', currentUserId: null };
+  window.team = { id: null, name: '', joinCode: '', githubRepo: '', currentUserId: null };
   window.teammates = [];
   window.blockers = [];
   window.meetingSlots = SLOT_DEFS.map(s => ({ ...s, availability: {} }));
   window.activity = [];
+
+  // Per-user GitHub PAT for writes (creating mirror issues). Stored on
+  // the user's device only — keeping PATs out of Supabase avoids handing
+  // each team member access to every other member's token.
+  const GH_TOKEN_KEY = 'sitrep-gh-token';
+  function readGithubToken() {
+    try { return window.localStorage.getItem(GH_TOKEN_KEY) || ''; }
+    catch (_e) { return ''; }
+  }
+  function writeGithubToken(token) {
+    try {
+      if (token) window.localStorage.setItem(GH_TOKEN_KEY, token);
+      else window.localStorage.removeItem(GH_TOKEN_KEY);
+    } catch (_e) { /* private mode */ }
+  }
 
   const sb = () => window.sbClient;
 
@@ -68,7 +83,7 @@
   async function loadCurrentTeam(userId) {
     const { data, error } = await sb()
       .from('memberships')
-      .select('team_id, teams ( id, name, join_code ), joined_at')
+      .select('team_id, teams ( id, name, join_code, github_repo ), joined_at')
       .eq('user_id', userId)
       .order('joined_at', { ascending: true });
     if (error) throw error;
@@ -171,7 +186,11 @@
       return;
     }
     window.team = {
-      id: t.id, name: t.name, joinCode: t.join_code, currentUserId: userId,
+      id: t.id,
+      name: t.name,
+      joinCode: t.join_code,
+      githubRepo: t.github_repo || '',
+      currentUserId: userId,
     };
 
     const [members, standups, blockerData, slotAvail, activityRows] = await Promise.all([
@@ -235,6 +254,9 @@
       startDate: b.start_date || '',
       dueDate: b.due_date || '',
       category: b.category || '',
+      externalSource: b.external_source || null,
+      externalId: b.external_id || null,
+      externalUrl: b.external_url || null,
       comments: commentsByBlocker[b.id] || [],
     }));
 
@@ -328,6 +350,13 @@
    * dueDate. Defaults `status` to "open" and `created_by` to the
    * caller's id.
    *
+   * If the team has a `github_repo` configured and the current user
+   * has a PAT cached locally, also mirrors the blocker to GitHub as a
+   * new issue and links the two via `external_source` / `external_id`
+   * / `external_url`. Mirror failures (no token, no repo, GH error)
+   * are swallowed: the Supabase row still exists, the link-back just
+   * doesn't happen.
+   *
    * @param {{
    *   title: string, severity: "critical"|"high"|"medium",
    *   description?: string, ownerId?: string|null, category?: string|null,
@@ -353,7 +382,35 @@
       .select()
       .single();
     if (error) throw error;
+
+    await _mirrorBlockerToGithub(data).catch(err => {
+      // Best-effort: Supabase has the row, the user sees it. Mirror
+      // failure stays in the console so devs notice but users don't.
+      console.warn('GitHub mirror skipped:', err.message);
+    });
+
     return data;
+  }
+
+  async function _mirrorBlockerToGithub(row) {
+    const repo = team.githubRepo;
+    const token = readGithubToken();
+    if (!repo || !token) return;
+
+    const gh = await createGithubIssue(repo, token, {
+      title: row.title,
+      body: row.description || '',
+    });
+
+    const { error } = await sb()
+      .from('blockers')
+      .update({
+        external_source: 'github',
+        external_id: String(gh.id),
+        external_url: gh.html_url,
+      })
+      .eq('id', row.id);
+    if (error) throw error;
   }
 
   /**
@@ -421,6 +478,118 @@
     if (error) throw error;
   }
 
+  /**
+   * Persist the chosen "owner/repo" on the team row so every member's
+   * sync modal opens to the same default. Any team member can call
+   * this — matched by the `team_member_update` RLS policy. Pass an
+   * empty string to clear it.
+   *
+   * @param {string} repo
+   */
+  async function setTeamGithubRepo(repo) {
+    const next = (repo || '').trim();
+    const { error } = await sb()
+      .from('teams')
+      .update({ github_repo: next || null })
+      .eq('id', team.id);
+    if (error) throw error;
+    team.githubRepo = next;
+  }
+
+  /**
+   * Pull every issue from `repo` and reconcile against this team's
+   * existing GitHub-synced blockers. Two-pass:
+   *
+   *   1. Look up the rows we already have for (team, external_source='github').
+   *   2. Partition the incoming issues into NEW vs EXISTING by external_id.
+   *      - NEW → INSERT with team defaults (severity=medium, category=swe).
+   *      - EXISTING → UPDATE title / description / external_url AND
+   *        `status` (GitHub is source-of-truth for open vs closed). Leaves
+   *        severity / owner / category alone so triage survives.
+   *
+   * The "GitHub owns status, team owns triage" split is deliberate: a
+   * GH close should flip the row to `resolved` automatically, but
+   * "Sam owns this" and "this is critical" are app-side judgements
+   * sync shouldn't clobber. Note this means an in-app status edit on
+   * a GH-synced row gets overwritten on the next sync — by design.
+   *
+   * Token is optional for public repos (60 req/hr/IP, fine for demos).
+   * A token also unlocks the createGithubIssue mirror flow, so we
+   * stash it in localStorage on success.
+   *
+   * @param {{repo: string, token?: string}} args
+   * @returns {Promise<{added: number, updated: number, total: number}>}
+   */
+  async function syncGithubIssues({ repo, token }) {
+    const cleanRepo = (repo || '').trim();
+    if (!cleanRepo) throw new Error('Repository is required.');
+
+    const issues = await fetchGitHubIssues(cleanRepo, token);
+
+    const { data: existing, error: exErr } = await sb()
+      .from('blockers')
+      .select('id, external_id, status')
+      .eq('team_id', team.id)
+      .eq('external_source', 'github');
+    if (exErr) throw exErr;
+
+    const existingById = new Map((existing || []).map(r => [r.external_id, r]));
+
+    const inserts = [];
+    const updates = [];
+    for (const issue of issues) {
+      const hit = existingById.get(issue.externalId);
+      const ghStatus = issue.status === 'resolved' ? 'resolved' : 'open';
+      if (hit) {
+        // GitHub owns open vs closed. If the team had set the row to
+        // 'in-progress' and upstream is still 'open', leave it as
+        // 'in-progress' — that's a triage state GitHub doesn't have a
+        // concept of. Only flip when upstream and app actually disagree
+        // on the open/closed bit.
+        const nextStatus =
+          ghStatus === 'resolved' ? 'resolved'
+          : hit.status === 'resolved' ? 'open'
+          : hit.status;
+        updates.push({
+          id: hit.id,
+          title: issue.title,
+          description: issue.description,
+          external_url: issue.externalUrl,
+          status: nextStatus,
+        });
+      } else {
+        inserts.push({
+          team_id: team.id,
+          title: issue.title,
+          description: issue.description,
+          severity: 'medium',
+          status: ghStatus,
+          category: 'swe',
+          created_by: team.currentUserId,
+          external_source: 'github',
+          external_id: issue.externalId,
+          external_url: issue.externalUrl,
+        });
+      }
+    }
+
+    if (inserts.length) {
+      const { error } = await sb().from('blockers').insert(inserts);
+      if (error) throw error;
+    }
+    for (const u of updates) {
+      const { id, ...patch } = u;
+      const { error } = await sb().from('blockers').update(patch).eq('id', id);
+      if (error) throw error;
+    }
+
+    // Remember the repo on the team and the token on this device.
+    await setTeamGithubRepo(cleanRepo);
+    if (token) writeGithubToken(token);
+
+    return { added: inserts.length, updated: updates.length, total: issues.length };
+  }
+
   window.db = {
     loadAll,
     saveMood,
@@ -430,5 +599,9 @@
     updateBlocker,
     addBlockerComment,
     setSlotAvailability,
+    syncGithubIssues,
+    setTeamGithubRepo,
+    readGithubToken,
+    writeGithubToken,
   };
 })();

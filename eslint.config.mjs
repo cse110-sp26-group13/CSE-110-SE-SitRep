@@ -18,7 +18,6 @@ const projectGlobals = {
   // From js/state.js
   state: "writable",
   saveState: "readonly",
-  setGithubIssues: "readonly",
 
   // From js/utils.js
   escapeHTML: "readonly",
@@ -51,6 +50,7 @@ const projectGlobals = {
   bindMoodQuick: "readonly",
   bindComposeForm: "readonly",
   fetchGitHubIssues: "readonly",
+  createGithubIssue: "readonly",
 
   // From js/pages/* — page orchestrators assign their renderer to window.renderAll
   renderAll: "writable",
