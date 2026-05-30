@@ -30,7 +30,8 @@ function updateIssuesSub() {
 window.renderAll = renderIssues;
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();
   renderIssues();
   bindBlockerControls();
 });

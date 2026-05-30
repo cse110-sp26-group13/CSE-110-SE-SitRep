@@ -1,0 +1,431 @@
+/* ───────────────────────────────────────────────────────────
+   SitRep · Halftone — base tokens
+   One theme: warm cream paper, ink dots, hard borders.
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --paper:        #efece4;
+  --paper-2:      #e7e3d8;
+  --card:         #f7f5ed;
+  --card-2:       #ece8db;
+  --card-3:       #e0dac8;
+
+  /* Ink + lines */
+  --ink:          #0a0a0a;
+  --ink-2:        #2a2722;
+  --muted:        #6e6655;
+  --subtle:       #948c7a;
+  --hairline:     #b0aa92;
+  --hairline-2:   #cdc6b3;
+
+  /* Semantic — printed/desaturated */
+  --good:         #2f6b3a;
+  --good-soft:    #d6ddc4;
+  --warn:         #b56a14;
+  --warn-soft:    #ecd8b3;
+  --bad:          #b3261e;
+  --bad-soft:     #ecc9c2;
+
+  /* Halftone pattern knobs */
+  --dot:          #0a0a0a;
+  --dot-size:     7px;
+  --dot-radius:   1.1px;
+  --veil:         rgba(239, 236, 228, 0.55);
+
+  /* Type */
+  --sans:    "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --display: "Bricolage Grotesque", "Geist", sans-serif;
+
+  /* Hard graphic shadow */
+  --hard-shadow: 4px 4px 0 var(--ink);
+}
+
+* { box-sizing: border-box; }
+*:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--dot) var(--dot-radius), transparent calc(var(--dot-radius) + 0.4px));
+  background-size: var(--dot-size) var(--dot-size);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--veil);
+  pointer-events: none;
+  z-index: 0;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-primary,
+.btn-secondary {
+  appearance: none;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  padding: 9px 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .08s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.btn-primary:active { transform: none; box-shadow: none; }
+.btn-secondary {
+  background: var(--card);
+  color: var(--ink);
+}
+.btn-secondary:hover {
+  background: var(--card-2);
+}
+
+/* ── Card shell (used everywhere) ────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.card-head h2 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+.card-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── Misc primitives ─────────────────────────────────────── */
+.empty {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 28px 12px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+.text-muted { color: var(--muted); }
+
+/* Anchor styling is opt-in (per-component) so rail icons, snapshot
+   numbers, and button-styled anchors don't inherit underlines or
+   ink-on-hover invert. Inline body links use .lede a. */
+a { color: inherit; text-decoration: none; }
+.lede a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.lede a:hover { background: var(--ink); color: var(--paper); text-decoration: none; }
+
+/* Avatar (utils.js stamps inline bg color — override to ink-on-paper) */
+.avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--ink) !important;
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--subtle); background-clip: content-box; }
+
+/* ── Modal (issue detail + new issue + GH sync) ──────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 12, 0.55);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.modal-backdrop[hidden] { display: none; }
+.modal {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--hard-shadow);
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--ink);
+  background: var(--paper);
+}
+.modal-head h3 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.modal-close {
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  width: 28px; height: 28px;
+  font-size: 18px;
+  line-height: 0;
+  display: grid; place-items: center;
+}
+.modal-close:hover { background: var(--ink); color: var(--paper); }
+.modal-body { padding: 20px; overflow-y: auto; }
+
+/* Form primitives */
+.issue-form,
+.checkin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field > span,
+.checkin-form label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field input,
+.field textarea,
+.field select,
+.checkin-form input,
+.checkin-form textarea {
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  text-transform: none;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.checkin-form input:focus,
+.checkin-form textarea:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -1.5px;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.field-row .field { min-width: 0; }
+.field-error {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--bad);
+  letter-spacing: 0.02em;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--hairline);
+  margin-top: 4px;
+}
+
+/* Issue detail */
+.issue-detail { display: flex; flex-direction: column; gap: 16px; }
+.issue-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--hairline);
+}
+.status-select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.status-select-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.status-select-wrap select {
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 5px 24px 5px 10px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 12px, calc(100% - 10px) 12px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.issue-owner-meta,
+.issue-posted-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.issue-owner-meta strong { color: var(--ink); font-weight: 600; }
+.issue-description {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 14px 16px;
+}
+.issue-dates-row { padding-top: 4px; }
+
+/* Comments */
+.comments-section { display: flex; flex-direction: column; gap: 10px; }
+.comments-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.comment {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 10px 12px;
+}
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.comment-who { font-weight: 600; font-size: 13px; }
+.comment-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.comment-text { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.comment-empty { padding: 14px 8px; }
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comment-form textarea {
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  padding: 10px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  resize: vertical;
+}

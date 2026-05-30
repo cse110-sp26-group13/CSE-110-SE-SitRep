@@ -83,15 +83,16 @@ function renderDashboard() {
 function bindResetDash() {
   const btn = document.getElementById("reset-btn");
   if (!btn) return;
-  btn.addEventListener("click", () => {
-    if (!confirm("Clear local check-ins, blockers, and cover actions?")) return;
-    localStorage.removeItem(STORAGE_KEY);
-    state = defaultState();
+  btn.textContent = "Refresh";
+  btn.title = "Re-fetch live data";
+  btn.addEventListener("click", async () => {
+    await db.loadAll();
     renderDashboard();
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();
   renderDashboard();
   bindResetDash();
 });

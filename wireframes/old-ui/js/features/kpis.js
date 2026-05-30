@@ -1,0 +1,33 @@
+function renderKPIs() {
+  const tm = effectiveTeammates();
+  const checkedIn = tm.filter(t => t.lastCheckIn).length;
+  const moods = tm.filter(t => t.mood != null).map(t => t.mood);
+  const avg = moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null;
+  const avgStr = avg == null ? "—" : avg.toFixed(1);
+  const openIssues = effectiveBlockers().filter(b => b.status !== "resolved");
+  const open = openIssues.length;
+  const critical = openIssues.filter(b => b.severity === "critical").length;
+  const cover = tm.filter(t => t.coverNeeded).length;
+
+  const moodCls = avg == null ? "" : avg >= 7 ? "good" : avg >= 5 ? "warn" : "alert";
+  const tiles = [
+    { label: "Checked in today", value: `${checkedIn}/${tm.length}`,
+      cls: checkedIn === tm.length ? "good" : "",
+      sub: checkedIn === tm.length ? "Full team in" : `${tm.length - checkedIn} pending` },
+    { label: "Team mood", value: `${avgStr}/10`, cls: moodCls,
+      sub: "Avg across team" },
+    { label: "Open blockers", value: open,
+      cls: open === 0 ? "good" : critical > 0 ? "alert" : "warn",
+      sub: open === 0 ? "All clear" : `${critical} critical` },
+    { label: "Cover needed", value: cover,
+      cls: cover === 0 ? "good" : "warn",
+      sub: cover === 0 ? "No requests" : "Help wanted" },
+  ];
+  document.getElementById("kpis").innerHTML = tiles.map(t => `
+    <div class="kpi">
+      <div class="kpi-label">${t.label}</div>
+      <div class="kpi-value ${t.cls || ""}">${t.value}</div>
+      <div class="kpi-trend">${t.sub}</div>
+    </div>
+  `).join("");
+}

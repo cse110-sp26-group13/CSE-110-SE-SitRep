@@ -1,0 +1,86 @@
+.w2m-grid {
+  display: grid;
+  gap: 3px;
+  align-items: center;
+}
+
+.w2m-corner { }
+
+.w2m-time {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.w2m-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  padding-right: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.w2m-cell {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  height: 22px;
+  padding: 0;
+  background: var(--surface-3);
+  transition: background 0.12s, transform 0.08s, border-color 0.12s;
+}
+.w2m-cell:not(:disabled):hover { transform: scale(1.08); }
+.w2m-cell:disabled { cursor: default; }
+.w2m-cell.available { background: var(--good); }
+.w2m-cell.unavailable { background: var(--surface-3); }
+.w2m-cell.me { border-color: var(--accent); }
+.w2m-cell.me.available { background: var(--accent); }
+
+.w2m-overlap-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
+  padding-right: 4px;
+}
+
+.w2m-overlap {
+  height: 18px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f1117;
+}
+.w2m-overlap.none { background: var(--surface-3); color: var(--text-muted); }
+.w2m-overlap.few  { background: #3a3f4a; color: var(--text); }
+.w2m-overlap.some { background: var(--warn); }
+.w2m-overlap.most { background: #6ed27c; }
+.w2m-overlap.all  { background: var(--good); }
+
+.w2m-legend {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.w2m-legend > span:not(.w2m-swatch) { margin-right: 6px; }
+.w2m-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.w2m-swatch.available { background: var(--good); }
+.w2m-swatch.unavailable { background: var(--surface-3); }
+.w2m-swatch.me { background: transparent; border: 1px solid var(--accent); }

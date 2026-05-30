@@ -9,6 +9,9 @@ function renderKPIs() {
   const critical = openIssues.filter(b => b.severity === "critical").length;
   const cover = tm.filter(t => t.coverNeeded).length;
 
+  // AI metrics — sourced from ai-agents.js (loaded on all pages)
+  const ai = typeof aiKPIData === "function" ? aiKPIData() : null;
+
   const moodCls = avg == null ? "" : avg >= 7 ? "good" : avg >= 5 ? "warn" : "alert";
   const tiles = [
     { label: "Checked in today", value: `${checkedIn}/${tm.length}`,
@@ -22,6 +25,11 @@ function renderKPIs() {
     { label: "Cover needed", value: cover,
       cls: cover === 0 ? "good" : "warn",
       sub: cover === 0 ? "No requests" : "Help wanted" },
+    ...(ai ? [
+      { label: "AI sessions today", value: ai.todayCount,
+        cls: ai.todayCount > 0 ? "good" : "",
+        sub: `Review rate ${ai.reviewRate}` },
+    ] : []),
   ];
   document.getElementById("kpis").innerHTML = tiles.map(t => `
     <div class="kpi">

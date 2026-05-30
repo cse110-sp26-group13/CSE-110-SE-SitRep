@@ -937,7 +937,8 @@ function isHexColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();
   renderCalendar();
   bindCalendar();
 });

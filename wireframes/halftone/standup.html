@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — Daily standup</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/checkins.css" />
+  <link rel="stylesheet" href="css/slots.css" />
+  <link rel="stylesheet" href="css/mood-trend.css" />
+</head>
+<body data-page="standup">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <a class="rail-icon" data-route="settings" href="#" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Daily standup.</h1>
+          <p class="lede">Drop your mood, what you shipped, what's next, and anything in the way. The team reads this with their coffee.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-primary" id="post-checkin-btn">+ Post standup</button>
+        </div>
+      </header>
+
+      <div class="deep-content">
+        <div class="standup-layout">
+          <div class="standup-column">
+            <section class="card mood-quick-card" aria-labelledby="mood-quick-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="mood-quick-title">How are you today?</h2>
+                  <span class="card-sub" id="mood-quick-sub"></span>
+                </div>
+              </div>
+              <div class="mood-faces" id="mood-faces" role="radiogroup" aria-label="Mood">
+                <button type="button" class="mood-face" data-mood="2"  aria-label="Very sad">😢</button>
+                <button type="button" class="mood-face" data-mood="4"  aria-label="Sad">🙁</button>
+                <button type="button" class="mood-face" data-mood="6"  aria-label="Okay">😐</button>
+                <button type="button" class="mood-face" data-mood="8"  aria-label="Happy">🙂</button>
+                <button type="button" class="mood-face" data-mood="10" aria-label="Very happy">😄</button>
+              </div>
+            </section>
+
+            <section class="card standup-card" aria-labelledby="checkins-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="checkins-title">Everyone today</h2>
+                  <span class="card-sub" id="checkins-sub"></span>
+                </div>
+              </div>
+              <form class="checkin-form" id="checkin-form" hidden>
+                <label>What did you do yesterday?
+                  <input type="text" id="yesterday-input" placeholder="Shipped the auth migration..." />
+                </label>
+                <label>What are you doing today?
+                  <input type="text" id="today-input" placeholder="Pairing with Sam on the empty states..." />
+                </label>
+                <label>Any blockers?
+                  <input type="text" id="blockers-input" placeholder="Leave blank if none" />
+                </label>
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary" id="cancel-checkin">Cancel</button>
+                  <button type="submit" class="btn-primary">Post standup</button>
+                </div>
+              </form>
+              <ul class="checkin-list" id="checkin-list"></ul>
+            </section>
+          </div>
+
+          <aside class="standup-side">
+            <section class="card" aria-labelledby="meet-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="meet-title">When can we meet?</h2>
+                  <span class="card-sub">Click a cell to toggle</span>
+                </div>
+              </div>
+              <ul class="slots-list" id="slots-list"></ul>
+            </section>
+
+            <section class="card" aria-labelledby="mood-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="mood-title">Mood — last 7 days</h2>
+                  <span class="card-sub" id="mood-card-sub"></span>
+                </div>
+              </div>
+              <div class="sparkline-wrap" id="sparkline-wrap"></div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <script src="js/features/header.js"></script>
+  <script src="js/features/checkins.js"></script>
+  <script src="js/features/slots.js"></script>
+  <script src="js/features/mood-trend.js"></script>
+  <script src="js/features/activity.js"></script>
+
+  <script src="js/pages/standup.js"></script>
+</body>
+</html>
