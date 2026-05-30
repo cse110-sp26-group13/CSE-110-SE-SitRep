@@ -133,32 +133,56 @@ const blockers = [
   },
 ];
 
-const meetingSlots = [
-  {
-    id: "s1",
-    time: "11:00",
-    label: "11:00 – 11:30 AM",
-    availability: { alex: true, jordan: false, sam: true, riley: true, taylor: true },
-  },
-  {
-    id: "s2",
-    time: "1:30",
-    label: "1:30 – 2:00 PM",
-    availability: { alex: true, jordan: true, sam: true, riley: true, taylor: true },
-  },
-  {
-    id: "s3",
-    time: "3:00",
-    label: "3:00 – 3:30 PM",
-    availability: { alex: false, jordan: true, sam: false, riley: true, taylor: true },
-  },
-  {
-    id: "s4",
-    time: "4:30",
-    label: "4:30 – 5:00 PM",
-    availability: { alex: true, jordan: true, sam: true, riley: false, taylor: true },
-  },
+const meetingDays = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
 ];
+
+const meetingHours = [
+  "8 AM",
+  "9 AM",
+  "10 AM",
+  "11 AM",
+  "12 PM",
+  "1 PM",
+  "2 PM",
+  "3 PM",
+  "4 PM",
+  "5 PM",
+  "6 PM",
+  "7 PM",
+  "8 PM",
+  "9 PM",
+  "10 PM",
+];
+
+const meetingSlots = [];
+
+meetingDays.forEach(day => {
+  meetingHours.forEach(hour => {
+    meetingSlots.push({
+      id: `${day}-${hour}`,
+
+      day,
+      hour,
+
+      label: `${day} ${hour}`,
+
+      availability: {
+        alex: true,
+        jordan: Math.random() > 0.4,
+        sam: Math.random() > 0.4,
+        riley: Math.random() > 0.4,
+        taylor: Math.random() > 0.4,
+      },
+    });
+  });
+});
 
 const activity = [
   { time: "10:01 AM", type: "checkin", who: "Sam Patel",   text: "checked in — mood 7/10" },

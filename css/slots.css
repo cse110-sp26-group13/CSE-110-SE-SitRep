@@ -6,114 +6,229 @@
   padding: 0;
 }
 
-.w2m-grid {
-  display: grid;
-  gap: 0;
-  border: 1.5px solid var(--ink);
+.meeting-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.availability-panel,
+.overlap-panel {
+  padding: 1rem;
   background: var(--paper);
 }
 
-.w2m-corner,
-.w2m-time,
-.w2m-name,
-.w2m-cell,
-.w2m-overlap,
-.w2m-overlap-label {
+.meeting-panel-head {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.meeting-panel-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+.meeting-panel-head h3,
+.meeting-tag {
+  white-space: nowrap;
+}
+
+.meeting-tag {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  opacity: 0.55;
+  font-family: var(--mono);
+  margin-left: auto;
+}
+
+.overlap-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+#team-overlap {
+  margin-top: 0.35rem;
+}
+
+.w2m-calendar-grid {
+  display: grid;
+  grid-template-columns: 44px repeat(7, 1fr);
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.w2m-day-label,
+.w2m-hour-label,
+.w2m-calendar-cell {
+  min-height: 18px;
   border-right: 1px solid var(--hairline-2);
   border-bottom: 1px solid var(--hairline-2);
-  min-height: 28px;
   display: grid;
   place-items: center;
-  font-size: 11px;
 }
-.w2m-corner { background: var(--card-2); }
 
-.w2m-time {
+.w2m-day-label {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--card-2);
-  padding: 4px 2px;
-}
-
-.w2m-name {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--card-2);
-}
-
-.w2m-cell {
-  appearance: none;
-  border-radius: 0;
-  border-left: 0;
-  border-top: 0;
-  border-right: 1px solid var(--hairline-2);
-  border-bottom: 1px solid var(--hairline-2);
-  background: var(--paper);
-  cursor: default;
-  width: 100%;
-  padding: 0;
-}
-.w2m-cell.available {
-  background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--paper) 18%, transparent) 1px, transparent 1.5px);
-  background-size: 4px 4px;
-}
-.w2m-cell.unavailable { background: var(--paper); }
-.w2m-cell.me { cursor: pointer; outline: 1.5px solid transparent; }
-.w2m-cell.me:hover { outline-color: var(--ink); outline-offset: -2px; }
-.w2m-cell.me.available { background-color: var(--ink); }
-
-.w2m-overlap-label {
-  font-family: var(--mono);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--card-2);
 }
-.w2m-overlap {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  background: var(--paper);
-}
-.w2m-overlap.all  { background: var(--good-soft); color: var(--ink); }
-.w2m-overlap.most { background: var(--good-soft); color: var(--ink); }
-.w2m-overlap.some { background: var(--card-2); color: var(--ink); }
-.w2m-overlap.few  { background: var(--warn-soft); color: var(--ink); }
-.w2m-overlap.none { background: var(--bad-soft); color: var(--ink); }
 
-.w2m-legend {
+.w2m-hour-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  background: var(--card-2);
+}
+
+.w2m-calendar-cell {
+  appearance: none;
+  border-top: 0;
+  border-left: 0;
+  padding: 0;
+  background: #F1EFE8;
+  cursor: pointer;
+  user-select: none;
+}
+
+.w2m-calendar-cell.available {
+  background: #6B8F71;
+}
+
+.meeting-card {
+  overflow: hidden;
+}
+
+.overlap-panel,
+.availability-panel {
+  overflow: hidden;
+}
+
+.w2m-overlap-cell {
+  cursor: default;
+}
+
+/* everyone free */
+.w2m-overlap-cell.all  { background: #2F3F32; }
+.w2m-overlap-cell.most { background: #4F4B42; }
+.w2m-overlap-cell.some { background: #7F7A68; }
+.w2m-overlap-cell.few  { background: #AFA995; }
+.w2m-overlap-cell.one  { background: #D6D1C5; }
+.w2m-overlap-cell.none { background: #F1EFE8; }
+
+.w2m-scale-legend {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding-top: 4px;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px dashed var(--hairline-2);
 }
-.w2m-swatch {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
+
+.w2m-scale-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.w2m-scale-bar {
+  display: flex;
+  height: 20px;
+  border: 1px solid var(--ink);
+  overflow: hidden;
+}
+
+.scale-block {
+  width: 34px;
+  height: 100%;
+}
+
+.scale-block.none { background: #F1EFE8; }
+.scale-block.one  { background: #D6D1C5; }
+.scale-block.few  { background: #AFA995; }
+.scale-block.some { background: #7F7A68; }
+.scale-block.most { background: #4F4B42; }
+.scale-block.all  { background: #2F3F32; }
+
+.w2m-calendar-cell,
+.w2m-overlap-cell {
+  transition:
+    background 120ms ease,
+    transform 80ms ease,
+    box-shadow 120ms ease;
+}
+
+.w2m-calendar-cell:hover {
+  transform: scale(0.96);
+}
+
+.w2m-overlap-cell:hover {
+  transform: scale(0.96);
+
+  box-shadow:
+    inset 0 0 0 1px var(--ink);
+}
+
+.w2m-calendar-cell {
+  cursor: pointer;
+}
+
+.availability-tooltip {
+  position: absolute;
+  z-index: 9999;
+
+  width: 360px;
+  max-width: 360px;
+  overflow-wrap: break-word;
+  padding: 1rem 1.25rem;
+
+  background: var(--paper);
   border: 1.5px solid var(--ink);
-  vertical-align: middle;
-  margin-right: 4px;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--ink) 18%, transparent);
+
+  font-family: var(--mono);
+  color: var(--ink);
+  pointer-events: none;
 }
-.w2m-swatch.available {
-  background-color: var(--ink);
-  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--paper) 18%, transparent) 1px, transparent 1.5px);
-  background-size: 3px 3px;
+
+.availability-tooltip.hidden {
+  display: none;
 }
-.w2m-swatch.unavailable { background: var(--paper); }
-.w2m-swatch.me { background: var(--paper); outline: 1.5px solid var(--ink); outline-offset: -2px; }
+
+.tooltip-count {
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.tooltip-time {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.tooltip-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.tooltip-heading {
+  font-weight: 800;
+  text-decoration: underline;
+  margin-bottom: 0.35rem;
+}

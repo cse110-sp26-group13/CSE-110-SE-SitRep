@@ -1,8 +1,58 @@
 /* Mood-quick card + daily standup list + checkin form */
 
 /* ── Mood quick (five faces) ─────────────────────────────── */
-.mood-quick-card .card-head h2 {
-  font-size: 18px;
+.mood-unified-card {
+  position: absolute; /* out of flow so .standup-column contributes 0 to grid row sizing */
+  inset: 0;
+  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mood-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mood-sub + .mood-sub {
+  border-top: 1px dashed var(--hairline);
+  padding-top: 16px;
+}
+
+.mood-sub-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Card-head and Your Mood stay fixed height; Team Mood grows to fill the rest */
+.mood-unified-card > .card-head,
+.mood-unified-card .mood-sub:not(:last-child) {
+  flex-shrink: 0;
+}
+.mood-unified-card .mood-sub:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Sub-head and form are anchored; only the list scrolls */
+.mood-unified-card .mood-sub:last-child > .mood-sub-head {
+  flex-shrink: 0;
+}
+
+.mood-sub-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
 }
 .mood-faces {
   display: grid;
@@ -13,26 +63,98 @@
   appearance: none;
   background: var(--paper);
   border: 1.5px solid var(--ink);
-  font-size: 24px;
-  padding: 10px 0;
   cursor: pointer;
-  transition: transform .08s, background .12s, box-shadow .12s;
-  display: grid;
-  place-items: center;
+
+  transition:
+    transform .08s,
+    background .12s,
+    color .12s,
+    box-shadow .12s;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 14px 8px;
+
+  font-family: var(--mono);
+  font-size: 11px;
   line-height: 1;
 }
-.mood-face:hover {
+
+.mood-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+.mood-icon-sm {
+  width: 20px;
+  height: 20px;
+}
+.mood-icon-xs {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.mood-label {
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+}
+
+.mood-face.selected {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--hairline);
+}
+
+.mood-face:hover:not(.selected) {
   background: var(--card-2);
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 var(--ink);
 }
-.mood-face.selected {
-  background: var(--ink);
-  box-shadow: 3px 3px 0 var(--hairline);
+
+.standup-card { gap: 14px; }
+.standup-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-/* ── Standup card ────────────────────────────────────────── */
-.standup-card { gap: 12px; }
+.inline-post-btn {
+  appearance: none;
+
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+
+  padding: 8px 12px;
+
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    background .12s,
+    color .12s,
+    transform .08s,
+    box-shadow .12s;
+}
+
+.inline-post-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--hairline);
+}
 
 .checkin-form {
   background: var(--paper);
@@ -48,7 +170,19 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
+
+.mood-unified-card .mood-sub:last-child .checkin-form {
+  flex-shrink: 0;
+}
+
+.checkin-list::-webkit-scrollbar        { width: 4px; }
+.checkin-list::-webkit-scrollbar-track  { background: transparent; }
+.checkin-list::-webkit-scrollbar-thumb  { background: var(--hairline); }
+.checkin-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 .checkin-row {
   display: grid;
@@ -117,8 +251,6 @@
   height: 26px;
   border: 1.5px solid var(--ink);
   background: var(--paper);
-  font-size: 14px;
-  line-height: 1;
 }
 .mood-pill.mood-good { background: var(--good-soft); }
 .mood-pill.mood-ok   { background: var(--card-2); }
@@ -160,3 +292,100 @@
 .cover-take-btn { background: var(--ink); color: var(--paper); }
 .cover-take-btn:hover { background: var(--ink-2); }
 .cover-msg-btn:hover { background: var(--card-2); }
+
+.own-checkin-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.checkin-edit-btn,
+.checkin-delete-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.checkin-edit-btn:hover,
+.checkin-delete-btn:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.delete-modal {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,0.45);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 999;
+}
+
+.delete-modal.hidden {
+  display: none;
+}
+
+.delete-modal-card {
+  width: 360px;
+
+  background: var(--paper);
+  border: 2px solid var(--ink);
+
+  padding: 24px;
+
+  box-shadow: 6px 6px 0 var(--hairline);
+}
+
+.delete-modal-title {
+  font-family: var(--display);
+  font-size: 28px;
+
+  margin-bottom: 10px;
+}
+
+.delete-modal-text {
+  font-family: var(--mono);
+  color: var(--muted);
+
+  margin-bottom: 24px;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-secondary-btn,
+.modal-danger-btn {
+  appearance: none;
+
+  border: 2px solid var(--ink);
+
+  padding: 10px 16px;
+
+  font-family: var(--mono);
+  cursor: pointer;
+}
+
+.modal-secondary-btn {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.modal-danger-btn {
+  background: var(--ink);
+  color: var(--paper);
+}
