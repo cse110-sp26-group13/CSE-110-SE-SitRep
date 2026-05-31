@@ -955,24 +955,25 @@ function renderCalTimeline() {
 
     // Formatting date string for bar
     const barDateRange = duration > 1 
-      ? `${visibleStart.getDate()}–${visibleEnd.getDate()}` 
+      ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` 
       : `${visibleStart.getDate()}`;
 
     const color = issue.color || "var(--ink)";
+    const tooltipText = `${escapeHTML(issue.title)}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
       <div class="timeline-row">
         <div class="label-col">
-          <div class="issue-title" title="${escapeHTML(issue.title)}">${escapeHTML(issue.title)}</div>
+          <div class="issue-title" title="${tooltipText}">${escapeHTML(issue.title)}</div>
         </div>
         <div class="days-col">
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${color}; cursor: pointer;">
-              <div class="assignee-pill" title="Assigned to ${escapeHTML(owner.name)}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${color}; cursor: pointer;" title="${tooltipText}">
+              <div class="assignee-pill">
                 <span class="avatar">${initials}</span>
               </div>
               <span class="bar-title" style="color: var(--paper)">${escapeHTML(issue.title)}</span>
-              <span class="bar-dates" style="color: var(--paper); opacity: 0.8">${barDateRange}</span>
+              <span class="bar-dates" style="color: var(--paper); opacity: 0.9">${barDateRange}</span>
             </div>
           </div>
         </div>
