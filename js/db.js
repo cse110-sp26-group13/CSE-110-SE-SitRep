@@ -52,14 +52,37 @@
 
   // -------- loaders --------
 
+  const ACTIVE_TEAM_KEY = 'sitrep-active-team';
+
+  function readActiveTeamId() {
+    try { return window.localStorage.getItem(ACTIVE_TEAM_KEY) || null; }
+    catch (_e) { return null; }
+  }
+
+  function writeActiveTeamId(id) {
+    try {
+      if (id) window.localStorage.setItem(ACTIVE_TEAM_KEY, id);
+      else window.localStorage.removeItem(ACTIVE_TEAM_KEY);
+    } catch (_e) { /* private mode */ }
+  }
+
   async function loadCurrentTeam(userId) {
     const { data, error } = await sb()
       .from('memberships')
-      .select('team_id, teams ( id, name, join_code )')
+      .select('team_id, teams ( id, name, join_code ), joined_at')
       .eq('user_id', userId)
-      .limit(1);
+      .order('joined_at', { ascending: true });
     if (error) throw error;
-    return data && data[0] ? data[0].teams : null;
+    const rows = (data || []).filter(r => r.teams);
+    if (!rows.length) return null;
+
+    const wantId = readActiveTeamId();
+    const match = wantId ? rows.find(r => r.teams.id === wantId) : null;
+    const chosen = (match || rows[0]).teams;
+    // Keep the stored id in sync — covers first load, stale ids from a
+    // since-left circle, and the rail switcher reading the same key.
+    if (chosen.id !== wantId) writeActiveTeamId(chosen.id);
+    return chosen;
   }
 
   async function loadTeamMembers(teamId) {

@@ -1,5 +1,5 @@
 // Dashboard page orchestrator.
-// Summary view: KPIs, standup + issues snapshots, mood trend, activity, next-up.
+// Summary view: KPIs, standup + issues snapshots, mood trend, activity.
 
 function renderStandupSnapshot() {
   const tm = effectiveTeammates();
@@ -80,19 +80,7 @@ function renderDashboard() {
   renderIssuesSnapshot();
 }
 
-function bindResetDash() {
-  const btn = document.getElementById("reset-btn");
-  if (!btn) return;
-  btn.textContent = "Refresh";
-  btn.title = "Re-fetch live data";
-  btn.addEventListener("click", async () => {
-    await db.loadAll();
-    renderDashboard();
-  });
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderDashboard();
-  bindResetDash();
 });
