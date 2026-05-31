@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — Daily standup</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/checkins.css" />
+  <link rel="stylesheet" href="css/slots.css" />
+  <link rel="stylesheet" href="css/mood-trend.css" />
+
+  <script src="js/theme.js"></script>
+</head>
+<body data-page="standup">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <div class="circle-switcher" data-circle-switcher></div>
+      <div class="rail-divider" aria-hidden="true"></div>
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Daily standup.</h1>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-primary" id="post-checkin-btn">+ Post standup</button>
+        </div>
+      </header>
+
+      <div class="deep-content">
+        <div class="standup-layout">
+          <div class="standup-column">
+            <section class="card mood-unified-card" aria-labelledby="mood-unified-title">
+
+              <div class="card-head">
+                <h2 id="mood-unified-title">Today's Mood</h2>
+              </div>
+
+              <!-- Your Mood -->
+              <div class="mood-sub">
+                <div class="mood-sub-head">
+                  <div>
+                    <span class="mood-sub-label" id="your-mood-label">
+                      Your Mood ·
+                      <span id="selected-mood-icon"></span>
+                    </span>
+                    <span class="card-sub" id="mood-quick-sub"></span>
+                  </div>
+                </div>
+                <div class="mood-faces" id="mood-faces" role="radiogroup" aria-labelledby="your-mood-label">
+                  <button type="button" class="mood-face" data-mood="2" aria-label="Cooked">
+                    <span class="mood-label">cooked</span>
+                  </button>
+                  <button type="button" class="mood-face" data-mood="4" aria-label="Tired">
+                    <span class="mood-label">tired</span>
+                  </button>
+                  <button type="button" class="mood-face" data-mood="6" aria-label="Surviving">
+                    <span class="mood-label">surviving</span>
+                  </button>
+                  <button type="button" class="mood-face" data-mood="8" aria-label="Chill">
+                    <span class="mood-label">chill</span>
+                  </button>
+                  <button type="button" class="mood-face" data-mood="10" aria-label="Locked in">
+                    <span class="mood-label">locked in</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Team Mood -->
+              <div class="mood-sub">
+                <div class="mood-sub-head">
+                  <div>
+                    <span class="mood-sub-label" id="team-mood-label">Team Mood</span>
+                    <span class="card-sub" id="checkins-sub"></span>
+                  </div>
+                  <button type="button" class="inline-post-btn" id="inline-post-btn">+ Add yours</button>
+                </div>
+                <form class="checkin-form" id="checkin-form" hidden>
+                  <label>What did you do yesterday?
+                    <input type="text" id="yesterday-input" placeholder="Shipped the auth migration..." />
+                  </label>
+                  <label>What are you doing today?
+                    <input type="text" id="today-input" placeholder="Pairing with Sam on the empty states..." />
+                  </label>
+                  <label>Any blockers?
+                    <input type="text" id="blockers-input" placeholder="Leave blank if none" />
+                  </label>
+                  <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancel-checkin">Cancel</button>
+                    <button type="submit" class="btn-primary">Post standup</button>
+                  </div>
+                </form>
+                <ul class="checkin-list" id="checkin-list"></ul>
+              </div>
+
+            </section>
+          </div>
+
+          <aside class="standup-side">
+            <section class="card meeting-card" aria-labelledby="meet-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="meet-title">When can we meet?</h2>
+                </div>
+              </div>
+
+              <div class="meeting-layout">
+                <div class="overlap-panel">
+                  <div class="meeting-panel-head">
+                    <h3>TEAM AVAILABILITY</h3>
+                    <button
+                      type="button"
+                      class="inline-post-btn"
+                      id="edit-mine-btn"
+                    >Edit Mine</button>
+                  </div>
+
+                  <div class="w2m-scale-legend" id="w2m-legend"></div>
+
+                  <ul
+                    class="slots-list overlap-list"
+                    id="team-overlap"
+                  ></ul>
+                </div>
+
+              </div>
+            </section>
+
+            <section class="card" aria-labelledby="mood-title">
+              <div class="card-head">
+                <div>
+                  <h2 id="mood-title">Mood — last 7 days</h2>
+                  <span class="card-sub" id="mood-card-sub"></span>
+                </div>
+              </div>
+              <div class="sparkline-wrap" id="sparkline-wrap"></div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Auth + Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
+
+  <!-- Shared infra -->
+  <script src="js/db.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <!-- Features used on this page -->
+  <script src="js/features/circle-switcher.js"></script>
+  <script src="js/features/header.js"></script>
+  <script src="js/features/checkins.js"></script>
+  <script src="js/features/slots.js"></script>
+  <script src="js/features/mood-trend.js"></script>
+  <script src="js/features/activity.js"></script>
+
+  <!-- Page orchestrator -->
+  <script src="js/pages/standup.js"></script>
+  <div id="availability-tooltip" class="availability-tooltip hidden"></div>
+  <div id="availability-modal" class="delete-modal hidden">
+    <div class="delete-modal-card" style="width:520px;max-width:95vw;">
+      <div class="delete-modal-title" style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;">
+        <span>Your Availability</span>
+        <button id="close-availability-modal" class="modal-secondary-btn" style="padding:4px 10px;font-size:0.85rem;">×</button>
+      </div>
+      <div class="delete-modal-text">Click or drag to toggle your slots. Changes save automatically.</div>
+      <ul class="slots-list" id="personal-availability"></ul>
+    </div>
+  </div>
+  <div id="delete-modal" class="delete-modal hidden">
+    <div class="delete-modal-card">
+      <div class="delete-modal-title">
+        Delete standup?
+      </div>
+
+      <div class="delete-modal-text">
+        This cannot be undone.
+      </div>
+
+      <div class="delete-modal-actions">
+        <button id="cancel-delete-btn" class="modal-secondary-btn">
+          Cancel
+        </button>
+
+        <button id="confirm-delete-btn" class="modal-danger-btn">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</body>

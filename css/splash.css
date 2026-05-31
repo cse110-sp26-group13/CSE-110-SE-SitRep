@@ -1,0 +1,237 @@
+/* Splash page — auth + create/join circle.
+   Halftone language: warm paper, hard ink borders, graphic shadow.
+   Consumes the tokens from base.css; dark mode cascades for free. */
+
+.splash {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.splash-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--hard-shadow);
+  padding: 28px;
+}
+
+.splash-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.splash-head h1,
+.splash-title {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 75;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.splash-sub {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* Tab strip */
+.splash-tabs {
+  display: flex;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  margin-bottom: 18px;
+}
+
+.splash-tab {
+  appearance: none;
+  flex: 1;
+  background: transparent;
+  border: 0;
+  border-left: 1.5px solid var(--ink);
+  color: var(--ink-2);
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.splash-tab:first-child { border-left: 0; }
+.splash-tab:hover { background: var(--card-2); }
+.splash-tab.active { background: var(--ink); color: var(--paper); }
+
+/* Forms */
+.splash-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.splash-form[hidden] { display: none; }
+
+.splash-row {
+  display: flex;
+  gap: 10px;
+}
+
+.splash-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 360px) {
+  .splash-row { flex-direction: column; gap: 0; }
+}
+
+.splash-label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+
+.splash-input {
+  appearance: none;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  letter-spacing: -0.005em;
+  transition: box-shadow .12s;
+}
+
+.splash-input:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -1.5px;
+}
+.splash-input::placeholder { color: var(--subtle); }
+
+/* Invalid field — bad-color border + halo on focus, plus the message under it */
+.splash-input--invalid,
+.splash-input--invalid:hover,
+.splash-input--invalid:focus {
+  border-color: var(--bad);
+  outline-color: var(--bad);
+}
+.splash-input--invalid:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 22%, transparent);
+}
+
+.splash-field-error {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--bad);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.splash-field-error[hidden] { display: none; }
+
+/* 6-digit join code — bigger, monospace, centered */
+.splash-code {
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+/* Submit — extends .btn-primary from base.css; just sizes it full-width */
+.splash-submit {
+  margin-top: 18px;
+  padding: 11px 14px;
+  width: 100%;
+  justify-content: center;
+}
+
+.splash-submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Messages — error (bad) and success (good) variants */
+.splash-message {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--ink);
+}
+
+.splash-error {
+  color: var(--ink);
+  background: var(--bad-soft);
+  border-color: var(--bad);
+}
+
+.splash-success {
+  color: var(--ink);
+  background: var(--good-soft);
+  border-color: var(--good);
+}
+
+/* Footer: signed-in-as + sign out */
+.splash-foot {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--hairline);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.splash-foot-label { color: var(--subtle); }
+.splash-foot-email { color: var(--ink); }
+
+.splash-link {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--ink);
+  padding: 0;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.splash-link:hover { color: var(--bad); }
+
+/* Mobile: full-bleed card */
+@media (max-width: 480px) {
+  .splash { padding: 0; }
+  .splash-card {
+    padding: 20px;
+    border: none;
+    box-shadow: none;
+    max-width: 100%;
+    min-height: 100vh;
+  }
+}

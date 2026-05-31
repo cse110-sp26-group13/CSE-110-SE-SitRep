@@ -1,0 +1,13 @@
+**HardCoders**  
+**Team 13 review of Team 14’s project repo**
+
+**Strengths**  
+Jeong: When I first looked through the repo, I was really impressed by how well-organized and structured everything was. The layout and documentation made it easy to follow the project's development from beginning to end. It seemed clear that the team had genuinely embraced an agile workflow. Their progress was tracked transparently in a way that was easy to understand at a glance, which I thought was one of the strongest aspects of the repository.  
+Aidan: I really liked how they used the Google Calendar API for their rendition of the calendar. They use good separation of concerns, keeping the API logic in a dedicated `googleCalendarService.js` folder rather than mixing it into the view layer. I also think it was good that the sync button includes proper error handling with toast notifications for success, failure, and loading states.  
+**Improvements**  
+Improvement 1: How is your mood?  
+Right now, the mood options are represented by emojis like a flame or a lightning bolt, but it's not immediately clear which feeling each one is supposed to convey. Since the connection between the emoji and the intended mood isn't obvious, users might find it confusing to choose the right one. I'd suggest replacing them with more universally recognizable emotion-based emojis.  
+Improvement 2: Add More Context to the Project Description and Architecture  
+The "Project" section still feels unfinished, we could understand where things are located, but we'd still need to click into other files or watch the video to understand what the team is actually building and why. We'd suggest adding a short paragraph explaining what the app does, who it's for, and what problem it solves. Similarly, the repo has a folder set aside for architectural decisions that is currently empty. Even a brief note explaining key choices, like why certain tools or frameworks were used, would make the project much more approachable for a new contributor.  
+**Unclear**  
+Jeong: One area for improvement is the lack of clarity around the transition from prototype to MVP. While prototype-01, 02, 03, and the MVP each exist as separate directories, there's no explanation of why prototype-02's architecture was chosen as the foundation for the MVP, or why prototype-03's SitRepStore and prototype-02/MVP's Store follow different patterns. For a new contributor looking at the repo, seeing three different architectural approaches with no context can be quite confusing. Adding a short decision log or a note in the README explaining these tradeoffs would go a long way in making the codebase more approachable.

@@ -1,50 +1,40 @@
+/**
+ * Read-only derived views over the globals db.loadAll() populates
+ * (window.team, teammates, blockers, activity). GitHub-synced issues
+ * stay in localStorage (state.githubIssues) and are merged in here so
+ * the rest of the UI doesn't need to know they live in two places.
+ *
+ * Selectors must stay pure — no mutation, no I/O.
+ */
+
+/** @returns {object[]} current team members in their default order. */
 function effectiveTeammates() {
-  return teammates.map(t => {
-    const extra = state.extraCheckIns[t.id];
-    const covered = state.coveredFor.includes(t.id);
-    return {
-      ...t,
-      mood: extra?.mood ?? t.mood,
-      lastCheckIn: extra
-        ? { ...(t.lastCheckIn || {}), ...extra }
-        : t.lastCheckIn,
-      coverNeeded: covered ? false : t.coverNeeded,
-    };
-  });
+  return teammates;
 }
 
+/**
+ * Supabase blockers + GitHub-synced issues merged into one list. The
+ * GitHub ones go first so they appear at the top of the panel before
+ * sorting; everything else is keyed by `id` (the GH ones are prefixed
+ * `gh-` so they never collide with Postgres uuids).
+ *
+ * @returns {object[]}
+ */
 function effectiveBlockers() {
-  return [...state.extraBlockers, ...blockers].map(b => {
-    const ov = state.blockerOverrides[b.id] || {};
-    return {
-      ...b,
-      description: ov.description ?? b.description ?? "",
-      status: ov.status ?? b.status ?? "open",
-      comments: ov.comments ?? b.comments ?? [],
-    };
-  });
+  return [...(state.githubIssues || []), ...blockers];
 }
 
+/**
+ * Look up a blocker by id across both Supabase and GitHub-synced rows.
+ *
+ * @param {string} id
+ * @returns {object|undefined}
+ */
 function findBlockerById(id) {
   return effectiveBlockers().find(b => b.id === id);
 }
 
-function updateBlocker(id, patch) {
-  const existing = state.blockerOverrides[id] || {};
-  const base = [...state.extraBlockers, ...blockers].find(b => b.id === id);
-  state.blockerOverrides[id] = {
-    description: existing.description ?? base?.description ?? "",
-    status: existing.status ?? base?.status ?? "open",
-    comments: existing.comments ?? base?.comments ?? [],
-    ...patch,
-  };
-}
-
+/** @returns {object[]} the activity feed as loaded from Supabase. */
 function effectiveActivity() {
-  return [...state.extraActivity, ...activity];
-}
-
-function pushActivity(entry) {
-  state.extraActivity.unshift({ ...entry, time: entry.time || nowTime() });
-  if (state.extraActivity.length > 20) state.extraActivity.length = 20;
+  return activity;
 }

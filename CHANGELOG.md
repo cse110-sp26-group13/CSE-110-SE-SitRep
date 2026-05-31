@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-18
+
 ### Added
+- Splash page with email/password signup, login, and create-or-join "circle" flow ([splash.html](splash.html), [css/splash.css](css/splash.css), [js/features/splash.js](js/features/splash.js))
+- Supabase client bootstrap ([js/supabaseClient.js](js/supabaseClient.js)) and auth helpers with normalized error mapping ([js/auth.js](js/auth.js))
+- Client-side auth gate ([js/auth-guard.js](js/auth-guard.js)) bouncing unauthenticated visitors from [index.html](index.html) to splash; documented in [ADR-0004](docs/adr/0004-client-side-auth-gate-and-routing.md)
+- Field-level signup validation (first/last name required, email shape, password strength meter with 4 requirement checks)
+- Resilient signup error handling: empty `identities` heuristic for "email already registered", graceful "check your inbox" state when email confirmation is on, friendly rate-limit messages
+- `create_team(p_name)` Supabase RPC for atomic team + lead-membership insert, resolving the documented `team_member_read` RLS gap ([supabase/schema.sql](supabase/schema.sql), [supabase/schema.md](supabase/schema.md))
+- Pre-implementation splash wireframe per the course rubric ([docs/wireframes/splash.md](docs/wireframes/splash.md))
+- Unit tests for `mapAuthError` and the 6-digit join-code regex — 22 cases, runnable in Node (CI) and in the browser ([tests/auth.test.js](tests/auth.test.js), [tests/auth.test.html](tests/auth.test.html))
+- Vanilla CI on GitHub Actions: JS syntax checks, HTML asset-reference checks, CSS custom-property usage checks, and the unit tests — no external lint or test packages ([.github/workflows/ci.yml](.github/workflows/ci.yml), [scripts/check.js](scripts/check.js))
 - Research notes for Notion, Slack, and personal dashboard / sticky-note patterns ([Research/shaziResearch.md](Research/shaziResearch.md))
+
+### Changed
+- [index.html](index.html) loads `js/supabaseClient.js` and `js/auth-guard.js` ahead of the dashboard scripts, gating dashboard access on a valid session + at least one team membership
+
+### Database
+- Migration `add_create_team_rpc` applied to the HardCoders Supabase project
+- [supabase/schema.md](supabase/schema.md) updated to document the new RPC and drop the previously-documented "INSERT-then-SELECT" workaround
 
 ## [0.1.1] - 2026-05-14
 
@@ -31,6 +49,7 @@ Initial barebones dashboard skeleton.
 - Modular CSS architecture, one stylesheet per feature ([css/](css/))
 - Modular JS architecture with per-feature modules under [js/features/](js/features/)
 
-[Unreleased]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep/releases/tag/v0.1.0

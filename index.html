@@ -3,139 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SE SitRep — Dashboard</title>
+  <title>SitRep — Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/rail.css" />
-  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/page.css" />
   <link rel="stylesheet" href="css/kpis.css" />
   <link rel="stylesheet" href="css/checkins.css" />
-  <link rel="stylesheet" href="css/blockers.css" />
-  <link rel="stylesheet" href="css/slots.css" />
   <link rel="stylesheet" href="css/mood-trend.css" />
   <link rel="stylesheet" href="css/activity.css" />
+
+  <script src="js/theme.js"></script>
 </head>
-<body>
+<body data-page="dashboard">
   <div class="app">
     <aside class="rail" aria-label="Primary navigation">
-      <div class="rail-icon active" title="Dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      </div>
-      <div class="rail-icon" title="Team">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
-      </div>
-      <div class="rail-icon" title="Blockers">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg>
-      </div>
-      <div class="rail-icon" title="Calendar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
-      </div>
+      <div class="circle-switcher" data-circle-switcher></div>
+      <div class="rail-divider" aria-hidden="true"></div>
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+      </a>
       <div class="rail-spacer"></div>
-      <div class="rail-icon" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-      </div>
+      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
     </aside>
 
     <main class="main">
-      <header class="header">
+      <header class="page-intro">
         <div>
-          <h1>Dashboard</h1>
-          <div class="header-sub" id="header-sub"></div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Today on the team.</h1>
+          <p class="lede">A live overview pulled from this morning's standup. Dig into a feature to see the detail.</p>
         </div>
-        <div class="header-actions">
-          <button class="btn-secondary" id="reset-btn" title="Clear local changes">Reset demo</button>
-          <button class="btn-primary" id="post-checkin-btn">+ Post standup</button>
+        <div class="page-actions">
+          <a class="btn-primary" href="standup.html">+ Post standup</a>
         </div>
       </header>
 
       <section class="kpis" id="kpis" aria-label="At-a-glance KPIs"></section>
 
-      <div class="content">
-        <div class="row-main">
-          <div class="standup-column">
-            <section class="card mood-quick-card" aria-labelledby="mood-quick-title">
-              <div class="card-head">
-                <h2 id="mood-quick-title">How are you today?</h2>
-                <span class="card-sub" id="mood-quick-sub"></span>
+      <div class="dash-content">
+        <div class="dash-row-snaps">
+          <!-- Standup snapshot -->
+          <section class="snapshot" aria-labelledby="snap-standup-title">
+            <div class="snapshot-head">
+              <div>
+                <h3 id="snap-standup-title">Standup</h3>
+                <div class="snapshot-sub" id="snap-standup-sub">—</div>
               </div>
-              <div class="mood-faces" id="mood-faces" role="radiogroup" aria-label="Mood">
-                <button type="button" class="mood-face" data-mood="2" aria-label="Very sad">😢</button>
-                <button type="button" class="mood-face" data-mood="4" aria-label="Sad">🙁</button>
-                <button type="button" class="mood-face" data-mood="6" aria-label="Okay">😐</button>
-                <button type="button" class="mood-face" data-mood="8" aria-label="Happy">🙂</button>
-                <button type="button" class="mood-face" data-mood="10" aria-label="Very happy">😄</button>
-              </div>
-            </section>
-
-            <section class="card standup-card" aria-labelledby="checkins-title">
-            <div class="card-head">
-              <h2 id="checkins-title">Daily standup</h2>
-              <span class="card-sub" id="checkins-sub"></span>
+              <div class="snapshot-num" id="snap-standup-num">—</div>
             </div>
-            <form class="checkin-form" id="checkin-form" hidden>
-              <label>What did you do yesterday?
-                <input type="text" id="yesterday-input" placeholder="Shipped the auth migration..." />
-              </label>
-              <label>What are you doing today?
-                <input type="text" id="today-input" placeholder="Pairing with Sam on the empty states..." />
-              </label>
-              <label>Any blockers?
-                <input type="text" id="blockers-input" placeholder="Leave blank if none" />
-              </label>
-              <div class="form-actions">
-                <button type="button" class="btn-secondary" id="cancel-checkin">Cancel</button>
-                <button type="submit" class="btn-primary">Post standup</button>
-              </div>
-            </form>
-            <ul class="checkin-list" id="checkin-list"></ul>
-            </section>
-          </div>
-
-          <section class="card" aria-labelledby="blockers-title">
-            <div class="card-head blockers-head">
-              <h2 id="blockers-title">Issues</h2>
-              <div class="filters-wrap">
-                <div class="filters" id="status-filters" role="tablist" aria-label="Filter by status">
-                  <button data-status="open" class="chip active">Open</button>
-                  <button data-status="resolved" class="chip">Resolved</button>
-                  <button data-status="all" class="chip">All</button>
-                </div>
-                <div class="filters" id="severity-filters" role="tablist" aria-label="Filter by severity">
-                  <button data-sev="all" class="chip active">All</button>
-                  <button data-sev="critical" class="chip">Critical</button>
-                  <button data-sev="high" class="chip">High</button>
-                  <button data-sev="medium" class="chip">Medium</button>
-                </div>
-              </div>
-              <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
+            <div class="snapshot-body" id="snap-standup-body"></div>
+            <div class="snapshot-foot">
+              <a class="snapshot-link" href="standup.html">See the full standup →</a>
             </div>
-            <ul class="blocker-list" id="blocker-list"></ul>
           </section>
 
-          <aside class="right-rail">
-            <section class="card meeting-card" aria-labelledby="meet-title">
-              <div class="card-head">
-                <h2 id="meet-title">When can we meet?</h2>
-                <span class="card-sub">Click cells to toggle</span>
+          <!-- Issues snapshot -->
+          <section class="snapshot" aria-labelledby="snap-issues-title">
+            <div class="snapshot-head">
+              <div>
+                <h3 id="snap-issues-title">Issues</h3>
+                <div class="snapshot-sub" id="snap-issues-sub">—</div>
               </div>
-              <ul class="slots-list" id="slots-list"></ul>
-            </section>
-          </aside>
+              <div class="snapshot-num" id="snap-issues-num">—</div>
+            </div>
+            <div class="sev-row" id="snap-issues-sev"></div>
+            <div class="snapshot-body" id="snap-issues-body"></div>
+            <div class="snapshot-foot">
+              <a class="snapshot-link" href="issues.html">Open the issue tracker →</a>
+            </div>
+          </section>
         </div>
 
-        <div class="row-bottom">
+        <div class="dash-row-bottom">
           <section class="card" aria-labelledby="mood-title">
             <div class="card-head">
-              <h2 id="mood-title">Team mood — last 7 days</h2>
-              <span class="card-sub" id="mood-card-sub"></span>
+              <div>
+                <h2 id="mood-title">Team mood — last 7 days</h2>
+                <span class="card-sub" id="mood-card-sub"></span>
+              </div>
+              <a class="snapshot-link" href="standup.html">Standup →</a>
             </div>
             <div class="sparkline-wrap" id="sparkline-wrap"></div>
           </section>
 
           <section class="card" aria-labelledby="activity-title">
             <div class="card-head">
-              <h2 id="activity-title">Recent activity</h2>
-              <span class="card-sub" id="activity-sub"></span>
+              <div>
+                <h2 id="activity-title">Recent activity</h2>
+                <span class="card-sub" id="activity-sub"></span>
+              </div>
             </div>
             <ul class="activity-list" id="activity-list"></ul>
           </section>
@@ -144,27 +127,28 @@
     </main>
   </div>
 
-  <div class="modal-backdrop" id="issue-modal" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title">
-      <div class="modal-head">
-        <h3 id="issue-modal-title">New issue</h3>
-        <button class="modal-close" id="issue-modal-close" aria-label="Close">×</button>
-      </div>
-      <div class="modal-body" id="issue-modal-body"></div>
-    </div>
-  </div>
+  <!-- Auth + Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
 
-  <script src="data.js"></script>
+  <!-- Shared infra -->
+  <script src="js/db.js"></script>
   <script src="js/state.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <!-- Features used on this page -->
+  <script src="js/features/circle-switcher.js"></script>
   <script src="js/features/header.js"></script>
+  <script src="js/features/ai-agents.js"></script>
   <script src="js/features/kpis.js"></script>
-  <script src="js/features/checkins.js"></script>
-  <script src="js/features/blockers.js"></script>
-  <script src="js/features/slots.js"></script>
   <script src="js/features/mood-trend.js"></script>
   <script src="js/features/activity.js"></script>
-  <script src="js/app.js"></script>
+
+  <!-- Page orchestrator -->
+  <script src="js/pages/dashboard.js"></script>
 </body>
 </html>

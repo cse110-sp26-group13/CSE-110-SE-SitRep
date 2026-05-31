@@ -82,6 +82,9 @@ const blockers = [
     ownerId: "jordan",
     owner: "Jordan Lee",
     postedAt: "8:20 AM",
+    startDate: "2026-05-10",
+    dueDate: "2026-05-20",
+    category: "backend",
     comments: [
       { id: "c1-1", who: "Alex Kim", text: "Saw this too — reproduced on my account. Happy to pair this afternoon.", time: "9:05 AM" },
     ],
@@ -95,6 +98,9 @@ const blockers = [
     ownerId: "riley",
     owner: "Riley Chen",
     postedAt: "Yesterday 4:12 PM",
+    startDate: "2026-05-08",
+    dueDate: "2026-05-15",
+    category: "backend",
     comments: [],
   },
   {
@@ -106,6 +112,9 @@ const blockers = [
     ownerId: "alex",
     owner: "Alex Kim",
     postedAt: "Yesterday 1:30 PM",
+    startDate: "2026-05-09",
+    dueDate: "2026-05-16",
+    category: "swe",
     comments: [],
   },
   {
@@ -117,36 +126,63 @@ const blockers = [
     ownerId: "sam",
     owner: "Sam Patel",
     postedAt: "9:50 AM",
+    startDate: "2026-05-14",
+    dueDate: "2026-05-17",
+    category: "ui",
     comments: [],
   },
 ];
 
-const meetingSlots = [
-  {
-    id: "s1",
-    time: "11:00",
-    label: "11:00 – 11:30 AM",
-    availability: { alex: true, jordan: false, sam: true, riley: true, taylor: true },
-  },
-  {
-    id: "s2",
-    time: "1:30",
-    label: "1:30 – 2:00 PM",
-    availability: { alex: true, jordan: true, sam: true, riley: true, taylor: true },
-  },
-  {
-    id: "s3",
-    time: "3:00",
-    label: "3:00 – 3:30 PM",
-    availability: { alex: false, jordan: true, sam: false, riley: true, taylor: true },
-  },
-  {
-    id: "s4",
-    time: "4:30",
-    label: "4:30 – 5:00 PM",
-    availability: { alex: true, jordan: true, sam: true, riley: false, taylor: true },
-  },
+const meetingDays = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
 ];
+
+const meetingHours = [
+  "8 AM",
+  "9 AM",
+  "10 AM",
+  "11 AM",
+  "12 PM",
+  "1 PM",
+  "2 PM",
+  "3 PM",
+  "4 PM",
+  "5 PM",
+  "6 PM",
+  "7 PM",
+  "8 PM",
+  "9 PM",
+  "10 PM",
+];
+
+const meetingSlots = [];
+
+meetingDays.forEach(day => {
+  meetingHours.forEach(hour => {
+    meetingSlots.push({
+      id: `${day}-${hour}`,
+
+      day,
+      hour,
+
+      label: `${day} ${hour}`,
+
+      availability: {
+        alex: true,
+        jordan: Math.random() > 0.4,
+        sam: Math.random() > 0.4,
+        riley: Math.random() > 0.4,
+        taylor: Math.random() > 0.4,
+      },
+    });
+  });
+});
 
 const activity = [
   { time: "10:01 AM", type: "checkin", who: "Sam Patel",   text: "checked in — mood 7/10" },

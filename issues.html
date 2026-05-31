@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — Issues</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/blockers.css" />
+
+  <script src="js/theme.js"></script>
+</head>
+<body data-page="issues">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <div class="circle-switcher" data-circle-switcher></div>
+      <div class="rail-divider" aria-hidden="true"></div>
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Issues.</h1>
+          <p class="lede">Blockers, bugs, and quick wins. The team posts here when something needs another set of eyes. <em>Sync from GitHub when you need it.</em></p>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-secondary" id="sync-gh-btn">Sync GitHub</button>
+          <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
+        </div>
+      </header>
+
+      <div class="deep-content">
+        <section class="card" aria-labelledby="blockers-title">
+          <div class="card-head blockers-head">
+            <div>
+              <h2 id="blockers-title">All issues</h2>
+              <span class="card-sub" id="issues-sub">—</span>
+            </div>
+            <div class="filters-wrap">
+              <div class="filters" id="status-filters" role="tablist" aria-label="Filter by status">
+                <button data-status="open" class="chip active">Open</button>
+                <button data-status="resolved" class="chip">Resolved</button>
+                <button data-status="all" class="chip">All</button>
+              </div>
+              <div class="filters" id="severity-filters" role="tablist" aria-label="Filter by severity">
+                <button data-sev="all" class="chip active">All</button>
+                <button data-sev="critical" class="chip">Critical</button>
+                <button data-sev="high" class="chip">High</button>
+                <button data-sev="medium" class="chip">Medium</button>
+              </div>
+            </div>
+          </div>
+          <ul class="blocker-list" id="blocker-list"></ul>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="issue-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title">
+      <div class="modal-head">
+        <h3 id="issue-modal-title">New issue</h3>
+        <button class="modal-close" id="issue-modal-close" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body" id="issue-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Auth + Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
+
+  <!-- Shared infra -->
+  <script src="js/db.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <!-- Features used on this page -->
+  <script src="js/features/circle-switcher.js"></script>
+  <script src="js/features/github-api.js"></script>
+  <script src="js/features/header.js"></script>
+  <script src="js/features/blockers.js"></script>
+
+  <!-- Page orchestrator -->
+  <script src="js/pages/issues.js"></script>
+</body>
+</html>

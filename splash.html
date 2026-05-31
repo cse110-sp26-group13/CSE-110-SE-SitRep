@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SE SitRep — Sign in</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/splash.css" />
+  <link rel="stylesheet" href="css/pw-strength.css" />
+</head>
+<body>
+  <main class="splash">
+    <div class="splash-card">
+
+      <!-- ============================================================
+           View A: Auth (signup / login)
+           ============================================================ -->
+      <section id="view-auth" class="splash-view">
+        <header class="splash-head">
+          <h1>SE SitRep</h1>
+          <p>Sign in to your circle</p>
+        </header>
+
+        <nav class="splash-tabs" role="tablist" aria-label="Account">
+          <button type="button" class="splash-tab active"
+                  data-auth-tab="signup" role="tab">Sign up</button>
+          <button type="button" class="splash-tab"
+                  data-auth-tab="login" role="tab">Log in</button>
+        </nav>
+
+        <p id="auth-message" class="splash-message" hidden></p>
+
+        <form id="signup-form" class="splash-form" novalidate>
+          <div class="splash-row">
+            <div class="splash-col">
+              <label class="splash-label" for="signup-first-name">First name</label>
+              <input id="signup-first-name" class="splash-input"
+                     type="text" autocomplete="given-name" required
+                     aria-describedby="signup-first-name-error" />
+              <span id="signup-first-name-error" class="splash-field-error" hidden></span>
+            </div>
+            <div class="splash-col">
+              <label class="splash-label" for="signup-last-name">Last name</label>
+              <input id="signup-last-name" class="splash-input"
+                     type="text" autocomplete="family-name" required
+                     aria-describedby="signup-last-name-error" />
+              <span id="signup-last-name-error" class="splash-field-error" hidden></span>
+            </div>
+          </div>
+
+          <label class="splash-label" for="signup-email">Email</label>
+          <input id="signup-email" class="splash-input"
+                 type="email" autocomplete="email" required
+                 aria-describedby="signup-email-error" />
+          <span id="signup-email-error" class="splash-field-error" hidden></span>
+
+          <label class="splash-label" for="signup-password">Password</label>
+          <input id="signup-password" class="splash-input"
+                 type="password" autocomplete="new-password"
+                 minlength="8" required
+                 aria-describedby="signup-password-error" />
+          <span id="signup-password-error" class="splash-field-error" hidden></span>
+
+          <div id="signup-strength" class="pw-strength" aria-live="polite">
+            <div class="pw-strength-bar">
+              <div id="signup-strength-fill" class="pw-strength-fill"
+                   data-level="0"></div>
+            </div>
+            <div class="pw-strength-label">
+              <span>Password strength</span>
+              <span id="signup-strength-text"></span>
+            </div>
+            <ul class="pw-strength-reqs">
+              <li data-req="length">At least 8 characters</li>
+              <li data-req="letter">Contains a letter</li>
+              <li data-req="number">Contains a number</li>
+              <li data-req="strong">Mixed case or a symbol (for a stronger password)</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            Create account
+          </button>
+        </form>
+
+        <form id="login-form" class="splash-form" novalidate hidden>
+          <label class="splash-label" for="login-email">Email</label>
+          <input id="login-email" class="splash-input"
+                 type="email" autocomplete="email" required />
+
+          <label class="splash-label" for="login-password">Password</label>
+          <input id="login-password" class="splash-input"
+                 type="password" autocomplete="current-password" required />
+
+          <button type="submit" class="btn-primary splash-submit">
+            Log in
+          </button>
+        </form>
+      </section>
+
+      <!-- ============================================================
+           View B: Circle (create / join)
+           ============================================================ -->
+      <section id="view-circle" class="splash-view" hidden>
+        <header class="splash-head">
+          <h1 class="splash-title">Join or create a circle</h1>
+          <p class="splash-sub">Your team's shared SitRep space</p>
+        </header>
+
+        <nav class="splash-tabs" role="tablist" aria-label="Circle">
+          <button type="button" class="splash-tab active"
+                  data-circle-tab="create" role="tab">Create</button>
+          <button type="button" class="splash-tab"
+                  data-circle-tab="join" role="tab">Join</button>
+        </nav>
+
+        <p id="circle-message" class="splash-message" hidden></p>
+
+        <form id="create-form" class="splash-form" novalidate>
+          <label class="splash-label" for="create-name">Circle name</label>
+          <input id="create-name" class="splash-input"
+                 type="text" maxlength="80"
+                 placeholder="Group 13 — HardCoders" required />
+
+          <button type="submit" class="btn-primary splash-submit">
+            Create circle
+          </button>
+        </form>
+
+        <form id="join-form" class="splash-form" novalidate hidden>
+          <label class="splash-label" for="join-code">6-digit invite code</label>
+          <input id="join-code" class="splash-input splash-code"
+                 type="text" inputmode="numeric" pattern="\d{6}"
+                 maxlength="6" placeholder="123456" required />
+
+          <button type="submit" class="btn-primary splash-submit">
+            Join circle
+          </button>
+        </form>
+
+        <footer class="splash-foot">
+          <span class="splash-foot-label">Signed in as</span>
+          <span id="signed-in-as" class="splash-foot-email"></span>
+          <button type="button" id="signout-btn" class="splash-link">
+            Sign out
+          </button>
+        </footer>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/features/pw-strength.js"></script>
+  <script src="js/features/splash.js"></script>
+</body>
+</html>

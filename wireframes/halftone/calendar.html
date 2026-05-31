@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — Calendar</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/calendar.css" />
+</head>
+<body data-page="calendar">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <a class="rail-icon" data-route="settings" href="#" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Calendar.</h1>
+          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>personal</em> vs <em>team</em>; click an issue bar to jump into the tracker.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-primary" id="new-event-btn">+ New event</button>
+        </div>
+      </header>
+
+      <div class="deep-content">
+        <div class="cal-layout">
+          <aside class="cal-side">
+            <div>
+              <h4>View</h4>
+              <div class="cal-toggle" id="cal-toggle" role="tablist">
+                <button class="on" data-view="all">All</button>
+                <button data-view="personal">Personal</button>
+                <button data-view="team">Team</button>
+              </div>
+            </div>
+
+            <div>
+              <h4>Projects</h4>
+              <div class="cal-projects" id="cal-projects"></div>
+            </div>
+
+            <div>
+              <h4>Legend</h4>
+              <div class="cal-legend">
+                <div class="row"><span class="swatch bar-team"></span> Team milestone</div>
+                <div class="row"><span class="swatch bar-personal"></span> Personal due</div>
+                <div class="row"><span class="swatch bar-stretch"></span> At risk</div>
+                <div class="row"><span class="swatch bar-blocked"></span> Blocked</div>
+              </div>
+            </div>
+          </aside>
+
+          <section class="cal-main">
+            <div class="cal-hd">
+              <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
+              <div class="cal-nav">
+                <button id="cal-prev" aria-label="Previous month">‹</button>
+                <button class="today-btn" id="cal-today">Today</button>
+                <button id="cal-next" aria-label="Next month">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="cal-foot">
+              <span id="cal-foot-count">—</span>
+              <span>Drag-to-create &amp; recurring events land in v2</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <script src="js/features/header.js"></script>
+
+  <script src="js/pages/calendar.js"></script>
+</body>
+</html>
