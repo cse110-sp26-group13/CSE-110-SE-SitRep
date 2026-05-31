@@ -779,6 +779,47 @@ function bindCalendar() {
   bindEventModal();
   bindGroupModal();
   bindDayModal();
+  bindSyncHover();
+}
+
+/**
+ * Synchronizes hover states for events or issues that appear in multiple places 
+ * (e.g., spanning multiple weeks in the grid or appearing in both grid and timeline).
+ */
+function bindSyncHover() {
+  const containers = [
+    document.getElementById("cal-grid"),
+    document.getElementById("cal-week-grid"),
+    document.getElementById("timeline-container")
+  ];
+
+  containers.forEach(container => {
+    if (!container) return;
+
+    container.addEventListener("mouseover", e => {
+      const target = e.target.closest("[data-event-id], [data-issue-id]");
+      if (!target) return;
+
+      const id = target.dataset.eventId || target.dataset.issueId;
+      const selector = target.dataset.eventId 
+        ? `[data-event-id="${CSS.escape(id)}"]` 
+        : `[data-issue-id="${CSS.escape(id)}"]`;
+
+      document.querySelectorAll(selector).forEach(el => el.classList.add("hovered"));
+    });
+
+    container.addEventListener("mouseout", e => {
+      const target = e.target.closest("[data-event-id], [data-issue-id]");
+      if (!target) return;
+
+      const id = target.dataset.eventId || target.dataset.issueId;
+      const selector = target.dataset.eventId 
+        ? `[data-event-id="${CSS.escape(id)}"]` 
+        : `[data-issue-id="${CSS.escape(id)}"]`;
+
+      document.querySelectorAll(selector).forEach(el => el.classList.remove("hovered"));
+    });
+  });
 }
 
 /**

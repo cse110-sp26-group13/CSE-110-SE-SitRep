@@ -435,7 +435,9 @@
   display: flex; align-items: center; padding: 0 0.625rem; gap: 0.5rem;
   box-shadow: 0.125rem 0.125rem 0 rgba(0,0,0,0.1);
   overflow: hidden;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
+.timeline-bar:hover, .timeline-bar.hovered { transform: translate(-0.0625rem, -0.0625rem); box-shadow: 0.125rem 0.125rem 0 var(--ink); }
 .bar-title {
   font-family: var(--mono);
   font-size: 0.625rem;
@@ -472,7 +474,7 @@
   cursor: pointer; text-align: left;
   margin-left: 0.125rem; margin-right: 0.125rem;
 }
-.cal-bar:hover { transform: translate(-0.0625rem, -0.0625rem); box-shadow: 0.125rem 0.125rem 0 var(--ink); }
+.cal-bar:hover, .cal-bar.hovered { transform: translate(-0.0625rem, -0.0625rem); box-shadow: 0.125rem 0.125rem 0 var(--ink); }
 .cal-bar.global   { background: var(--ink); color: var(--paper); }
 .cal-bar.team     { background: var(--ink); color: var(--paper); }
 .cal-bar.personal { background: var(--muted); color: var(--paper); }
