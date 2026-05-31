@@ -18,14 +18,34 @@
     busy: false,
   };
 
+  /**
+   * Shorthand for document.getElementById.
+   *
+   * @param {string} id
+   * @returns {HTMLElement|null}
+   */
   function $(id) { return document.getElementById(id); }
 
+  /**
+   * Swap between the two top-level splash views.
+   *
+   * @param {"auth"|"circle"} name
+   */
   function showView(name) {
     state.view = name;
     $('view-auth').hidden = name !== 'auth';
     $('view-circle').hidden = name !== 'circle';
   }
 
+  /**
+   * Activate one tab within a tab group (signup/login or create/join)
+   * and clear the matching error banner. Toggling tabs never clears
+   * field values — users can flip between login and signup without
+   * losing their email.
+   *
+   * @param {"auth"|"circle"} group
+   * @param {string} name - the tab id within that group.
+   */
   function setTab(group, name) {
     if (group === 'auth') {
       state.authTab = name;
@@ -46,9 +66,16 @@
     }
   }
 
-//elId = element id
-//normalized = message object
-//kind = success/error
+  /**
+   * Show a banner-style error or success message on the auth or
+   * circle view.
+   *
+   * @param {string} elId - id of the message element to populate.
+   * @param {{code: string, message: string} | null} normalized -
+   *   error object from mapAuthError(), or a synthetic one for
+   *   client-side validation failures.
+   * @param {"error"|"success"} [kind="error"]
+   */
   function showMessage(elId, normalized, kind) {
     const el = $(elId);
     if (!el || !normalized) return;
@@ -58,6 +85,11 @@
     el.hidden = false;
   }
 
+  /**
+   * Hide and reset a banner-style message element.
+   *
+   * @param {string} elId
+   */
   function clearMessage(elId) {
     const el = $(elId);
     if (!el) return;
@@ -65,6 +97,14 @@
     el.textContent = '';
   }
 
+  /**
+   * Mark a form field as invalid and show its inline error message.
+   * Sets aria-invalid and wires up the matching `${id}-error`
+   * element so screen readers announce the message.
+   *
+   * @param {string} inputId
+   * @param {string} message
+   */
   function setFieldError(inputId, message) {
     const input = $(inputId);
     const errEl = $(`${inputId}-error`);
@@ -75,6 +115,11 @@
     errEl.hidden = false;
   }
 
+  /**
+   * Clear the invalid state and inline error for a field.
+   *
+   * @param {string} inputId
+   */
   function clearFieldError(inputId) {
     const input = $(inputId);
     const errEl = $(`${inputId}-error`);
@@ -95,10 +140,22 @@
     'create-name', 'join-code',
   ];
 
+  /** Clear inline errors from every signup field at once. */
   function clearAllSignupErrors() {
     SIGNUP_FIELDS.forEach(clearFieldError);
   }
 
+  /**
+   * Client-side email shape check. Catches the common typos
+   * (missing @, missing TLD, doubled dots, whitespace) so we don't
+   * round-trip an obvious error to Supabase. The server is still
+   * the source of truth — anything that passes here might still
+   * come back as `invalid_credentials` later.
+   *
+   * @param {string} raw
+   * @returns {{code: string, message: string} | null}
+   *   `null` when the email is valid.
+   */
   function validateEmail(raw) {
     const email = (raw || '').trim();
     if (!email) return { code: 'email_blank', message: 'Please enter your email.' };
@@ -126,9 +183,23 @@
     return null;
   }
 
+  /**
+   * Update the signup password strength meter.
+   *
+   * @param {string} password
+   * @returns {{score: number, requiredMet: boolean}}
+   */
   const updatePasswordStrength = (password) =>
     window.PwStrength.update('signup', password);
 
+  /**
+   * Disable the submit button on a form while a network call is in
+   * flight, swapping its text to "Working…". Restored on the
+   * complementary `setBusy(form, false)` call.
+   *
+   * @param {HTMLFormElement} form
+   * @param {boolean} isBusy
+   */
   function setBusy(form, isBusy) {
     state.busy = isBusy;
     const btn = form.querySelector('button[type="submit"]');
@@ -165,8 +236,15 @@
     showView('circle');
   }
 
-  // Resolves to { data, error } whether the RPC returns an error in its
-  // payload or throws (e.g. network failure).
+  /**
+   * Call a Supabase RPC and normalize its return shape so the
+   * caller always gets `{ data, error }` — whether the RPC failed
+   * inside Postgres or threw on the network.
+   *
+   * @param {string} name - RPC function name.
+   * @param {object} args - RPC arguments.
+   * @returns {Promise<{data: unknown, error: unknown}>}
+   */
   async function callRpc(name, args) {
     try {
       return await window.sbClient.rpc(name, args);
@@ -175,6 +253,14 @@
     }
   }
 
+  /**
+   * Signup form submit. Validates every field client-side first so
+   * the user sees all errors at once, then calls window.auth.signUp.
+   * Server errors are routed back to the field they describe when
+   * possible (e.g. `email_already_registered` → email field).
+   *
+   * @param {SubmitEvent} e
+   */
   async function onSignupSubmit(e) {
     e.preventDefault();
     if (state.busy) return;
@@ -236,6 +322,12 @@
     if (data && data.session) await route();
   }
 
+  /**
+   * Login form submit. Minimal client-side validation (both fields
+   * non-empty) since Supabase returns clear errors for bad creds.
+   *
+   * @param {SubmitEvent} e
+   */
   async function onLoginSubmit(e) {
     e.preventDefault();
     if (state.busy) return;
@@ -258,6 +350,14 @@
     await route();
   }
 
+  /**
+   * "Create circle" submit. Calls the create_team RPC which inserts
+   * the team row and the lead membership atomically (see
+   * [supabase/schema.sql](../../supabase/schema.sql)). On success,
+   * redirects straight to the dashboard.
+   *
+   * @param {SubmitEvent} e
+   */
   async function onCreateSubmit(e) {
     e.preventDefault();
     if (state.busy) return;
@@ -279,6 +379,12 @@
     window.location.replace(DASHBOARD_URL);
   }
 
+  /**
+   * "Join circle" submit. Validates the 6-digit code shape client-side
+   * (cheap) before hitting the join_team_by_code RPC.
+   *
+   * @param {SubmitEvent} e
+   */
   async function onJoinSubmit(e) {
     e.preventDefault();
     if (state.busy) return;
@@ -300,6 +406,11 @@
     window.location.replace(DASHBOARD_URL);
   }
 
+  /**
+   * "Sign out" click — clears the session, resets every field and
+   * tab back to the initial signup view. Used on the circle view
+   * when the user wants to switch accounts before joining a team.
+   */
   async function onSignoutClick() {
     if (state.busy) return;
     await window.auth.signOut();
@@ -313,6 +424,10 @@
     updatePasswordStrength('');
   }
 
+  /**
+   * One-time setup on DOMContentLoaded: bind every tab, form, and
+   * input handler, then route() to put the user in the right view.
+   */
   async function init() {
     document.querySelectorAll('[data-auth-tab]').forEach((btn) => {
       btn.addEventListener('click', () => setTab('auth', btn.dataset.authTab));
