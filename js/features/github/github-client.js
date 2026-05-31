@@ -11,17 +11,18 @@ function getGHToken() {
 }
 
 async function ghFetch(path, options = {}) {
-  const token = getGHToken();
+  const { token: explicitToken, ...fetchOptions } = options;
+  const token = explicitToken ?? getGHToken();
   const url = GH_API_BASE + path;
 
   const headers = {
     Accept: "application/vnd.github+json",
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
+    ...(fetchOptions.headers || {}),
   };
 
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(url, { ...fetchOptions, headers });
 
   if (!response.ok) {
     if (response.status === 404) throw new Error(`GitHub resource not found: ${path}`);

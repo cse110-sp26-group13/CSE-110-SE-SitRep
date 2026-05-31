@@ -7,9 +7,13 @@ function labelToSeverity(labels) {
 }
 
 async function fetchGitHubIssues(repoPath, token) {
-  const response = await ghFetch(`/repos/${repoPath}/issues?state=all`);
+  const response = await ghFetch(`/repos/${repoPath}/issues?state=all`, { token });
   const data = await response.json();
-  return data.map((issue) => ({
+  return data.filter((issue) => !issue.pull_request).map(mapGitHubIssue);
+}
+
+function mapGitHubIssue(issue) {
+  return {
     id: `gh-${issue.id}`,
     ghNumber: issue.number,
     title: issue.title,
@@ -23,7 +27,7 @@ async function fetchGitHubIssues(repoPath, token) {
     category: "swe",
     comments: [],
     isExternal: true,
-  }));
+  };
 }
 
 async function createGitHubIssue(title, body) {

@@ -434,7 +434,7 @@ function openGitHubSyncModal() {
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues + PRs</button>
       </div>
     </form>
   `);
@@ -451,19 +451,23 @@ function openGitHubSyncModal() {
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const issues = await fetchGitHubIssues(repo, token);
+      const [issues, pullRequests] = await Promise.all([
+        fetchGitHubIssues(repo, token),
+        fetchGitHubPullRequests(repo, token),
+      ]);
       sessionStorage.setItem("sitrep_gh_repo", repo);
       sessionStorage.setItem("sitrep_gh_token", token);
       setGithubIssues(issues);
+      setGithubPullRequests(pullRequests);
 
-      await db.addActivity("checkin", `Synced ${issues.length} issues from GitHub (${repo})`);
+      await db.addActivity("checkin", `Synced ${issues.length} issues and ${pullRequests.length} PRs from GitHub (${repo})`);
       await db.loadAll();
       closeModal();
       renderAll();
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
-      btn.textContent = "Pull Issues";
+      btn.textContent = "Pull Issues + PRs";
       btn.disabled = false;
     }
   });

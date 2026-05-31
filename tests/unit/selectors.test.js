@@ -3,8 +3,8 @@ import { readFileSync } from 'fs'
 import vm from 'vm'
 
 // js/selectors.js is now a thin layer over the Supabase-backed globals
-// populated by js/db.js. It just merges localStorage'd GitHub issues
-// with the team's DB blockers, and exposes findBlockerById().
+// populated by js/db.js. It merges localStorage'd GitHub issues with
+// the team's DB blockers and exposes localStorage'd GitHub PRs.
 const SELECTORS_CODE = readFileSync('./js/selectors.js', 'utf8')
 
 const SAMPLE_BLOCKER = {
@@ -26,9 +26,23 @@ const SAMPLE_GH_ISSUE = {
   isExternal: true,
 }
 
+const SAMPLE_GH_PR = {
+  id: 'gh-pr-99',
+  title: 'Add PR support',
+  status: 'open',
+  author: 'octocat',
+  isExternal: true,
+}
+
 function makeCtx({ state = {}, blockers = [], teammates = [], activity = [] } = {}) {
   const ctx = vm.createContext({
-    state: { githubIssues: [], severityFilter: 'all', statusFilter: 'open', ...state },
+    state: {
+      githubIssues: [],
+      githubPullRequests: [],
+      severityFilter: 'all',
+      statusFilter: 'open',
+      ...state,
+    },
     blockers,
     teammates,
     activity,
@@ -87,6 +101,31 @@ describe('findBlockerById()', () => {
   it('returns undefined for an unknown id', () => {
     const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER] })
     expect(ctx.findBlockerById('nope')).toBeUndefined()
+  })
+})
+
+describe('effectivePullRequests()', () => {
+  it('returns GitHub-synced pull requests', () => {
+    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    expect(ctx.effectivePullRequests()).toHaveLength(1)
+    expect(ctx.effectivePullRequests()[0].id).toBe('gh-pr-99')
+  })
+
+  it('tolerates a missing state.githubPullRequests field', () => {
+    const ctx = makeCtx({ state: { githubPullRequests: undefined } })
+    expect(ctx.effectivePullRequests()).toHaveLength(0)
+  })
+})
+
+describe('findPullRequestById()', () => {
+  it('finds a GitHub-synced pull request by id', () => {
+    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    expect(ctx.findPullRequestById('gh-pr-99').title).toBe('Add PR support')
+  })
+
+  it('returns undefined for an unknown pull request id', () => {
+    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    expect(ctx.findPullRequestById('gh-pr-nope')).toBeUndefined()
   })
 })
 

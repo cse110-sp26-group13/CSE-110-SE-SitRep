@@ -3,6 +3,7 @@ const STORAGE_KEY = "sitrep_state_v3";
 function defaultState() {
   return {
     githubIssues: [],
+    githubPullRequests: [],
     severityFilter: "all",
     statusFilter: "open",
     slotAvailability: {},
@@ -26,6 +27,11 @@ function saveState() {
 
 function setGithubIssues(issues) {
   state.githubIssues = issues;
+  saveState();
+}
+
+function setGithubPullRequests(pullRequests) {
+  state.githubPullRequests = pullRequests;
   saveState();
 }
 

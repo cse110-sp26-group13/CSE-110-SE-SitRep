@@ -1,9 +1,10 @@
 // Issues page orchestrator.
-// Full blockers list + filters + new-issue + GitHub sync modal.
+// Full blockers list + filters + new-issue + GitHub sync modal + pull requests.
 
 function renderIssues() {
   renderHeader();
   renderBlockers();
+  renderPullRequests();
   updateIssuesSub();
 }
 
@@ -22,4 +23,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderIssues();
   bindBlockerControls();
+  bindPullRequestControls();
 });

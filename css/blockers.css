@@ -157,6 +157,64 @@
   letter-spacing: 0.02em;
 }
 
+/* Pull request list */
+.pull-request-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pull-request-row {
+  border-top: 1px dashed var(--hairline);
+}
+.pull-request-row:first-child { border-top: 0; }
+.pull-request-row.status-closed { opacity: 0.62; }
+
+.pull-request-link {
+  display: block;
+  padding: 14px 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+.pull-request-link:hover {
+  background: var(--card-2);
+  margin: 0 -10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.pull-request-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pull-request-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.status-merged { background: var(--good-soft); color: var(--ink); }
+.status-closed { background: var(--card-2); color: var(--muted); }
+
+.pr-draft,
+.pr-mergeable {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1.5px solid var(--hairline);
+  background: var(--paper);
+  color: var(--muted);
+}
+
 /* New-issue accent */
 .new-issue-btn { box-shadow: 3px 3px 0 var(--hairline); }
 .new-issue-btn:hover { box-shadow: 3px 3px 0 var(--ink); }
