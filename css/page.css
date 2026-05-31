@@ -1,4 +1,4 @@
-/* Shared page chrome: page-intro header, lede, next-up promo, dashboard snapshots */
+/* Shared page chrome: page-intro header, lede, dashboard snapshots */
 
 .page-intro {
   display: flex;
@@ -260,47 +260,6 @@
   gap: 20px;
   position: sticky;
   top: 24px;
-}
-
-/* ── Next-up promo bar ────────────────────────────────────── */
-.next-up {
-  background: var(--ink);
-  color: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-.next-up-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-.next-up-text strong {
-  font-family: var(--display);
-  font-weight: 800;
-  font-variation-settings: "wdth" 75;
-  font-size: 22px;
-  letter-spacing: -0.02em;
-  color: var(--paper);
-}
-.next-up-text {
-  font-size: 13.5px;
-  color: color-mix(in srgb, var(--paper) 72%, transparent);
-}
-.next-up .btn-secondary {
-  background: var(--paper);
-  color: var(--ink);
-  border-color: var(--paper);
-}
-.next-up .btn-secondary:hover {
-  background: transparent;
-  color: var(--paper);
-  border-color: var(--paper);
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
