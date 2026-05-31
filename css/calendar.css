@@ -394,59 +394,77 @@
 .cal-week-grid .cal-cell { flex: 1; min-height: 31.25rem; }
 
 /* ─── Timeline View ─────────────────────────────────────────────────── */
-.cal-timeline-view { overflow-x: auto; }
-.timeline-container { min-width: 50rem; flex: 1; display: flex; flex-direction: column; }
+.cal-timeline-view { 
+  overflow-x: auto; 
+  background: var(--card); 
+  border: 0.1rem solid var(--ink);
+  box-shadow: 0.375rem 0.375rem 0 var(--ink);
+}
+.timeline-container { width: fit-content; display: flex; flex-direction: column; }
 .timeline-grid {
-  display: flex; flex-direction: column; border: 0.1rem solid var(--ink);
+  display: flex; flex-direction: column;
   background: var(--paper); flex: 1;
 }
 .timeline-header {
   background: var(--card-2); font-family: var(--mono); font-size: 0.625rem; font-weight: 700;
   text-transform: uppercase; border-bottom: 0.1rem solid var(--ink); display: flex;
+  position: sticky; top: 0; z-index: 10;
 }
 .timeline-body { display: flex; flex-direction: column; flex: 1; background: var(--card-2); }
-.timeline-row { display: flex; border-bottom: 0.1rem solid var(--ink); flex: 1; min-height: 4.5rem; background: var(--paper); }
+.timeline-row { display: flex; border-bottom: 0.1rem solid var(--ink); flex: 1; min-height: 5rem; background: var(--paper); }
 .timeline-row:nth-child(even) { background: var(--card-2); }
 .timeline-row:last-child { border-bottom: 0; }
 
 .label-col {
-  width: 14rem; padding: 0.75rem 1.25rem; border-right: 0.1rem solid var(--ink);
-  flex-shrink: 0; display: flex; align-items: center; background: inherit;
-  position: sticky; left: 0; z-index: 5;
+  width: 16rem; padding: 0.75rem 1.25rem; border-right: 0.1rem solid var(--ink);
+  flex-shrink: 0; display: flex; align-items: center; background: var(--paper);
+  position: sticky; left: 0; z-index: 15;
 }
-.days-col { flex: 1; display: flex; position: relative; }
+.days-col { 
+  display: flex; 
+  position: relative; 
+  background: transparent;
+}
+
 .day-tick {
-  flex: 1;
+  width: 4rem; /* Fixed width per day to ensure bars are 'rectangles' */
+  flex-shrink: 0;
   border-right: 0.0625rem solid var(--hairline);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 800;
   color: var(--muted);
   pointer-events: none;
+  height: 100%;
 }
-.day-tick.weekend { background: rgba(0,0,0,0.03); }
+.day-tick.weekend { background: rgba(0,0,0,0.04); }
+.timeline-header .day-tick { height: 3rem; color: var(--ink); }
 .day-tick:last-child { border-right: 0; }
 
-.issue-title { font-family: var(--display); font-size: 0.875rem; font-weight: 800; color: var(--ink); line-height: 1.2; }
+.issue-title { font-family: var(--display); font-size: 0.9375rem; font-weight: 800; color: var(--ink); line-height: 1.2; }
 
-.timeline-bar-wrap { position: absolute; top: 50%; transform: translateY(-50%); height: 2.75rem; padding: 0; }
+.timeline-bar-wrap { position: absolute; top: 50%; transform: translateY(-50%); height: 3rem; padding: 0; }
 .timeline-bar {
   width: 100%; height: 100%; border: 0.125rem solid var(--ink);
-  display: flex; align-items: center; padding: 0 0.75rem; gap: 0.75rem;
+  display: flex; align-items: center; padding: 0 0.875rem; gap: 0.875rem;
   box-shadow: 0.25rem 0.25rem 0 var(--ink);
   overflow: hidden;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  border-radius: 0.125rem; /* The "squished square" look */
+  transition: all 0.1s ease;
+  border-radius: 0.125rem; /* Squished square look */
 }
-.timeline-bar:hover, .timeline-bar.hovered { transform: translate(-0.125rem, -0.125rem); box-shadow: 0.375rem 0.375rem 0 var(--ink); }
+.timeline-bar:hover, .timeline-bar.hovered { 
+  transform: translate(-0.125rem, -0.125rem); 
+  box-shadow: 0.4rem 0.4rem 0 var(--ink);
+  z-index: 20;
+}
 
 .bar-title {
   font-family: var(--sans);
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -454,22 +472,23 @@
 }
 .bar-dates {
   font-family: var(--mono);
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   white-space: nowrap;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.2);
-  padding: 0.125rem 0.375rem;
+  background: rgba(255,255,255,0.25);
+  padding: 0.2rem 0.5rem;
+  border: 0.0625rem solid rgba(0,0,0,0.1);
   border-radius: 0.125rem;
 }
 .assignee-pill {
-  width: 1.75rem; height: 1.75rem; background: var(--paper); 
+  width: 2rem; height: 2rem; background: var(--paper); 
   border-radius: 0.125rem; /* Squished square */
   display: flex; align-items: center; justify-content: center; border: 0.125rem solid var(--ink);
   flex-shrink: 0;
-  box-shadow: 0.125rem 0.125rem 0 var(--ink);
+  box-shadow: 0.15rem 0.15rem 0 var(--ink);
 }
-.avatar { font-family: var(--mono); font-size: 0.625rem; font-weight: 900; color: var(--ink); }
+.avatar { font-family: var(--mono); font-size: 0.75rem; font-weight: 900; color: var(--ink); }
 
 /* ─── Event Bars & Kind Indicators ────────────────────────────────── */
 .cal-date { font-family: var(--mono); font-size: 0.6875rem; font-weight: 700; color: var(--ink); }
