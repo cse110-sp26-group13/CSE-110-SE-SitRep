@@ -157,6 +157,7 @@ function openCreateModal() {
       </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
+        <button type="button" class="btn-secondary" id="create-gh-issue-btn">Create GitHub issue</button>
         <button type="submit" class="btn-primary">Create issue</button>
       </div>
     </form>
@@ -191,10 +192,46 @@ function openCreateModal() {
     renderAll();
   });
 
+  document.getElementById("create-gh-issue-btn").addEventListener("click", async () => {
+    const title = document.getElementById("issue-title").value.trim();
+    const dateError = document.getElementById("date-error");
+    if (!title) {
+      dateError.textContent = "Title is required.";
+      dateError.hidden = false;
+      return;
+    }
+    const description = document.getElementById("issue-desc").value.trim();
+    try {
+      const ghIssue = await createGitHubIssue(title, description);
+      const ownerSelect = document.getElementById("issue-owner");
+      const newGhIssue = {
+        id: `gh-${ghIssue.id}`,
+        ghNumber: ghIssue.number,
+        title: ghIssue.title,
+        description: ghIssue.body || "",
+        severity: document.getElementById("issue-sev").value,
+        status: "open",
+        owner: ownerSelect.options[ownerSelect.selectedIndex].text,
+        postedAt: "GitHub Sync",
+        startDate: document.getElementById("issue-start").value,
+        dueDate: document.getElementById("issue-due").value,
+        category: document.getElementById("issue-category").value,
+        comments: [],
+        isExternal: true,
+      };
+      setGithubIssues([...(state.githubIssues || []), newGhIssue]);
+      closeModal();
+      renderAll();
+    } catch (err) {
+      dateError.textContent = err.message;
+      dateError.hidden = false;
+    }
+  });
+
   bindModalDismissers();
 }
 
-function openDetailModal(id) {
+async function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
@@ -202,8 +239,20 @@ function openDetailModal(id) {
   const currentDueDate = b.dueDate ?? "";
   const currentCategory = b.category ?? "swe";
 
-  const commentsHTML = b.comments.length
-    ? b.comments.map(c => `
+  // GitHub-synced issues live in localStorage, not Postgres — guard those.
+  const isGithubIssue = String(id).startsWith("gh-");
+
+  let displayComments = b.comments;
+  if (isGithubIssue && b.ghNumber) {
+    try {
+      displayComments = await fetchGitHubComments(b.ghNumber);
+    } catch (err) {
+      console.error("Failed to fetch GitHub comments:", err);
+    }
+  }
+
+  const commentsHTML = displayComments.length
+    ? displayComments.map(c => `
         <li class="comment">
           <div class="comment-head">
             <span class="comment-who">${escapeHTML(c.who)}</span>
@@ -264,13 +313,22 @@ function openDetailModal(id) {
     </div>
   `);
 
-  // GitHub-synced issues live in localStorage, not Postgres — guard those.
-  const isGithubIssue = String(id).startsWith("gh-");
-
   document.getElementById("issue-status").addEventListener("change", async e => {
     const newStatus = e.target.value;
     if (newStatus === b.status) return;
-    if (isGithubIssue) return;
+    if (isGithubIssue) {
+      if (newStatus === "resolved") {
+        try { await closeGitHubIssue(b.ghNumber); }
+        catch (err) { console.error("Failed to close GitHub issue:", err); }
+        const updated = (state.githubIssues || []).map(issue =>
+          issue.ghNumber === b.ghNumber ? { ...issue, status: "resolved" } : issue
+        );
+        setGithubIssues(updated);
+        renderAll();
+        closeModal();
+      }
+      return;
+    }
     await db.updateBlocker(id, { status: newStatus });
     await db.addActivity("blocker", `set "${b.title}" to ${STATUS_LABEL[newStatus]}`);
     await db.loadAll();
@@ -305,7 +363,9 @@ function openDetailModal(id) {
     const text = input.value.trim();
     if (!text) return;
     if (isGithubIssue) {
-      alert("Comments on GitHub-synced issues aren't persisted yet.");
+      try { await addGitHubComment(b.ghNumber, text); }
+      catch (err) { console.error("Failed to post GitHub comment:", err); }
+      await openDetailModal(id);
       return;
     }
     await db.addBlockerComment(id, text);
@@ -393,6 +453,7 @@ function openGitHubSyncModal() {
 
       const issues = await fetchGitHubIssues(repo, token);
       sessionStorage.setItem("sitrep_gh_repo", repo);
+      sessionStorage.setItem("sitrep_gh_token", token);
       setGithubIssues(issues);
 
       await db.addActivity("checkin", `Synced ${issues.length} issues from GitHub (${repo})`);
