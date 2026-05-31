@@ -895,30 +895,60 @@ function bindDayModal() {
  */
 function renderCalTimeline() {
   const container = document.getElementById("timeline-container");
+  const scrollWrapper = document.querySelector(".cal-timeline-view");
   const hd = document.getElementById("timeline-hd");
-  const issues = effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved");
+  const allIssues = effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved");
   const teammates = effectiveTeammates();
 
-  // Range: Current month only
-  const startDate = new Date(calState.year, calState.month, 1);
-  const endDate = new Date(calState.year, calState.month + 1, 0);
-  const totalDays = endDate.getDate();
+  // Range: Current month bounds
+  const monthStart = new Date(calState.year, calState.month, 1);
+  const monthEnd = new Date(calState.year, calState.month + 1, 0);
 
-  // Update External Header
+  // 1. Filter and Sort issues active in this month
+  const issues = allIssues.filter(issue => {
+    const s = issue.startDate || issue.dueDate;
+    const e = issue.dueDate || issue.startDate;
+    if (!s) return false;
+    const iStart = new Date(`${s}T00:00:00`);
+    const iEnd = new Date(`${e}T00:00:00`);
+    return iStart <= monthEnd && iEnd >= monthStart;
+  }).sort((a, b) => (a.startDate || a.dueDate).localeCompare(b.startDate || b.dueDate));
+
   if (hd) {
     hd.innerHTML = `<div class="cal-month">${MONTH_NAMES[calState.month]}<span class="yr">${calState.year}</span></div>`;
   }
 
   if (issues.length === 0) {
-    container.innerHTML = '<div class="timeline-empty">No active issues found in tracker.</div>';
+    container.innerHTML = '<div class="timeline-empty">No active issues found for this month.</div>';
     return;
   }
 
-  const daysArr = [];
-  for (let d = 0; d < totalDays; d++) {
-    const day = new Date(calState.year, calState.month, d + 1);
-    daysArr.push(day);
+  // 2. Determine "Relevant Range" (earliest start to latest end within month)
+  let firstRelevantDay = monthStart.getDate();
+  let lastRelevantDay = monthEnd.getDate();
+
+  const issueDates = issues.flatMap(i => {
+    const s = new Date(`${i.startDate || i.dueDate}T00:00:00`);
+    const e = new Date(`${i.dueDate || i.startDate}T00:00:00`);
+    return [s < monthStart ? monthStart : s, e > monthEnd ? monthEnd : e];
+  });
+
+  firstRelevantDay = Math.min(...issueDates.map(d => d.getDate()));
+  lastRelevantDay = Math.max(...issueDates.map(d => d.getDate()));
+
+  // Always include today if it's in the month
+  const today = new Date();
+  if (today.getFullYear() === calState.year && today.getMonth() === calState.month) {
+    firstRelevantDay = Math.min(firstRelevantDay, today.getDate());
+    lastRelevantDay = Math.max(lastRelevantDay, today.getDate());
   }
+
+  const daysArr = [];
+  for (let d = firstRelevantDay; d <= lastRelevantDay; d++) {
+    daysArr.push(new Date(calState.year, calState.month, d));
+  }
+
+  const totalVisibleDays = daysArr.length;
 
   let html = `
     <div class="timeline-grid">
@@ -934,30 +964,21 @@ function renderCalTimeline() {
   issues.forEach(issue => {
     const sStr = issue.startDate || issue.dueDate;
     const eStr = issue.dueDate || issue.startDate;
-    if (!sStr) return;
-
     const iStart = new Date(`${sStr}T00:00:00`);
     const iEnd = new Date(`${eStr}T00:00:00`);
 
-    if (iStart > endDate || iEnd < startDate) return;
+    const visibleStart = iStart < daysArr[0] ? daysArr[0] : iStart;
+    const visibleEnd = iEnd > daysArr[totalVisibleDays - 1] ? daysArr[totalVisibleDays - 1] : iEnd;
 
-    const visibleStart = iStart < startDate ? startDate : iStart;
-    const visibleEnd = iEnd > endDate ? endDate : iEnd;
-
-    const startIdx = visibleStart.getDate() - 1;
+    const startIdx = visibleStart.getDate() - firstRelevantDay;
     const duration = Math.round((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)) + 1;
 
-    const leftPct = (startIdx / totalDays) * 100;
-    const widthPct = (duration / totalDays) * 100;
+    const leftPct = (startIdx / totalVisibleDays) * 100;
+    const widthPct = (duration / totalVisibleDays) * 100;
 
     const owner = teammates.find(t => t.id === issue.ownerId) || { name: issue.owner, id: "unknown" };
     const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
-
-    // Formatting date string for bar
-    const barDateRange = duration > 1 
-      ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` 
-      : `${visibleStart.getDate()}`;
-
+    const barDateRange = duration > 1 ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` : `${visibleStart.getDate()}`;
     const color = issue.color || "var(--ink)";
     const textColor = getContrastColor(color);
     const tooltipText = `${escapeHTML(issue.title)}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
@@ -989,6 +1010,17 @@ function renderCalTimeline() {
   `;
 
   container.innerHTML = html;
+
+  // Auto-scroll to today if today is in the visible range
+  if (today.getFullYear() === calState.year && today.getMonth() === calState.month) {
+    setTimeout(() => {
+      const todayTick = container.querySelector(`.timeline-header [data-day="${today.getDate()}"]`);
+      if (todayTick && scrollWrapper) {
+        const labelWidth = 256; // 16rem in px
+        scrollWrapper.scrollLeft = todayTick.offsetLeft - labelWidth - 100; // Center it a bit
+      }
+    }, 0);
+  }
 
   // Add click listeners to timeline bars
   container.querySelectorAll(".timeline-bar").forEach(bar => {
