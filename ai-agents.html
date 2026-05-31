@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — AI Agents</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/kpis.css" />
+  <link rel="stylesheet" href="css/ai-agents.css" />
+
+  <script src="js/theme.js"></script>
+</head>
+<body data-page="ai-agents">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <a class="rail-icon rail-active" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+          <rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/>
+          <line x1="12" y1="2" x2="12" y2="8"/>
+          <circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/>
+          <line x1="9" y1="18" x2="15" y2="18"/>
+        </svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <a class="rail-icon" data-route="settings" href="#" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </a>
+      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>AI Agents.</h1>
+          <p class="lede">Track which AI tools the team used today, how many tokens were consumed, and whether the output was human-reviewed before it landed.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-primary" id="ai-log-btn">+ Log session</button>
+        </div>
+      </header>
+
+      <!-- Page-local AI KPI strip -->
+      <div class="ai-kpi-row" id="ai-kpis" aria-label="AI agent KPIs"></div>
+
+      <!-- Log session form (hidden until "Log session" is clicked) -->
+      <form class="ai-log-form" id="ai-log-form" hidden aria-label="Log AI session">
+        <div class="ai-form-grid">
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="ai-agent-select">Agent</label>
+            <select class="ai-form-select" id="ai-agent-select" required>
+              <option value="claude-code">Claude Code</option>
+              <option value="copilot">GitHub Copilot</option>
+              <option value="cursor">Cursor</option>
+              <option value="chatgpt">ChatGPT</option>
+              <option value="gemini">Gemini</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="ai-model-select">Model</label>
+            <!-- Options are populated dynamically by ai-agents.js based on the selected agent -->
+            <select class="ai-form-select" id="ai-model-select"></select>
+          </div>
+
+          <div class="ai-form-field full-width">
+            <label class="ai-form-label" for="ai-task-input">What did you use it for?</label>
+            <textarea class="ai-form-textarea" id="ai-task-input"
+              placeholder="E.g. Wrote unit tests for the auth module, refactored the state reducer, debugged a layout issue…"
+              required></textarea>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="ai-tokens-input">
+              Tokens used <span class="optional">(optional — copy from session summary)</span>
+            </label>
+            <input class="ai-form-input" id="ai-tokens-input" type="number" min="0"
+              placeholder="e.g. 42000" />
+            <div class="ai-cost-preview" id="ai-cost-preview"></div>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="ai-pr-input">
+              PR / commit link <span class="optional">(optional)</span>
+            </label>
+            <input class="ai-form-input" id="ai-pr-input" type="url"
+              placeholder="https://github.com/…/pull/42" />
+          </div>
+
+          <div class="ai-checkbox-row">
+            <input type="checkbox" id="ai-reviewed-check" />
+            <label class="ai-checkbox-label" for="ai-reviewed-check">
+              Output was human-reviewed before merging
+            </label>
+          </div>
+
+        </div>
+        <div class="ai-form-actions">
+          <button type="button" class="btn-secondary" id="ai-cancel-btn">Cancel</button>
+          <button type="submit" class="btn-primary">Log session</button>
+        </div>
+      </form>
+
+      <!-- Today's session cards -->
+      <section aria-labelledby="ai-sessions-heading" style="margin-bottom: 24px;">
+        <h2 id="ai-sessions-heading" style="font-size:14px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Today's sessions</h2>
+        <ul class="ai-sessions-list" id="ai-sessions-list"></ul>
+      </section>
+
+      <!-- Sprint token burn chart -->
+      <section aria-labelledby="ai-burn-heading">
+        <div class="ai-burn-wrap">
+          <div class="ai-burn-title" id="ai-burn-heading">Sprint token burn (daily)</div>
+          <div class="ai-burn-subtitle">Each bar = total tokens logged that day. Tallest bar is the peak day. Hover a bar for the exact count.</div>
+          <div class="ai-burn-chart" id="ai-burn-chart"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Session detail / edit overlay (hidden until a card is clicked) -->
+  <div class="ai-session-overlay" id="ai-session-overlay" hidden role="dialog"
+       aria-modal="true" aria-labelledby="ai-dialog-agent-label">
+    <div class="ai-dialog-box" tabindex="-1">
+
+      <div class="ai-dialog-header">
+        <div class="ai-dialog-header-left">
+          <span class="ai-dialog-agent-label" id="ai-dialog-agent-label">Session</span>
+          <span class="ai-dialog-time"></span>
+        </div>
+        <button class="ai-dialog-close" aria-label="Close dialog" title="Close (Esc)">×</button>
+      </div>
+
+      <div class="ai-dialog-body">
+        <div class="ai-dialog-section-label">Edit session details</div>
+        <div class="ai-form-grid">
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="dlg-agent-select">Agent</label>
+            <select class="ai-form-select" id="dlg-agent-select">
+              <option value="claude-code">Claude Code</option>
+              <option value="copilot">GitHub Copilot</option>
+              <option value="cursor">Cursor</option>
+              <option value="chatgpt">ChatGPT</option>
+              <option value="gemini">Gemini</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="dlg-model-select">Model</label>
+            <!-- Populated dynamically based on agent selection -->
+            <select class="ai-form-select" id="dlg-model-select"></select>
+          </div>
+
+          <div class="ai-form-field full-width">
+            <label class="ai-form-label" for="dlg-task-input">What was it used for?</label>
+            <textarea class="ai-form-textarea" id="dlg-task-input" required></textarea>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="dlg-tokens-input">
+              Tokens used <span class="optional">(optional)</span>
+            </label>
+            <input class="ai-form-input" id="dlg-tokens-input" type="number" min="0" />
+            <div class="ai-cost-preview" id="dlg-cost-preview"></div>
+          </div>
+
+          <div class="ai-form-field">
+            <label class="ai-form-label" for="dlg-pr-input">
+              PR / commit link <span class="optional">(optional)</span>
+            </label>
+            <input class="ai-form-input" id="dlg-pr-input" type="url"
+              placeholder="https://github.com/…/pull/42" />
+          </div>
+
+          <div class="ai-checkbox-row">
+            <input type="checkbox" id="dlg-reviewed-check" />
+            <label class="ai-checkbox-label" for="dlg-reviewed-check">
+              Output was human-reviewed before merging
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="ai-dialog-footer">
+        <button type="button" class="btn-secondary ai-dialog-close-btn" onclick="closeSessionDialog()">Cancel</button>
+        <button type="button" class="btn-primary ai-dialog-save">Save changes</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Auth + Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
+
+  <!-- Shared infra -->
+  <script src="data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <!-- Features used on this page -->
+  <script src="js/features/header.js"></script>
+  <script src="js/features/ai-agents.js"></script>
+
+  <!-- Page orchestrator -->
+  <script src="js/pages/ai-agents.js"></script>
+</body>
+</html>

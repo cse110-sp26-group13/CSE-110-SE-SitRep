@@ -236,9 +236,23 @@
 /* Standup deep view: 2 columns (main + side) */
 .standup-layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 20px;
-  align-items: start;
+  grid-template-columns:
+    minmax(0, 1.6fr)
+    minmax(0, 1fr);
+
+  gap: 24px;
+  align-items: stretch;
+}
+
+.standup-layout > * {
+  min-height: 0;
+}
+
+.standup-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  align-self: stretch;
 }
 .standup-side {
   display: flex;
@@ -249,7 +263,7 @@
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
   .standup-layout { grid-template-columns: 1fr; }
   .standup-side { position: static; }
 }

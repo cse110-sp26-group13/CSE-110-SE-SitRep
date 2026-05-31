@@ -1,10 +1,10 @@
+
 /**
  * Activity feed — last 10 events for the current team, rendered into
  * `#activity-list`. Each event row gets an icon glyph keyed off its
  * `kind`; unknown kinds fall back to a middle dot.
  */
-
-const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺" };
+const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" };
 
 /**
  * Re-render the activity feed from effectiveActivity(). Also updates
