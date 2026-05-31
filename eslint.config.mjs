@@ -46,11 +46,17 @@ const projectGlobals = {
   renderCheckIns: "readonly",
   renderBlockers: "readonly",
   renderSlots: "readonly",
+  renderAllAI: "readonly",
   moodFace: "readonly",
   bindBlockerControls: "readonly",
   bindMoodQuick: "readonly",
   bindComposeForm: "readonly",
+  bindAgentModelLink: "readonly",
+  bindCostPreview: "readonly",
+  bindAILogForm: "readonly",
+  bindSessionDialog: "readonly",
   fetchGitHubIssues: "readonly",
+  aiKPIData: "readonly",
 
   // From js/pages/* — page orchestrators assign their renderer to window.renderAll
   renderAll: "writable",
