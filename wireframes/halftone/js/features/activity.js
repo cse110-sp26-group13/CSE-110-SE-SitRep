@@ -1,10 +1,5 @@
-const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" };
+const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺" };
 
-/**
- * Re-render the activity feed from effectiveActivity(). Also updates
- * `#activity-sub` with the total event count (across the full feed,
- * not just the 10 shown).
- */
 function renderActivity() {
   const items = effectiveActivity().slice(0, 10);
   document.getElementById("activity-sub").textContent = `${effectiveActivity().length} events`;

@@ -1,0 +1,473 @@
+/* ───────────────────────────────────────────────────────────
+   SitRep · AI Agents page styles
+   Follows the one-file-per-feature CSS module pattern.
+   ─────────────────────────────────────────────────────────── */
+
+/* ── AI KPI strip (page-local row above the form) ─────────── */
+.ai-kpi-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.ai-kpi {
+  flex: 1;
+  min-width: 140px;
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  padding: 14px 16px;
+}
+
+.ai-kpi-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.ai-kpi-value {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.ai-kpi-value.good  { color: var(--good); }
+.ai-kpi-value.warn  { color: var(--warn); }
+.ai-kpi-value.alert { color: var(--bad); }
+
+.ai-kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* ── Log Session form ──────────────────────────────────────── */
+.ai-log-form {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.ai-log-form[hidden] { display: none; }
+
+.ai-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .ai-form-grid { grid-template-columns: 1fr; }
+}
+
+.ai-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.ai-form-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ai-form-label .optional {
+  color: var(--subtle);
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ai-form-input,
+.ai-form-select,
+.ai-form-textarea {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  padding: 8px 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
+
+.ai-form-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+.ai-form-input:focus,
+.ai-form-select:focus,
+.ai-form-textarea:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* Cost preview badge */
+.ai-cost-preview {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  min-height: 16px;
+}
+
+.ai-cost-preview.has-value {
+  color: var(--good);
+}
+
+/* Reviewed checkbox row */
+.ai-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.ai-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  appearance: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ai-checkbox-row input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.ai-checkbox-label {
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+/* Form action row */
+.ai-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+/* ── Session cards ─────────────────────────────────────────── */
+.ai-sessions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-session-card {
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  cursor: pointer;
+  transition: background 0.1s, box-shadow 0.1s;
+}
+
+.ai-session-card:hover {
+  background: var(--card-2);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.ai-session-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.ai-agent-badge {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+  align-self: center;
+}
+
+.ai-agent-badge.claude   { background: var(--ink); }
+.ai-agent-badge.copilot  { background: var(--good); border-color: var(--good); }
+.ai-agent-badge.cursor   { background: var(--warn); border-color: var(--warn); color: var(--paper); }
+.ai-agent-badge.chatgpt  { background: var(--muted); border-color: var(--muted); }
+
+.ai-session-body {}
+
+.ai-session-task {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.ai-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.ai-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.ai-meta-chip.reviewed {
+  border-color: var(--good);
+  color: var(--good);
+  background: var(--good-soft);
+}
+
+.ai-meta-chip.unreviewed {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.ai-session-time {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--subtle);
+  white-space: nowrap;
+}
+
+/* PR link */
+.ai-pr-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline);
+  text-underline-offset: 2px;
+}
+
+.ai-pr-link:hover { text-decoration-color: var(--ink); }
+
+/* ── Burn chart ────────────────────────────────────────────── */
+.ai-burn-wrap {
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  padding: 16px;
+}
+
+.ai-burn-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.ai-burn-subtitle {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--subtle);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.ai-burn-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+}
+
+.ai-burn-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.ai-burn-count {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ai-burn-bar {
+  width: 100%;
+  background: var(--ink);
+  min-height: 3px;
+  transition: height 0.2s ease;
+}
+
+.ai-burn-bar-wrap:hover .ai-burn-bar {
+  background: var(--muted);
+}
+
+.ai-burn-day {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ai-burn-empty {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--subtle);
+  padding: 24px 0;
+  text-align: center;
+  width: 100%;
+  line-height: 1.6;
+}
+
+/* ── Empty states ──────────────────────────────────────────── */
+.ai-empty {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--subtle);
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* ── Session detail / edit dialog overlay ──────────────────── */
+.ai-session-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.ai-session-overlay[hidden] { display: none; }
+
+.ai-dialog-box {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--hard-shadow);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  outline: none; /* focus managed via tabindex */
+}
+
+.ai-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1.5px solid var(--hairline);
+  gap: 12px;
+}
+
+.ai-dialog-header-left {}
+
+.ai-dialog-agent-label {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ai-dialog-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.ai-dialog-close {
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ai-dialog-close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ai-dialog-body {
+  padding: 20px;
+}
+
+.ai-dialog-section-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* Reuse ai-form-* classes inside the dialog */
+.ai-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px 16px;
+  border-top: 1.5px solid var(--hairline);
+}

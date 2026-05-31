@@ -16,14 +16,10 @@
   <link rel="stylesheet" href="css/checkins.css" />
   <link rel="stylesheet" href="css/slots.css" />
   <link rel="stylesheet" href="css/mood-trend.css" />
-
-  <script src="js/theme.js"></script>
 </head>
 <body data-page="standup">
   <div class="app">
     <aside class="rail" aria-label="Primary navigation">
-      <div class="circle-switcher" data-circle-switcher></div>
-      <div class="rail-divider" aria-hidden="true"></div>
       <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       </a>
@@ -36,16 +32,9 @@
       <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
       </a>
-      <a class="rail-icon" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-      </a>
       <div class="rail-spacer"></div>
-      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
-        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
-        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-      </button>
-      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <a class="rail-icon" data-route="settings" href="#" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
       </a>
     </aside>
 
@@ -136,28 +125,18 @@
     </main>
   </div>
 
-  <!-- Auth + Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/supabaseClient.js"></script>
-  <script src="js/auth-guard.js"></script>
-
-  <!-- Shared infra -->
-  <script src="js/db.js"></script>
+  <script src="data.js"></script>
   <script src="js/state.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/selectors.js"></script>
   <script src="js/nav.js"></script>
 
-  <!-- Features used on this page -->
-  <script src="js/features/circle-switcher.js"></script>
   <script src="js/features/header.js"></script>
   <script src="js/features/checkins.js"></script>
   <script src="js/features/slots.js"></script>
   <script src="js/features/mood-trend.js"></script>
   <script src="js/features/activity.js"></script>
 
-  <!-- Page orchestrator -->
   <script src="js/pages/standup.js"></script>
 </body>
 </html>

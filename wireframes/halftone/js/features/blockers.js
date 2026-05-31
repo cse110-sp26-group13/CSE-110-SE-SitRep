@@ -1,26 +1,6 @@
-/**
- * Blockers panel — issue list, create/detail modals, and the GitHub
- * sync dialog. Reads from effectiveBlockers() and writes to Supabase
- * through db.* helpers.
- *
- * GitHub-synced rows live in the same `public.blockers` table as
- * native rows, tagged with `externalSource: 'github'`. They're fully
- * editable here (status / comments / severity all persist normally);
- * the only visible difference is a small "GitHub" badge with a
- * click-through to `externalUrl`.
- */
-
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
 const STATUS_LABEL = { open: "Open", "in-progress": "In progress", resolved: "Resolved" };
 
-/**
- * Format a YYYY-MM-DD date string as a short local date ("May 18").
- * The `T00:00:00` suffix anchors the date to local midnight so it
- * doesn't drift across timezones when rendered.
- *
- * @param {string} dateString
- * @returns {string}
- */
 function formatIssueDate(dateString) {
   if (!dateString) return "";
   const date = new Date(`${dateString}T00:00:00`);
@@ -30,13 +10,6 @@ function formatIssueDate(dateString) {
   });
 }
 
-/**
- * True if the issue has a due date in the past and is not yet resolved.
- * Resolved issues are never "overdue" even if their due date passed.
- *
- * @param {{dueDate?: string, status: string}} issue
- * @returns {boolean}
- */
 function isIssueOverdue(issue) {
   if (!issue.dueDate || issue.status === "resolved") return false;
 
@@ -47,15 +20,6 @@ function isIssueOverdue(issue) {
   return due < today;
 }
 
-/**
- * Whether a blocker's status matches the active filter chip.
- * The "open" filter intentionally folds in "in-progress" so users
- * don't lose track of work they've already started.
- *
- * @param {"open"|"in-progress"|"resolved"} status
- * @param {"all"|"open"|"resolved"} filter
- * @returns {boolean}
- */
 function statusMatchesFilter(status, filter) {
   if (filter === "all") return true;
   if (filter === "open") return status === "open" || status === "in-progress";
@@ -63,14 +27,6 @@ function statusMatchesFilter(status, filter) {
   return true;
 }
 
-/**
- * Render the filtered blocker list into `#blocker-list`, refresh the
- * active state on the severity/status filter chips, and rebind row
- * click handlers to open the detail modal.
- *
- * Sort order: resolved sink to the bottom, then by severity
- * (critical → high → medium).
- */
 function renderBlockers() {
   const all = effectiveBlockers();
   const filtered = all
@@ -102,10 +58,6 @@ function renderBlockers() {
           </span>`
         : "";
 
-      const ghBadge = b.externalSource === "github" && b.externalUrl
-        ? `<a class="cat-badge cat-github" href="${escapeHTML(b.externalUrl)}" target="_blank" rel="noopener" title="Open on GitHub" onclick="event.stopPropagation()">GITHUB ↗</a>`
-        : "";
-
       return `
       <li class="blocker-row status-${b.status}" data-open="${escapeHTML(b.id)}">
         <span class="sev-tag sev-${b.severity}">${b.severity}</span>
@@ -113,10 +65,9 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
-
+            
             ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
-            ${ghBadge}
-
+            
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
             ${dueBadge}
             ${commentBadge}
@@ -137,39 +88,18 @@ function renderBlockers() {
   });
 }
 
-/**
- * `<option>` list of every teammate, with the given id pre-selected.
- *
- * @param {string} [selectedId]
- * @returns {string} HTML safe to drop into a `<select>`.
- */
 function teammateOptions(selectedId) {
   return teammates.map(t =>
     `<option value="${escapeHTML(t.id)}"${t.id === selectedId ? " selected" : ""}>${escapeHTML(t.name)}</option>`
   ).join("");
 }
 
-/**
- * `<option>` list of severities (critical / high / medium) with one
- * pre-selected. Order is the same as SEVERITY_ORDER so the dropdown
- * matches the sort order in the list.
- *
- * @param {"critical"|"high"|"medium"} [selected]
- * @returns {string}
- */
 function severityOptions(selected) {
   return ["critical", "high", "medium"].map(s =>
     `<option value="${s}"${s === selected ? " selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`
   ).join("");
 }
 
-/**
- * `<option>` list of categories with a disabled placeholder when
- * nothing is selected — forces a deliberate choice on create.
- *
- * @param {"ui"|"swe"|"backend"|""} [selected]
- * @returns {string}
- */
 function categoryOptions(selected) {
   const placeholder = `<option value="" disabled${!selected ? " selected" : ""}>Select category</option>`;
   return placeholder + ["ui", "swe", "backend"].map(c =>
@@ -177,31 +107,17 @@ function categoryOptions(selected) {
   ).join("");
 }
 
-/**
- * Show the shared issue modal with the given title and body HTML.
- * The caller is responsible for binding any handlers inside `bodyHTML`
- * after this returns.
- *
- * @param {string} titleText
- * @param {string} bodyHTML
- */
 function openModal(titleText, bodyHTML) {
   document.getElementById("issue-modal-title").textContent = titleText;
   document.getElementById("issue-modal-body").innerHTML = bodyHTML;
   document.getElementById("issue-modal").hidden = false;
 }
 
-/** Hide the issue modal and clear its body so old handlers don't linger. */
 function closeModal() {
   document.getElementById("issue-modal").hidden = true;
   document.getElementById("issue-modal-body").innerHTML = "";
 }
 
-/**
- * Open the "New issue" form, validate dates on submit, and persist
- * the new blocker + an activity event. Re-loads from Supabase and
- * re-renders before closing the modal so the new row appears.
- */
 function openCreateModal() {
   const me = teammates.find(t => t.id === team.currentUserId);
   openModal("New issue", `
@@ -241,20 +157,20 @@ function openCreateModal() {
       </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="button" class="btn-secondary" id="create-gh-issue-btn">Create GitHub issue</button>
         <button type="submit" class="btn-primary">Create issue</button>
       </div>
     </form>
   `);
   document.getElementById("issue-title").focus();
 
-  document.getElementById("issue-create-form").addEventListener("submit", async e => {
+  document.getElementById("issue-create-form").addEventListener("submit", e => {
     e.preventDefault();
     const title = document.getElementById("issue-title").value.trim();
     if (!title) return;
     const description = document.getElementById("issue-desc").value.trim();
     const severity = document.getElementById("issue-sev").value;
     const ownerId = document.getElementById("issue-owner").value;
+    const ownerObj = teammates.find(t => t.id === ownerId);
     const startDate = document.getElementById("issue-start").value;
     const dueDate = document.getElementById("issue-due").value;
     const category = document.getElementById("issue-category").value;
@@ -267,84 +183,47 @@ function openCreateModal() {
     }
     dateError.hidden = true;
 
-    await db.createBlocker({
-      title, description, severity, ownerId, startDate, dueDate, category,
+    const newId = `u${Date.now()}`;
+    state.extraBlockers.unshift({
+      id: newId,
+      title,
+      description,
+      severity,
+      status: "open",
+      ownerId,
+      owner: ownerObj?.name ?? "Unassigned",
+      postedAt: nowTime(),
+      startDate,
+      dueDate,
+      category,
+      comments: [],
     });
-    await db.addActivity("blocker", `opened a ${severity} issue — ${title}`);
-    await db.loadAll();
+
+    pushActivity({
+      type: "blocker",
+      who: teammates.find(t => t.id === team.currentUserId)?.name ?? "You",
+      text: `opened a ${severity} issue — ${title}`,
+    });
+
+    saveState();
     closeModal();
     renderAll();
-  });
-
-  document.getElementById("create-gh-issue-btn").addEventListener("click", async () => {
-    const title = document.getElementById("issue-title").value.trim();
-    const dateError = document.getElementById("date-error");
-    if (!title) {
-      dateError.textContent = "Title is required.";
-      dateError.hidden = false;
-      return;
-    }
-    const description = document.getElementById("issue-desc").value.trim();
-    try {
-      const ghIssue = await createGitHubIssue(title, description);
-      const ownerSelect = document.getElementById("issue-owner");
-      const newGhIssue = {
-        id: `gh-${ghIssue.id}`,
-        ghNumber: ghIssue.number,
-        title: ghIssue.title,
-        description: ghIssue.body || "",
-        severity: document.getElementById("issue-sev").value,
-        status: "open",
-        owner: ownerSelect.options[ownerSelect.selectedIndex].text,
-        postedAt: "GitHub Sync",
-        startDate: document.getElementById("issue-start").value,
-        dueDate: document.getElementById("issue-due").value,
-        category: document.getElementById("issue-category").value,
-        comments: [],
-        isExternal: true,
-      };
-      setGithubIssues([...(state.githubIssues || []), newGhIssue]);
-      closeModal();
-      renderAll();
-    } catch (err) {
-      dateError.textContent = err.message;
-      dateError.hidden = false;
-    }
   });
 
   bindModalDismissers();
 }
 
-/**
- * Open the issue detail modal for a blocker. Lets the user edit
- * status / start / due / category and post comments inline; each
- * change persists to Supabase and re-renders. Works the same for
- * native and GitHub-synced rows — both live in `public.blockers` now.
- *
- * @param {string} id - blocker id from effectiveBlockers().
- */
-async function openDetailModal(id) {
+function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
-  const currentStartDate = b.startDate ?? "";
-  const currentDueDate = b.dueDate ?? "";
-  const currentCategory = b.category ?? "swe";
+  const ov = state.blockerOverrides[id] || {};
+  const currentStartDate = ov.startDate ?? b.startDate ?? "";
+  const currentDueDate = ov.dueDate ?? b.dueDate ?? "";
+  const currentCategory = ov.category ?? b.category ?? "swe";
 
-  // GitHub-synced issues live in localStorage, not Postgres — guard those.
-  const isGithubIssue = String(id).startsWith("gh-");
-
-  let displayComments = b.comments;
-  if (isGithubIssue && b.ghNumber) {
-    try {
-      displayComments = await fetchGitHubComments(b.ghNumber);
-    } catch (err) {
-      console.error("Failed to fetch GitHub comments:", err);
-    }
-  }
-
-  const commentsHTML = displayComments.length
-    ? displayComments.map(c => `
+  const commentsHTML = b.comments.length
+    ? b.comments.map(c => `
         <li class="comment">
           <div class="comment-head">
             <span class="comment-who">${escapeHTML(c.who)}</span>
@@ -353,10 +232,6 @@ async function openDetailModal(id) {
           <div class="comment-text">${escapeHTML(c.text)}</div>
         </li>`).join("")
     : `<li class="empty comment-empty">No comments yet.</li>`;
-
-  const ghLink = b.externalSource === "github" && b.externalUrl
-    ? `<a class="issue-gh-link" href="${escapeHTML(b.externalUrl)}" target="_blank" rel="noopener">View on GitHub ↗</a>`
-    : "";
 
   openModal(b.title, `
     <div class="issue-detail">
@@ -372,7 +247,6 @@ async function openDetailModal(id) {
         </label>
         <span class="issue-owner-meta">Assigned to <strong>${escapeHTML(b.owner)}</strong></span>
         <span class="issue-posted-meta">Opened ${escapeHTML(b.postedAt)}</span>
-        ${ghLink}
       </div>
 
       <div class="field-row issue-dates-row">
@@ -410,60 +284,52 @@ async function openDetailModal(id) {
     </div>
   `);
 
-  document.getElementById("issue-status").addEventListener("change", async e => {
+  document.getElementById("issue-status").addEventListener("change", e => {
     const newStatus = e.target.value;
     if (newStatus === b.status) return;
-    if (isGithubIssue) {
-      if (newStatus === "resolved") {
-        try { await closeGitHubIssue(b.ghNumber); }
-        catch (err) { console.error("Failed to close GitHub issue:", err); }
-        const updated = (state.githubIssues || []).map(issue =>
-          issue.ghNumber === b.ghNumber ? { ...issue, status: "resolved" } : issue
-        );
-        setGithubIssues(updated);
-        renderAll();
-        closeModal();
-      }
-      return;
-    }
-    await db.updateBlocker(id, { status: newStatus });
-    await db.addActivity("blocker", `set "${b.title}" to ${STATUS_LABEL[newStatus]}`);
-    await db.loadAll();
+    updateBlocker(id, { status: newStatus });
+    pushActivity({
+      type: "blocker",
+      who: teammates.find(t => t.id === team.currentUserId)?.name ?? "You",
+      text: `set "${b.title}" to ${STATUS_LABEL[newStatus]}`,
+    });
+    saveState();
     renderAll();
     openDetailModal(id);
   });
 
-  document.getElementById("detail-start").addEventListener("change", async e => {
-    await db.updateBlocker(id, { startDate: e.target.value });
-    await db.loadAll();
+  document.getElementById("detail-start").addEventListener("change", e => {
+    updateBlocker(id, { startDate: e.target.value });
+    saveState();
     renderAll();
   });
 
-  document.getElementById("detail-due").addEventListener("change", async e => {
-    await db.updateBlocker(id, { dueDate: e.target.value });
-    await db.loadAll();
+  document.getElementById("detail-due").addEventListener("change", e => {
+    updateBlocker(id, { dueDate: e.target.value });
+    saveState();
+    renderAll(); 
+  });
+
+  document.getElementById("detail-category").addEventListener("change", e => {
+    updateBlocker(id, { category: e.target.value });
+    saveState();
     renderAll();
   });
 
-  document.getElementById("detail-category").addEventListener("change", async e => {
-    await db.updateBlocker(id, { category: e.target.value });
-    await db.loadAll();
-    renderAll();
-  });
-
-  document.getElementById("comment-form").addEventListener("submit", async e => {
+  document.getElementById("comment-form").addEventListener("submit", e => {
     e.preventDefault();
     const input = document.getElementById("comment-input");
     const text = input.value.trim();
     if (!text) return;
-    if (isGithubIssue) {
-      try { await addGitHubComment(b.ghNumber, text); }
-      catch (err) { console.error("Failed to post GitHub comment:", err); }
-      await openDetailModal(id);
-      return;
-    }
-    await db.addBlockerComment(id, text);
-    await db.loadAll();
+    const me = teammates.find(t => t.id === team.currentUserId);
+    const newComments = [...b.comments, {
+      id: `c${Date.now()}`,
+      who: me?.name ?? "You",
+      text,
+      time: nowTime(),
+    }];
+    updateBlocker(id, { comments: newComments });
+    saveState();
     renderAll();
     openDetailModal(id);
   });
@@ -471,22 +337,11 @@ async function openDetailModal(id) {
   bindModalDismissers();
 }
 
-/**
- * Wire every `[data-modal-cancel]` button inside the currently-open
- * modal to closeModal(). Called once after each openModal() so newly
- * injected cancel buttons are bound.
- */
 function bindModalDismissers() {
   document.querySelectorAll("[data-modal-cancel]").forEach(el =>
     el.addEventListener("click", closeModal));
 }
 
-/**
- * One-time setup for the blockers panel: filter chips, the GitHub
- * sync button, the "new issue" button, and modal dismissers
- * (close button, backdrop click, Escape key). Called once per page
- * load — handlers persist for the lifetime of the page.
- */
 function bindBlockerControls() {
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'sync-gh-btn') {
@@ -519,24 +374,10 @@ function bindBlockerControls() {
   });
 }
 
-/**
- * Show the GitHub sync dialog. On submit, fetch every issue for the
- * given `owner/repo` (optionally with a PAT for higher rate limits,
- * private repos, or the create-issue mirror flow) and upsert into the
- * team's `blockers` table via [db.syncGithubIssues](../db.js). The
- * repo is persisted on `teams.github_repo` so every member's modal
- * prefills the same default; the PAT is cached in localStorage on
- * this device only.
- *
- * @see fetchGitHubIssues in [./github-api.js](github-api.js)
- * @see db.syncGithubIssues in [../db.js](../db.js)
- */
 function openGitHubSyncModal() {
-  const savedRepo = (team.githubRepo || "").trim()
-    || "cse110-sp26-group13/CSE-110-SE-SitRep";
-  const savedToken = db.readGithubToken();
-
-  openModal("Sync with GitHub", `
+  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
+  
+  openModal("Sync with GitHub (v2)", `
     <form id="gh-sync-form" class="issue-form">
       <div class="field-row">
         <label class="field">
@@ -546,11 +387,10 @@ function openGitHubSyncModal() {
       </div>
       <div class="field-row">
         <label class="field">
-          <span>Personal Access Token (optional for public repos; required to mirror new issues to GitHub)</span>
-          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" value="${escapeHTML(savedToken)}" />
+          <span>Personal Access Token (Optional for public repos)</span>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
         </label>
       </div>
-      <p class="field-help">The repo is shared with your circle. The token stays on this device.</p>
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
@@ -571,17 +411,16 @@ function openGitHubSyncModal() {
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const { added, updated, total } = await db.syncGithubIssues({ repo, token });
       const issues = await fetchGitHubIssues(repo, token);
       sessionStorage.setItem("sitrep_gh_repo", repo);
-      sessionStorage.setItem("sitrep_gh_token", token);
       setGithubIssues(issues);
+      
+      pushActivity({
+        type: "checkin",
+        who: "System",
+        text: `Synced ${issues.length} issues from GitHub (${repo})`,
+      });
 
-      await db.addActivity(
-        "blocker",
-        `synced ${total} issues from GitHub (${repo}) — ${added} new, ${updated} updated`,
-      );
-      await db.loadAll();
       closeModal();
       renderAll();
     } catch (err) {

@@ -18,6 +18,8 @@ function defaultState() {
   return {
     severityFilter: "all",
     statusFilter: "open",
+    slotAvailability: {},
+    aiSessions: [],
   };
 }
 
