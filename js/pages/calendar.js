@@ -35,6 +35,10 @@ const MONTH_NAMES = [
 const CAL_KINDS = ["global", "personal"];
 let calState = {};
 
+/**
+ * Initializes the calendar state with default values based on the current date.
+ * Sets the year, month, and active filters.
+ */
 function initCalState() {
   calState = {
     // Default to today (page loads on current month). Easy to override for demo.
@@ -52,6 +56,10 @@ function initCalState() {
   getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
 }
 
+/**
+ * Returns an array of IDs for all custom calendar groups.
+ * @returns {string[]} Array of group IDs.
+ */
 function getCustomGroupIds() {
   const groups = Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
   return groups.map(g => g.id);
@@ -63,6 +71,14 @@ const EVENT_KIND_LABELS = {
 };
 
 // ─── Rendering ───────────────────────────────────────────────────────
+
+/**
+ * Calculates and returns the dates needed to fill a month-view grid.
+ * Includes leading/trailing days from adjacent months to complete weeks.
+ * @param {number} year - The year to build for.
+ * @param {number} month - The month index (0-11).
+ * @returns {Object[]} Array of cell objects { date: Date, muted: boolean }.
+ */
 function buildMonthCells(year, month) {
   // First-of-month + previous-month tail to fill the leading week.
   const first = new Date(year, month, 1);
@@ -86,16 +102,31 @@ function buildMonthCells(year, month) {
   return cells;
 }
 
+/**
+ * Formats a Date object into an ISO date string (YYYY-MM-DD).
+ * @param {Date} d - The date to format.
+ * @returns {string} The ISO date string.
+ */
 function isoDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * Checks if two Date objects represent the same calendar day.
+ * @param {Date} a 
+ * @param {Date} b 
+ * @returns {boolean}
+ */
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear()
       && a.getMonth()    === b.getMonth()
       && a.getDate()     === b.getDate();
 }
 
+/**
+ * Filters the list of calendar events based on current visibility state.
+ * @returns {Object[]} Filtered list of events.
+ */
 function filterEvents() {
   return getCalendarEvents().filter(e => {
     // Map event group to our UI kinds: default to global if not specified
@@ -111,6 +142,10 @@ function filterEvents() {
   });
 }
 
+/**
+ * Merges sample projects with custom project data.
+ * @returns {Object[]} Combined project list.
+ */
 function getCalendarProjects() {
   const customProjects = Array.isArray(state.extraCalendarProjects) ? state.extraCalendarProjects : [];
   const deletedSampleIds = new Set(Array.isArray(state.deletedSampleProjectIds) ? state.deletedSampleProjectIds : []);
@@ -118,16 +153,30 @@ function getCalendarProjects() {
   return [...samples, ...customProjects];
 }
 
+/**
+ * Retrieves the current list of calendar groups from the global window object.
+ * @returns {Object[]}
+ */
 function getCalendarGroups() {
   return Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
 }
 
+/**
+ * Retrieves the current list of calendar events from the global window object.
+ * @returns {Object[]}
+ */
 function getCalendarEvents() {
   return Array.isArray(window.calendarEvents) ? window.calendarEvents : [];
 }
 
 const contrastCache = new Map();
 
+/**
+ * Calculates the best contrast color (white or black) for a given background color.
+ * Caches results to improve performance during large grid renders.
+ * @param {string} color - CSS color value (hex, rgb, or var).
+ * @returns {string} Contrast color CSS variable.
+ */
 function getContrastColor(color) {
   if (!color) return "var(--ink)";
   
@@ -195,6 +244,11 @@ function getContrastColor(color) {
   return lastResort;
 }
 
+/**
+ * Generates the style string for an event bar's background and text colors.
+ * @param {Object} event - The event object.
+ * @returns {string} CSS style string.
+ */
 function eventColorStyle(event) {
   const groupColors = state.calendarGroupColors || {};
   let color = groupColors[event.group] || (event.group === "personal" ? "var(--muted)" : "var(--ink)");
@@ -210,10 +264,20 @@ function eventColorStyle(event) {
   return `--event-color:${color};--event-text:${textColor};`;
 }
 
+/**
+ * Returns the CSS classes for an event bar.
+ * @param {Object} event - The event object.
+ * @returns {string} Space-separated class list.
+ */
 function eventBarClasses(event) {
   return ["cal-bar", event.group, "custom-color"].filter(Boolean).join(" ");
 }
 
+/**
+ * Generates the tooltip text for an event bar.
+ * @param {Object} event - The event object.
+ * @returns {string}
+ */
 function eventTooltip(event) {
   const customGroups = getCalendarGroups();
   const customGroup = customGroups.find(g => g.id === event.group);
@@ -221,14 +285,29 @@ function eventTooltip(event) {
   return `${event.title} - ${groupLabel}`;
 }
 
+/**
+ * Finds an event in the global list by its ID.
+ * @param {string} id - The event UUID.
+ * @returns {Object|undefined}
+ */
 function findCalendarEvent(id) {
   return getCalendarEvents().find(event => event.id === id);
 }
 
+/**
+ * Finds a custom group in the global list by its ID.
+ * @param {string} id - The group UUID.
+ * @returns {Object|undefined}
+ */
 function findCalendarGroup(id) {
   return getCalendarGroups().find(g => g.id === id);
 }
 
+/**
+ * Calculates the Sunday starting a week for any given date.
+ * @param {Date} d 
+ * @returns {Date}
+ */
 function getStartOfWeek(d) {
   const date = new Date(d);
   const day = date.getDay();
@@ -236,6 +315,9 @@ function getStartOfWeek(d) {
   return new Date(date.setDate(diff));
 }
 
+/**
+ * Renders the single-week grid view.
+ */
 function renderCalWeek() {
   const container = document.getElementById("cal-week-grid");
   const label = document.getElementById("week-range-label");
@@ -289,6 +371,9 @@ function renderCalWeek() {
   if (countEl) countEl.textContent = `${events.length} events in view`;
 }
 
+/**
+ * Renders the main month-view grid with advanced multi-day bar stacking.
+ */
 function renderCalGrid() {
   const today = new Date();
   const grid = document.getElementById("cal-grid");
@@ -460,11 +545,17 @@ function renderCalGrid() {
     `${events.length} events in view`;
 }
 
+/**
+ * Updates the main calendar header with current month and year.
+ */
 function renderCalHeader() {
   document.getElementById("cal-month").innerHTML =
     `${MONTH_NAMES[calState.month]}<span class="yr">${calState.year}</span>`;
 }
 
+/**
+ * Renders the sidebar legend with filter checkboxes and color pickers.
+ */
 function renderCalLegend() {
   const container = document.getElementById("cal-legend");
   if (!container) return;
@@ -539,6 +630,9 @@ function renderCalLegend() {
   });
 }
 
+/**
+ * Orchestrates the full rendering process for the current page state.
+ */
 function renderCalendar() {
   renderHeader();
   renderCalHeader();
@@ -546,6 +640,9 @@ function renderCalendar() {
   refreshActiveView();
 }
 
+/**
+ * Refreshes only the currently active view (Month, Week, or Timeline).
+ */
 function refreshActiveView() {
   const activeTab = document.querySelector(".cal-tab.active");
   const mode = activeTab ? activeTab.dataset.tab : "month";
@@ -560,6 +657,10 @@ function refreshActiveView() {
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────
+
+/**
+ * Binds all event listeners for calendar navigation and controls.
+ */
 function bindCalendar() {
   const themeBtn = document.getElementById("theme-toggle");
   if (themeBtn) {
@@ -680,6 +781,10 @@ function bindCalendar() {
   bindDayModal();
 }
 
+/**
+ * Opens a modal showing all events for a specific day.
+ * @param {string} dateStr - ISO date string of the day to inspect.
+ */
 function openDayModal(dateStr) {
   const modal = document.getElementById("calendar-day-modal");
   const title = document.getElementById("calendar-day-modal-title");
@@ -727,10 +832,16 @@ function openDayModal(dateStr) {
   modal.hidden = false;
 }
 
+/**
+ * Closes the day details modal.
+ */
 function closeDayModal() {
   document.getElementById("calendar-day-modal").hidden = true;
 }
 
+/**
+ * Binds closing events for the day modal.
+ */
 function bindDayModal() {
   const modal = document.getElementById("calendar-day-modal");
   document.getElementById("calendar-day-modal-close").addEventListener("click", closeDayModal);
@@ -738,6 +849,9 @@ function bindDayModal() {
   modal.addEventListener("click", e => { if (e.target === modal) closeDayModal(); });
 }
 
+/**
+ * Renders the horizontal timeline view for project issues.
+ */
 function renderCalTimeline() {
   const container = document.getElementById("timeline-container");
   const hd = document.getElementById("timeline-hd");
@@ -841,6 +955,10 @@ function renderCalTimeline() {
   });
 }
 
+/**
+ * Returns a default date for new events, preferring today if in range.
+ * @returns {string} ISO date string.
+ */
 function getDefaultEventDate() {
   const today = new Date();
   const isViewingCurrentMonth =
@@ -848,6 +966,11 @@ function getDefaultEventDate() {
   return isoDate(isViewingCurrentMonth ? today : new Date(calState.year, calState.month, 1));
 }
 
+/**
+ * Opens the event creation/editing modal.
+ * @param {string|null} eventId - The ID of the event to edit, or null for new.
+ * @param {string|null} defaultDate - Optional pre-selected date.
+ */
 function openEventModal(eventId = null, defaultDate = null) {
   const event = eventId ? findCalendarEvent(eventId) : null;
   const modal = document.getElementById("calendar-event-modal");
@@ -925,6 +1048,10 @@ function openEventModal(eventId = null, defaultDate = null) {
   if (canEdit) name.focus();
 }
 
+/**
+ * Opens the group creation/editing modal.
+ * @param {string|null} groupId - The ID of the group to edit, or null for new.
+ */
 function openGroupModal(groupId = null) {
   const group = groupId ? findCalendarGroup(groupId) : null;
   const modal = document.getElementById("calendar-group-modal");
@@ -992,11 +1119,17 @@ function openGroupModal(groupId = null) {
   if (isCreator) name.focus();
 }
 
+/**
+ * Closes the group modal.
+ */
 function closeGroupModal() {
   document.getElementById("calendar-group-modal").hidden = true;
   calState.editingGroupId = null;
 }
 
+/**
+ * Binds events for the group modal.
+ */
 function bindGroupModal() {
   const modal = document.getElementById("calendar-group-modal");
   const form = document.getElementById("calendar-group-form");
@@ -1011,6 +1144,10 @@ function bindGroupModal() {
   form.addEventListener("submit", saveGroup);
 }
 
+/**
+ * Persists a new or existing group to the database.
+ * @param {Event} e - Form submission event.
+ */
 async function saveGroup(e) {
   e.preventDefault();
   const name = document.getElementById("calendar-group-name").value.trim();
@@ -1070,6 +1207,9 @@ async function saveGroup(e) {
   }
 }
 
+/**
+ * Deletes the currently edited group.
+ */
 async function deleteCalendarGroup() {
   const id = calState.editingGroupId;
   if (!id) return;
@@ -1091,6 +1231,9 @@ async function deleteCalendarGroup() {
   }
 }
 
+/**
+ * Removes the current user from the edited group.
+ */
 async function leaveCalendarGroup() {
   const id = calState.editingGroupId;
   if (!id) return;
@@ -1119,11 +1262,17 @@ async function leaveCalendarGroup() {
   }
 }
 
+/**
+ * Closes the event modal.
+ */
 function closeEventModal() {
   document.getElementById("calendar-event-modal").hidden = true;
   calState.editingEventId = null;
 }
 
+/**
+ * Binds events for the event creation/editing modal.
+ */
 function bindEventModal() {
   const modal = document.getElementById("calendar-event-modal");
   const form = document.getElementById("calendar-event-form");
@@ -1140,6 +1289,10 @@ function bindEventModal() {
   form.addEventListener("submit", createCalendarEvent);
 }
 
+/**
+ * Persists a new or edited event to the database.
+ * @param {Event} e - Form submission event.
+ */
 async function createCalendarEvent(e) {
   e.preventDefault();
 
@@ -1193,6 +1346,9 @@ async function createCalendarEvent(e) {
   }
 }
 
+/**
+ * Deletes the currently edited event.
+ */
 async function deleteCalendarEvent() {
   const id = calState.editingEventId;
   if (!id) return;
@@ -1209,10 +1365,16 @@ async function deleteCalendarEvent() {
   }
 }
 
+/**
+ * Basic hex color validation.
+ * @param {string} value 
+ * @returns {boolean}
+ */
 function isHexColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value);
 }
 
+// Initial entry point
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await db.loadAll();
