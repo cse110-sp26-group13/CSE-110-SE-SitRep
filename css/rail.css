@@ -194,3 +194,22 @@
   border-top: 1px dashed var(--hairline);
 }
 .circle-pop-manage:hover { text-decoration: underline; }
+
+/* Cross-document view transitions. Browsers that support it (Chromium,
+   Safari) snapshot the old page, snapshot the new page, and animate
+   between them. We use it only to smooth the rail — main content still
+   hard-cuts. Firefox ignores the rule and falls back to normal nav. */
+@view-transition { navigation: auto; }
+
+/* Naming the rail pulls it OUT of the root snapshot, so it animates as
+   its own layer — the dark "active" highlight slides from the old icon
+   to the new one instead of disappearing and reappearing. */
+.rail { view-transition-name: rail; }
+
+/* Skip the default crossfade on everything else. Without this, main
+   content also fades old→new; with it, only the rail animates. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
