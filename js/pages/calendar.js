@@ -959,6 +959,7 @@ function renderCalTimeline() {
       : `${visibleStart.getDate()}`;
 
     const color = issue.color || "var(--ink)";
+    const textColor = getContrastColor(color);
     const tooltipText = `${escapeHTML(issue.title)}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
@@ -967,13 +968,14 @@ function renderCalTimeline() {
           <div class="issue-title" title="${tooltipText}">${escapeHTML(issue.title)}</div>
         </div>
         <div class="days-col">
+          ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}"></div>`).join("")}
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${color}; cursor: pointer;" title="${tooltipText}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: var(--ink); cursor: pointer;" title="${tooltipText}">
               <div class="assignee-pill">
                 <span class="avatar">${initials}</span>
               </div>
-              <span class="bar-title" style="color: var(--paper)">${escapeHTML(issue.title)}</span>
-              <span class="bar-dates" style="color: var(--paper); opacity: 0.9">${barDateRange}</span>
+              <span class="bar-title" style="color: ${textColor}">${escapeHTML(issue.title)}</span>
+              <span class="bar-dates" style="color: ${textColor}">${barDateRange}</span>
             </div>
           </div>
         </div>
