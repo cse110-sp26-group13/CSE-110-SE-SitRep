@@ -26,6 +26,7 @@
   window.teammates = [];
   window.blockers = [];
   window.meetingSlots = SLOT_DEFS.map(s => ({ ...s, availability: {} }));
+  window.slotAvailability = {};
   window.activity = [];
   window.calendarEvents = [];
   window.calendarGroups = [];
@@ -255,6 +256,7 @@
       ...s,
       availability: availBySlot[s.id] || {},
     }));
+    window.slotAvailability = availBySlot;
 
     window.activity = activityRows.map(a => ({
       time: fmtTime(a.created_at),
