@@ -115,13 +115,6 @@
   cursor: default;
 }
 
-/* everyone free */
-.w2m-overlap-cell.all  { background: #2F3F32; }
-.w2m-overlap-cell.most { background: #4F4B42; }
-.w2m-overlap-cell.some { background: #7F7A68; }
-.w2m-overlap-cell.few  { background: #AFA995; }
-.w2m-overlap-cell.one  { background: #D6D1C5; }
-.w2m-overlap-cell.none { background: #F1EFE8; }
 
 .w2m-scale-legend {
   display: flex;
@@ -141,23 +134,12 @@
 }
 
 .w2m-scale-bar {
-  display: flex;
+  flex: 1;
   height: 20px;
   border: 1px solid var(--ink);
   overflow: hidden;
 }
 
-.scale-block {
-  width: 34px;
-  height: 100%;
-}
-
-.scale-block.none { background: #F1EFE8; }
-.scale-block.one  { background: #D6D1C5; }
-.scale-block.few  { background: #AFA995; }
-.scale-block.some { background: #7F7A68; }
-.scale-block.most { background: #4F4B42; }
-.scale-block.all  { background: #2F3F32; }
 
 .w2m-calendar-cell,
 .w2m-overlap-cell {

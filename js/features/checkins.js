@@ -34,7 +34,7 @@ function moodFace(score) {
 }
 
 function currentUserMood() {
-  return state.extraCheckIns[team.currentUserId]?.mood ?? null;
+  return teammates.find(t => t.id === team.currentUserId)?.mood ?? null;
 }
 
 function renderMoodQuick() {
@@ -67,14 +67,7 @@ function renderCheckIns() {
   document.getElementById("checkins-sub").textContent = `${checkedIn} of ${tm.length}`;
 
   document.getElementById("checkin-list").innerHTML = tm.map(t => {
-    const mine = state.extraCheckIns[t.id];
-    const hasRealStandup =
-      mine &&
-      (
-        mine.yesterday ||
-        mine.today ||
-        mine.blockers
-      );
+    const hasRealStandup = !!t.lastCheckIn;
     if (
       t.id === team.currentUserId &&
       !hasRealStandup
@@ -86,12 +79,10 @@ function renderCheckIns() {
       !t.lastCheckIn ? "stale" : "",
     ].filter(Boolean).join(" ");
 
-    const hasExplicitMood =
-      t.lastCheckIn &&
-      state.extraCheckIns[t.id]?.mood != null;
+    const hasExplicitMood = t.lastCheckIn && t.mood != null;
 
     const moodPill = hasExplicitMood
-      ? `<span class="mood-pill ${moodClass(state.extraCheckIns[t.id].mood)}">${moodSVG(moodBucket(state.extraCheckIns[t.id].mood), "mood-icon-sm")}</span>`
+      ? `<span class="mood-pill ${moodClass(t.mood)}">${moodSVG(moodBucket(t.mood), "mood-icon-sm")}</span>`
       : "";
     const ts = t.lastCheckIn?.time ?? "Not checked in";
 
@@ -107,7 +98,7 @@ function renderCheckIns() {
     const coverBadge = t.coverNeeded ? `<span class="cover-badge">Cover needed</span>` : "";
     const isMe =
       t.id === team.currentUserId &&
-      state.extraCheckIns[t.id];
+      !!t.lastCheckIn;
     const ownActions = isMe ? `
       <div class="own-checkin-actions">
         <button class="checkin-edit-btn" data-edit="${t.id}">Edit</button>
@@ -192,14 +183,9 @@ function bindMoodQuick() {
       const me = teammates.find(t => t.id === team.currentUserId);
       if (!me) return;
       const score = Number(b.dataset.mood);
-      const prev = state.extraCheckIns[me.id] || {};
-      const nextMood = prev.mood === score ? null : score;
-      state.extraCheckIns[me.id] = {
-        ...prev,
-        mood: nextMood,
-        time: prev.time || nowTime()
-      };
-      saveState();
+      const nextMood = me.mood === score ? null : score;
+      await db.saveMood(nextMood);
+      await db.loadAll();
       renderAll();
     }));
 }
@@ -233,30 +219,21 @@ function bindComposeForm() {
     const me = teammates.find(t => t.id === team.currentUserId);
     if (!me) return;
 
-    const prev = state.extraCheckIns[me.id] || {};
     const isEditing = form.dataset.editing === "true";
-    const mood = prev.mood ?? null;
-    state.extraCheckIns[me.id] = {
-      ...prev,
-      time: nowTime(),
-      mood,
-      yesterday,
-      today,
-      blockers: blockerNote,
-    };
 
-    const mood = me.mood;
-    const parts = [];
-    if (mood != null)   parts.push(`mood: ${MOOD_LABELS[moodBucket(mood)] ?? mood}`);
-    if (yesterday)      parts.push(`yesterday: ${yesterday}`);
-    if (today)          parts.push(`today: ${today}`);
+    await db.saveStandupCompose({
+      yesterday,
+      today: todayText,
+      blockersNote: blockerNote,
+    });
 
     if (!isEditing) {
-      pushActivity({
-        type: "checkin",
-        who: me.name,
-        text: `posted standup${parts.length ? ` — ${parts.join(" · ")}` : ""}`,
-      });
+      const mood = me.mood;
+      const parts = [];
+      if (mood != null) parts.push(`mood: ${MOOD_LABELS[moodBucket(mood)] ?? mood}`);
+      if (yesterday)    parts.push(`yesterday: ${yesterday}`);
+      if (todayText)    parts.push(`today: ${todayText}`);
+      await db.addActivity("checkin", `posted standup${parts.length ? ` — ${parts.join(" · ")}` : ""}`);
     }
 
     if (blockerNote) {
@@ -281,7 +258,7 @@ function bindComposeForm() {
 function handleEditCheckin(id) {
   if (id !== team.currentUserId) return;
 
-  const data = state.extraCheckIns[id];
+  const data = teammates.find(t => t.id === id)?.lastCheckIn;
   if (!data) return;
 
   const form = document.getElementById("checkin-form");
@@ -311,11 +288,10 @@ function handleDeleteCheckin(id) {
     modal.classList.add("hidden");
   };
 
-  document.getElementById("confirm-delete-btn").onclick = () => {
-    delete state.extraCheckIns[id];
+  document.getElementById("confirm-delete-btn").onclick = async () => {
+    await db.saveStandupCompose({ yesterday: null, today: null, blockersNote: null });
     modal.classList.add("hidden");
-
-    saveState();
+    await db.loadAll();
     renderAll();
   };
 }

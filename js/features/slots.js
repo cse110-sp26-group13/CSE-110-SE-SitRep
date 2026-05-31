@@ -1,32 +1,32 @@
 let isDraggingAvailability = false;
 let dragAvailabilityValue = null;
+const dragChangedSlots = new Map();
 
-function effectiveAvailability(slot, teammateId) {
-  return !!slot.availability[teammateId];
+const meetingDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const meetingHours = [
+  "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
+  "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM", "9 PM", "10 PM",
+];
+
+function effectiveAvailability(slotId, teammateId) {
+  return !!(window.slotAvailability?.[slotId]?.[teammateId]);
 }
 
 function setSlotAvailability(slotId, teammateId, value) {
   if (teammateId !== team.currentUserId) return;
-  const slot = meetingSlots.find(
-    s => s.id === slotId
-  );
-  if (!slot) return;
-  if (!state.slotAvailability) {
-    state.slotAvailability = {};
-  }
-  if (!state.slotAvailability[slotId]) {
-    state.slotAvailability[slotId] = {};
-  }
-  state.slotAvailability[slotId][teammateId] = value;
+  if (!window.slotAvailability) window.slotAvailability = {};
+  if (!window.slotAvailability[slotId]) window.slotAvailability[slotId] = {};
+  window.slotAvailability[slotId][teammateId] = value;
+  dragChangedSlots.set(slotId, value);
 }
 
-function overlapClass(count, total) {
-  if (count === total) return "all";
-  if (count >= total - 1) return "most";
-  if (count * 2 >= total) return "some";
-  if (count === 0) return "none";
-  if (count === 1) return "one";
-  return "few";
+function slotBgColor(count, total) {
+  if (total === 0) return "#F1EFE8";
+  const ratio = count / total;
+  const r = Math.round(241 + (47  - 241) * ratio);
+  const g = Math.round(239 + (63  - 239) * ratio);
+  const b = Math.round(232 + (50  - 232) * ratio);
+  return `rgb(${r},${g},${b})`;
 }
 
 function renderSlots() {
@@ -35,9 +35,15 @@ function renderSlots() {
   const personalList = document.getElementById("personal-availability");
   const overlapList = document.getElementById("team-overlap");
   const total = teammates.length;
-  const counts = meetingSlots.map(s =>
-    teammates.reduce((sum, t) => sum + (effectiveAvailability(s, t.id) ? 1 : 0), 0)
-  );
+
+  const legendEl = document.getElementById("w2m-legend");
+  if (legendEl) {
+    legendEl.innerHTML = `
+      <span class="w2m-scale-label">0 / ${total}</span>
+      <div class="w2m-scale-bar" style="background: linear-gradient(to right, #F1EFE8, #2F3F32)"></div>
+      <span class="w2m-scale-label">${total} / ${total}</span>
+    `;
+  }
 
   const currentUser = teammates.find(
     t => t.id === team.currentUserId
@@ -51,14 +57,8 @@ function renderSlots() {
     `;
 
     const cells = DAYS.map(day => {
-      const slot = meetingSlots.find(
-        s => s.day === day && s.hour === hour
-      );
-
-      const avail = effectiveAvailability(
-        slot,
-        currentUser.id
-      );
+      const slotId = `${day}-${hour}`;
+      const avail = effectiveAvailability(slotId, currentUser.id);
 
       return `
         <button
@@ -68,7 +68,7 @@ function renderSlots() {
           ${day} ${hour}
           Click to toggle availability
           "
-          data-slot="${slot.id}"
+          data-slot="${slotId}"
           data-teammate="${currentUser.id}"
         ></button>
       `;
@@ -88,29 +88,23 @@ function renderSlots() {
     `;
 
     const cells = DAYS.map(day => {
-      const slot = meetingSlots.find(
-        s => s.day === day && s.hour === hour
-      );
-
+      const slotId = `${day}-${hour}`;
       const count = teammates.reduce(
-        (sum, t) => sum + (effectiveAvailability(slot, t.id) ? 1 : 0),
+        (sum, t) => sum + (effectiveAvailability(slotId, t.id) ? 1 : 0),
         0
       );
       const availablePeople = teammates
-        .filter(t => effectiveAvailability(slot, t.id))
+        .filter(t => effectiveAvailability(slotId, t.id))
         .map(t => t.name);
 
       const unavailablePeople = teammates
-        .filter(t => !effectiveAvailability(slot, t.id))
+        .filter(t => !effectiveAvailability(slotId, t.id))
         .map(t => t.name);
 
       return `
         <div
-          class="
-            w2m-calendar-cell
-            w2m-overlap-cell
-            ${overlapClass(count, total)}
-          "
+          class="w2m-calendar-cell w2m-overlap-cell"
+          style="background: ${slotBgColor(count, total)}"
           data-day="${day}"
           data-hour="${hour}"
           data-count="${count}"
@@ -181,15 +175,10 @@ function renderSlots() {
 
       isDraggingAvailability = true;
 
-      const slot = meetingSlots.find(
-        s => s.id === cell.dataset.slot
+      const current = effectiveAvailability(
+        cell.dataset.slot,
+        cell.dataset.teammate
       );
-
-      const current =
-        effectiveAvailability(
-          slot,
-          cell.dataset.teammate
-        );
 
       dragAvailabilityValue = !current;
 
@@ -212,11 +201,15 @@ function renderSlots() {
     });
   });
 
-  document.addEventListener("mouseup", () => {
+  document.addEventListener("mouseup", async () => {
     if (!isDraggingAvailability) return;
 
     isDraggingAvailability = false;
-    saveState();
+    for (const [slotId, value] of dragChangedSlots) {
+      await db.setSlotAvailability(slotId, value);
+    }
+    dragChangedSlots.clear();
+    await db.loadAll();
     renderSlots();
   });
 
