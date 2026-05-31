@@ -2,8 +2,7 @@
 
 /* ── Mood quick (five faces) ─────────────────────────────── */
 .mood-unified-card {
-  position: absolute; /* out of flow so .standup-column contributes 0 to grid row sizing */
-  inset: 0;
+  flex: 1;
   gap: 14px;
   display: flex;
   flex-direction: column;
