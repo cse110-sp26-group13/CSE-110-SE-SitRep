@@ -193,6 +193,7 @@ function getContrastColor(color) {
     "var(--ink-2)":  { light: "var(--paper)", dark: "var(--paper)" },
     "var(--muted)":  { light: "var(--paper)", dark: "var(--paper)" },
     "var(--subtle)": { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--card-3)": { light: "var(--ink)",   dark: "var(--paper)" },
   };
 
   if (semanticMap[color]) {
