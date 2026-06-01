@@ -190,6 +190,13 @@ input, textarea, select {
   letter-spacing: 0.05em;
 }
 
+@media (max-width: 520px) {
+  .card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* ── Misc primitives ─────────────────────────────────────── */
 .empty {
   color: var(--muted);
