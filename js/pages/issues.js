@@ -3,6 +3,7 @@
 
 function renderIssues() {
   renderHeader();
+  updateGitHubSyncActions();
   renderBlockers();
   renderPullRequests();
   updateIssuesSub();

@@ -88,6 +88,19 @@ function renderBlockers() {
   });
 }
 
+function updateGitHubSyncActions() {
+  const unsyncButton = document.getElementById("unsync-gh-btn");
+  if (!unsyncButton) return;
+
+  const hasSyncedRepo = Boolean(sessionStorage.getItem("sitrep_gh_repo"));
+  if (!hasSyncedRepo && ((state.githubIssues || []).length || (state.githubPullRequests || []).length)) {
+    setGithubIssues([]);
+    setGithubPullRequests([]);
+  }
+
+  unsyncButton.hidden = !hasSyncedRepo;
+}
+
 function teammateOptions(selectedId) {
   return teammates.map(t =>
     `<option value="${escapeHTML(t.id)}"${t.id === selectedId ? " selected" : ""}>${escapeHTML(t.name)}</option>`
@@ -388,6 +401,7 @@ function bindBlockerControls() {
       openGitHubSyncModal();
     }
   });
+  document.getElementById("unsync-gh-btn")?.addEventListener("click", unsyncGitHub);
   document.querySelectorAll("#severity-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
       state.severityFilter = c.dataset.sev;
@@ -412,6 +426,25 @@ function bindBlockerControls() {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !modal.hidden) closeModal();
   });
+}
+
+async function unsyncGitHub() {
+  const syncedIssues = (state.githubIssues || []).length;
+  const syncedPullRequests = (state.githubPullRequests || []).length;
+
+  setGithubIssues([]);
+  setGithubPullRequests([]);
+  sessionStorage.removeItem("sitrep_gh_repo");
+  sessionStorage.removeItem("sitrep_gh_token");
+
+  try {
+    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs`);
+    await db.loadAll();
+  } catch (err) {
+    console.error("Failed to log GitHub unsync:", err);
+  }
+
+  renderAll();
 }
 
 function openGitHubSyncModal() {
