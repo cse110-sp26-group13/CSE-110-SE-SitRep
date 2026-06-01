@@ -1,5 +1,7 @@
 let isDraggingAvailability = false;
 let dragAvailabilityValue = null;
+let slotsDocumentMouseupBound = false;
+let slotsModalBound = false;
 const dragChangedSlots = new Map();
 
 const meetingDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -18,6 +20,39 @@ function setSlotAvailability(slotId, teammateId, value) {
   if (!window.slotAvailability[slotId]) window.slotAvailability[slotId] = {};
   window.slotAvailability[slotId][teammateId] = value;
   dragChangedSlots.set(slotId, value);
+}
+
+function paintAvailabilityCell(cell, value) {
+  cell.classList.toggle("available", value);
+  cell.classList.toggle("unavailable", !value);
+}
+
+async function saveDraggedAvailability() {
+  if (!isDraggingAvailability) return;
+
+  isDraggingAvailability = false;
+  for (const [slotId, value] of dragChangedSlots) {
+    await db.setSlotAvailability(slotId, value);
+  }
+  dragChangedSlots.clear();
+  await db.loadAll();
+  renderSlots();
+}
+
+function bindAvailabilityModal() {
+  if (slotsModalBound) return;
+  slotsModalBound = true;
+
+  const availabilityModal = document.getElementById("availability-modal");
+  document.getElementById("edit-mine-btn")?.addEventListener("click", () => {
+    availabilityModal.classList.remove("hidden");
+  });
+  document.getElementById("close-availability-modal")?.addEventListener("click", () => {
+    availabilityModal.classList.add("hidden");
+  });
+  availabilityModal?.addEventListener("click", e => {
+    if (e.target === availabilityModal) availabilityModal.classList.add("hidden");
+  });
 }
 
 function slotBgColor(count, total) {
@@ -192,6 +227,7 @@ function renderSlots() {
         cell.dataset.teammate,
         dragAvailabilityValue
       );
+      paintAvailabilityCell(cell, dragAvailabilityValue);
     });
 
     cell.addEventListener("mouseenter", () => {
@@ -203,31 +239,16 @@ function renderSlots() {
         cell.dataset.teammate,
         dragAvailabilityValue
       );
+      paintAvailabilityCell(cell, dragAvailabilityValue);
     });
   });
 
-  document.addEventListener("mouseup", async () => {
-    if (!isDraggingAvailability) return;
+  if (!slotsDocumentMouseupBound) {
+    slotsDocumentMouseupBound = true;
+    document.addEventListener("mouseup", saveDraggedAvailability);
+  }
 
-    isDraggingAvailability = false;
-    for (const [slotId, value] of dragChangedSlots) {
-      await db.setSlotAvailability(slotId, value);
-    }
-    dragChangedSlots.clear();
-    await db.loadAll();
-    renderSlots();
-  });
-
-  const availabilityModal = document.getElementById("availability-modal");
-  document.getElementById("edit-mine-btn")?.addEventListener("click", () => {
-    availabilityModal.classList.remove("hidden");
-  });
-  document.getElementById("close-availability-modal")?.addEventListener("click", () => {
-    availabilityModal.classList.add("hidden");
-  });
-  availabilityModal?.addEventListener("click", e => {
-    if (e.target === availabilityModal) availabilityModal.classList.add("hidden");
-  });
+  bindAvailabilityModal();
 
   const tooltip = document.getElementById("availability-tooltip");
 
