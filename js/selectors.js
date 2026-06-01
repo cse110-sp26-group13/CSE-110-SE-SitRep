@@ -1,8 +1,9 @@
 /**
  * Read-only derived views over the globals db.loadAll() populates
  * (window.team, teammates, blockers, activity). GitHub-synced issues
- * stay in localStorage (state.githubIssues) and are merged in here so
- * the rest of the UI doesn't need to know they live in two places.
+ * stay in localStorage (scoped per circle, see [state.js](state.js))
+ * and are merged in here so the rest of the UI doesn't need to know
+ * they live in two places.
  *
  * Selectors must stay pure — no mutation, no I/O.
  */
@@ -52,8 +53,9 @@ function effectiveActivity() {
 }
 
 function activeGithubRepo() {
-  const repos = state.githubRepos || [];
-  return repos.find(repo => repo.repoPath === state.activeGithubRepo) || repos[0] || null;
+  const repos = currentGithubRepos();
+  const activePath = currentActiveRepoPath();
+  return repos.find(repo => repo.repoPath === activePath) || repos[0] || null;
 }
 
 function activeGithubIssues() {
@@ -61,5 +63,5 @@ function activeGithubIssues() {
 }
 
 function allGithubIssues() {
-  return (state.githubRepos || []).flatMap(repo => repo.issues || []);
+  return currentGithubRepos().flatMap(repo => repo.issues || []);
 }

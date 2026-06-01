@@ -34,17 +34,15 @@ const SAMPLE_GH_PR = {
   isExternal: true,
 }
 
-function makeCtx({ state = {}, blockers = [], teammates = [], activity = [] } = {}) {
+// GitHub repos live in state.js (scoped per circle); selectors read them
+// through currentGithubRepos()/currentActiveRepoPath(). We stub those here
+// to test the selectors in isolation — the per-circle scoping itself is
+// covered in state.test.js.
+function makeCtx({ githubRepos = [], activeRepoPath = '', blockers = [], teammates = [], activity = [] } = {}) {
   const ctx = vm.createContext({
-    state: {
-      githubIssues: [],
-      githubPullRequests: [],
-      githubRepos: [],
-      activeGithubRepo: '',
-      severityFilter: 'all',
-      statusFilter: 'open',
-      ...state,
-    },
+    state: { severityFilter: 'all', statusFilter: 'open' },
+    currentGithubRepos: () => githubRepos,
+    currentActiveRepoPath: () => activeRepoPath,
     blockers,
     teammates,
     activity,
@@ -75,10 +73,8 @@ describe('effectiveBlockers()', () => {
   it('prepends GitHub-synced issues before DB blockers', () => {
     const ctx = makeCtx({
       blockers: [SAMPLE_BLOCKER],
-      state: {
-        activeGithubRepo: 'owner/repo',
-        githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
-      },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
     })
     const result = ctx.effectiveBlockers()
     expect(result).toHaveLength(2)
@@ -86,8 +82,8 @@ describe('effectiveBlockers()', () => {
     expect(result[1].id).toBe('b1')
   })
 
-  it('tolerates a missing state.githubIssues field', () => {
-    const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER], state: { githubIssues: undefined } })
+  it('returns DB blockers only when the circle has no synced repos', () => {
+    const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER] })
     expect(ctx.effectiveBlockers()).toHaveLength(1)
   })
 })
@@ -100,10 +96,8 @@ describe('findBlockerById()', () => {
 
   it('finds a GitHub-synced issue by id', () => {
     const ctx = makeCtx({
-      state: {
-        activeGithubRepo: 'owner/repo',
-        githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
-      },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
     })
     expect(ctx.findBlockerById('gh-42').title).toBe('GH issue from sync')
   })
@@ -117,38 +111,31 @@ describe('findBlockerById()', () => {
 describe('effectivePullRequests()', () => {
   it('returns GitHub-synced pull requests', () => {
     const ctx = makeCtx({
-      state: {
-        activeGithubRepo: 'owner/repo',
-        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
-      },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
     })
     expect(ctx.effectivePullRequests()).toHaveLength(1)
     expect(ctx.effectivePullRequests()[0].id).toBe('gh-pr-99')
   })
 
-  it('tolerates a missing state.githubPullRequests field', () => {
-    const ctx = makeCtx({ state: { githubPullRequests: undefined } })
-    expect(ctx.effectivePullRequests()).toHaveLength(0)
+  it('returns empty when the circle has no active repo', () => {
+    expect(makeCtx().effectivePullRequests()).toHaveLength(0)
   })
 })
 
 describe('findPullRequestById()', () => {
   it('finds a GitHub-synced pull request by id', () => {
     const ctx = makeCtx({
-      state: {
-        activeGithubRepo: 'owner/repo',
-        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
-      },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
     })
     expect(ctx.findPullRequestById('gh-pr-99').title).toBe('Add PR support')
   })
 
   it('returns undefined for an unknown pull request id', () => {
     const ctx = makeCtx({
-      state: {
-        activeGithubRepo: 'owner/repo',
-        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
-      },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
     })
     expect(ctx.findPullRequestById('gh-pr-nope')).toBeUndefined()
   })

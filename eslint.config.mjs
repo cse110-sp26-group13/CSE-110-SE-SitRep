@@ -18,7 +18,8 @@ const projectGlobals = {
   // From js/state.js
   state: "writable",
   saveState: "readonly",
-  setGithubIssues: "readonly",
+  currentGithubRepos: "readonly",
+  currentActiveRepoPath: "readonly",
   setGithubRepos: "readonly",
   setActiveGithubRepo: "readonly",
   removeGithubRepo: "readonly",

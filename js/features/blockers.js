@@ -131,7 +131,7 @@ function renderBlockers() {
 function updateGitHubSyncActions() {
   const unsyncButton = document.getElementById("unsync-gh-btn");
   const repoSelect = document.getElementById("gh-repo-select");
-  const repos = state.githubRepos || [];
+  const repos = currentGithubRepos();
   const activeRepo = activeGithubRepo();
 
   if (repoSelect) {
@@ -171,7 +171,7 @@ function parseGitHubRepoPath(value) {
 function updateActiveGithubIssues(issues) {
   const activeRepo = activeGithubRepo();
   if (!activeRepo) return;
-  const repos = (state.githubRepos || []).map(repo =>
+  const repos = currentGithubRepos().map(repo =>
     repo.repoPath === activeRepo.repoPath ? { ...repo, issues } : repo
   );
   setGithubRepos(repos);
@@ -369,8 +369,8 @@ function openCreateModal() {
  *
  * GitHub-synced issues (id prefixed `gh-`) are read-only here —
  * edits are no-ops and comments show an alert, because there's no
- * place to persist the change ([state.js](../state.js)'s
- * `state.githubIssues` is rewritten wholesale on next sync).
+ * place to persist the change (the active circle's cached repos in
+ * [state.js](../state.js) are rewritten wholesale on next sync).
  *
  * @param {string} id - blocker id from effectiveBlockers().
  */
@@ -594,8 +594,8 @@ async function unsyncGitHub() {
 /**
  * Show the GitHub sync dialog. On submit, fetch every issue for the
  * given `owner/repo` (optionally with a PAT for higher rate limits or
- * private repos), drop them into state.githubIssues, log an activity
- * event, and re-render. The chosen repo is remembered in
+ * private repos), store them under the active circle's repo set, log an
+ * activity event, and re-render. The chosen repo is remembered in
  * sessionStorage so the next sync defaults to it.
  *
  * @see fetchGitHubIssues in [./github-api.js](github-api.js)
