@@ -22,10 +22,22 @@
     open: false,
   };
 
+  /**
+   * Read the persisted active-team id from localStorage.
+   * Returns null in private mode (storage throws).
+   *
+   * @returns {string|null}
+   */
   function readStoredId() {
     try { return localStorage.getItem(KEY) || null; } catch (_e) { return null; }
   }
 
+  /**
+   * Persist (or clear) the active-team id. No-op when localStorage
+   * is unavailable.
+   *
+   * @param {string|null} id
+   */
   function writeStoredId(id) {
     try {
       if (id) localStorage.setItem(KEY, id);
@@ -33,10 +45,17 @@
     } catch (_e) { /* private mode */ }
   }
 
+  /** @returns {object|null} the currently-active circle row, or null. */
   function activeCircle() {
     return state.circles.find((c) => c.id === state.activeId) || null;
   }
 
+  /**
+   * 1–2 letter initials for the circle name (used in the rail mark).
+   *
+   * @param {string} name
+   * @returns {string}
+   */
   function initials(name) {
     const trimmed = (name || '').trim();
     if (!trimmed) return '?';
@@ -44,6 +63,14 @@
     return parts.map((p) => p[0]).join('').toUpperCase();
   }
 
+  /**
+   * Pull every circle the signed-in user belongs to, with role info.
+   * Scoped to `auth.uid()` explicitly because RLS allows reading
+   * memberships for *any* team you belong to (including teammates'
+   * rows) — without the filter, teammates show up as extra circles.
+   *
+   * @returns {Promise<Array<{id: string, name: string, joinCode: string, role: string}>>}
+   */
   async function fetchCircles() {
     if (!window.sbClient) return [];
     // RLS lets you read every membership for any team you belong to —
@@ -68,6 +95,7 @@
       }));
   }
 
+  /** Paint the rail mark and the popover list from `state.circles`. */
   function render() {
     const btn = state.mount.querySelector('.circle-switcher-btn');
     const pop = state.mount.querySelector('.circle-pop');
@@ -110,6 +138,13 @@
     });
   }
 
+  /**
+   * Local HTML escaper. Duplicated from utils.js because this module
+   * loads on splash.html where utils.js isn't included.
+   *
+   * @param {unknown} s
+   * @returns {string}
+   */
   function escapeHtml(s) {
     return String(s || '')
       .replace(/&/g, '&amp;')
@@ -118,6 +153,12 @@
       .replace(/"/g, '&quot;');
   }
 
+  /**
+   * Toggle the popover open/closed. Updates the aria-expanded attribute
+   * on the trigger button so assistive tech reflects the state.
+   *
+   * @param {boolean} open
+   */
   function setOpen(open) {
     state.open = open;
     state.mount.classList.toggle('open', open);
@@ -125,6 +166,13 @@
     if (btn) btn.setAttribute('aria-expanded', String(open));
   }
 
+  /**
+   * Switch to a different circle, persist the choice, and reload the
+   * page so every feature module re-hydrates from the new team. Skips
+   * if the id is already active or empty.
+   *
+   * @param {string} id - team id from `state.circles`.
+   */
   function setActive(id) {
     if (!id || id === state.activeId) { setOpen(false); return; }
     state.activeId = id;
@@ -136,6 +184,7 @@
     window.location.reload();
   }
 
+  /** Close the popover on outside click or Escape. Bound once. */
   function bindOutsideClose() {
     document.addEventListener('click', (e) => {
       if (!state.open) return;
@@ -146,6 +195,13 @@
     });
   }
 
+  /**
+   * One-time setup on DOMContentLoaded. Mounts the rail button +
+   * popover into `[data-circle-switcher]`, fetches the user's circles,
+   * picks the active one (stored id when valid, else first), renders,
+   * and fires `sitrep:active-team` so listeners (header subline, etc.)
+   * can paint with the right name.
+   */
   async function init() {
     const mount = document.querySelector('[data-circle-switcher]');
     if (!mount) return;
@@ -178,8 +234,6 @@
 
   window.activeCircle = {
     get: () => activeCircle(),
-    getId: () => state.activeId,
-    list: () => state.circles.slice(),
   };
 
   document.addEventListener('DOMContentLoaded', init);

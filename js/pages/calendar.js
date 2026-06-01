@@ -63,6 +63,18 @@ const EVENT_KIND_LABELS = {
 };
 
 // ─── Rendering ───────────────────────────────────────────────────────
+
+/**
+ * Build the 35-or-42 cell month grid for a given year + month.
+ * Pads the leading week with the tail of the previous month and the
+ * trailing week with the head of the next month so the grid is
+ * always a clean multiple of 7.
+ *
+ * @param {number} year
+ * @param {number} month - 0-indexed (0 = January).
+ * @returns {Array<{date: Date, muted: boolean}>} `muted: true` for
+ *   cells from adjacent months.
+ */
 function buildMonthCells(year, month) {
   // First-of-month + previous-month tail to fill the leading week.
   const first = new Date(year, month, 1);
@@ -86,16 +98,38 @@ function buildMonthCells(year, month) {
   return cells;
 }
 
+/**
+ * Format a Date as `YYYY-MM-DD` in local time. Used as the key for
+ * matching events to cells; intentionally local (not UTC) so an
+ * event on the 18th doesn't slide to the 17th in Pacific time.
+ *
+ * @param {Date} d
+ * @returns {string}
+ */
 function isoDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * True if both Dates fall on the same local calendar day.
+ *
+ * @param {Date} a
+ * @param {Date} b
+ * @returns {boolean}
+ */
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear()
       && a.getMonth()    === b.getMonth()
       && a.getDate()     === b.getDate();
 }
 
+/**
+ * Apply the active view (all / personal / team) and project filters
+ * to CAL_EVENTS. `team` view includes blocked + stretch events;
+ * `personal` is personal-only.
+ *
+ * @returns {typeof CAL_EVENTS}
+ */
 function filterEvents() {
   return getCalendarEvents().filter(e => {
     // Map event group to our UI kinds: default to global if not specified
@@ -289,6 +323,11 @@ function renderCalWeek() {
   if (countEl) countEl.textContent = `${events.length} events in view`;
 }
 
+/**
+ * Render the day-name header + month cell grid into `#cal-grid`,
+ * with up to 3 event bars per cell and a "+N more" overflow tag.
+ * Also refreshes the footer event count.
+ */
 function renderCalGrid() {
   const today = new Date();
   const grid = document.getElementById("cal-grid");
@@ -460,11 +499,16 @@ function renderCalGrid() {
     `${events.length} events in view`;
 }
 
+/** Paint the "May 2026"-style month/year heading. */
 function renderCalHeader() {
   document.getElementById("cal-month").innerHTML =
     `${MONTH_NAMES[calState.month]}<span class="yr">${calState.year}</span>`;
 }
 
+/**
+ * Render the project checklist in the sidebar and bind each checkbox
+ * to update `calState.projects` and re-render the grid.
+ */
 function renderCalLegend() {
   const container = document.getElementById("cal-legend");
   if (!container) return;
@@ -539,6 +583,7 @@ function renderCalLegend() {
   });
 }
 
+/** Top-level re-render: header subline, month heading, project filter, grid. */
 function renderCalendar() {
   renderHeader();
   renderCalHeader();
@@ -560,6 +605,12 @@ function refreshActiveView() {
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────
+
+/**
+ * One-time setup: bind prev/next/today nav, the view toggle
+ * (All/Personal/Team), and the placeholder "new event" button.
+ * Re-renders only the parts that actually change.
+ */
 function bindCalendar() {
   const themeBtn = document.getElementById("theme-toggle");
   if (themeBtn) {

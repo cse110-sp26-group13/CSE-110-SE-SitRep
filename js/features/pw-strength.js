@@ -34,6 +34,23 @@
   const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
   const REQUIRED_KEYS = ['length', 'letter', 'number'];
 
+  /**
+   * Score `password` against the four checks, paint the bar / label /
+   * requirement list keyed by `prefix`, and return the result.
+   *
+   * `requiredMet` reflects only length/letter/number — "strong" is a
+   * bonus point for the bar score but never gates submit, so users
+   * aren't forced into special characters.
+   *
+   * Reused from both splash signup (prefix "signup") and settings
+   * password-change (prefix "pw-new"); each page renders its own
+   * matching markup.
+   *
+   * @param {string} prefix - id prefix for the three DOM nodes.
+   * @param {string} password
+   * @returns {{score: number, requiredMet: boolean}}
+   *   `score` is 0–4; `requiredMet` is true once the gating reqs pass.
+   */
   function update(prefix, password) {
     const wrap = document.getElementById(`${prefix}-strength`);
     const fill = document.getElementById(`${prefix}-strength-fill`);

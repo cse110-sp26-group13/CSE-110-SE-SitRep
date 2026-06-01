@@ -1,3 +1,16 @@
+/**
+ * Mood trend sparkline — 7-day rolling team mood average rendered as
+ * an inline SVG into `#sparkline-wrap`. Days with no data show a gap
+ * in the line; the area fill is anchored to the first/last data
+ * points so partial weeks don't smear across empty days.
+ */
+
+/**
+ * Aggregate every teammate's moodHistory into a 7-point series, then
+ * draw the sparkline (grid, area, line, points, labels) plus the
+ * three summary stats below it (today, week avg, vs 6d ago).
+ * Reads from window.teammates; no I/O.
+ */
 function renderMoodTrend() {
   const days = 7;
   const series = [];

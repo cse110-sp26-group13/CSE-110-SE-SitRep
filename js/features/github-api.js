@@ -1,3 +1,24 @@
+/**
+ * Fetch every issue (open and closed) from a public or private GitHub
+ * repo and normalize each row into the same shape the local blockers
+ * panel uses. Synced rows get id `gh-<github-id>` and `isExternal: true`
+ * so the rest of the UI can keep them separate from Supabase blockers.
+ *
+ * Without a token, GitHub allows 60 requests/hour per IP — fine for
+ * smoke-testing but easy to hit during real use. A PAT (even one with
+ * no scopes) bumps that to 5,000/hour and is required for private repos.
+ *
+ * @param {string} repoPath - e.g. `"owner/name"`.
+ * @param {string} [token] - GitHub Personal Access Token.
+ * @returns {Promise<Array<{
+ *   id: string, title: string, description: string, severity: string,
+ *   status: "open"|"resolved", owner: string, postedAt: string,
+ *   startDate: string, dueDate: string, category: string,
+ *   comments: object[], isExternal: true
+ * }>>}
+ * @throws {Error} On 404 (repo missing / private without token) or
+ *   any other non-OK GitHub response.
+ */
 async function fetchGitHubIssues(repoPath, token) {
     const url = `https://api.github.com/repos/${repoPath}/issues?state=all`;
     const headers = {
