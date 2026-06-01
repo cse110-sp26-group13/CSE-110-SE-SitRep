@@ -359,8 +359,10 @@ function renderCalWeek() {
     });
     const isToday = isSameDay(date, today);
 
-    let html = `<div class="cal-cell ${isToday ? "today" : ""}">
-      <div class="cal-date">${date.getDate()}</div>`;
+    let html = `<div class="cal-cell ${isToday ? "today" : ""}" data-date="${key}">
+      <div class="cal-cell-header" data-date="${key}">
+        <div class="cal-date">${date.getDate()}</div>
+      </div>`;
     
     dayEvents.forEach(e => {
       html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}" style="${eventColorStyle(e)}">${escapeHTML(e.title)}</button>`;
