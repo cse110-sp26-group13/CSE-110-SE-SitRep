@@ -42,6 +42,18 @@
   gap: 8px;
 }
 
+.gh-repo-select {
+  min-width: 210px;
+  max-width: 280px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
 /* List */
 .blocker-list {
   list-style: none;

@@ -7,7 +7,11 @@ function effectiveTeammates() {
 }
 
 function effectiveBlockers() {
-  return [...(state.githubIssues || []), ...blockers];
+  return [...allGithubIssues(), ...blockers];
+}
+
+function effectiveActiveGithubBlockers() {
+  return [...activeGithubIssues(), ...blockers];
 }
 
 function findBlockerById(id) {
@@ -15,7 +19,7 @@ function findBlockerById(id) {
 }
 
 function effectivePullRequests() {
-  return state.githubPullRequests || [];
+  return activeGithubRepo()?.pullRequests || [];
 }
 
 function findPullRequestById(id) {
@@ -24,4 +28,17 @@ function findPullRequestById(id) {
 
 function effectiveActivity() {
   return activity;
+}
+
+function activeGithubRepo() {
+  const repos = state.githubRepos || [];
+  return repos.find(repo => repo.repoPath === state.activeGithubRepo) || repos[0] || null;
+}
+
+function activeGithubIssues() {
+  return activeGithubRepo()?.issues || [];
+}
+
+function allGithubIssues() {
+  return (state.githubRepos || []).flatMap(repo => repo.issues || []);
 }
