@@ -118,6 +118,7 @@ button {
   cursor: pointer;
   color: inherit;
 }
+[hidden] { display: none !important; }
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
