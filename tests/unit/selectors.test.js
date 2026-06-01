@@ -3,8 +3,8 @@ import { readFileSync } from 'fs'
 import vm from 'vm'
 
 // js/selectors.js is now a thin layer over the Supabase-backed globals
-// populated by js/db.js. It merges localStorage'd GitHub issues with
-// the team's DB blockers and exposes localStorage'd GitHub PRs.
+// populated by js/db.js. It merges the active GitHub repo's issues with
+// the team's DB blockers and exposes the active repo's PRs.
 const SELECTORS_CODE = readFileSync('./js/selectors.js', 'utf8')
 
 const SAMPLE_BLOCKER = {
@@ -39,6 +39,8 @@ function makeCtx({ state = {}, blockers = [], teammates = [], activity = [] } = 
     state: {
       githubIssues: [],
       githubPullRequests: [],
+      githubRepos: [],
+      activeGithubRepo: '',
       severityFilter: 'all',
       statusFilter: 'open',
       ...state,
@@ -73,7 +75,10 @@ describe('effectiveBlockers()', () => {
   it('prepends GitHub-synced issues before DB blockers', () => {
     const ctx = makeCtx({
       blockers: [SAMPLE_BLOCKER],
-      state: { githubIssues: [SAMPLE_GH_ISSUE] },
+      state: {
+        activeGithubRepo: 'owner/repo',
+        githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
+      },
     })
     const result = ctx.effectiveBlockers()
     expect(result).toHaveLength(2)
@@ -94,7 +99,12 @@ describe('findBlockerById()', () => {
   })
 
   it('finds a GitHub-synced issue by id', () => {
-    const ctx = makeCtx({ state: { githubIssues: [SAMPLE_GH_ISSUE] } })
+    const ctx = makeCtx({
+      state: {
+        activeGithubRepo: 'owner/repo',
+        githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
+      },
+    })
     expect(ctx.findBlockerById('gh-42').title).toBe('GH issue from sync')
   })
 
@@ -106,7 +116,12 @@ describe('findBlockerById()', () => {
 
 describe('effectivePullRequests()', () => {
   it('returns GitHub-synced pull requests', () => {
-    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    const ctx = makeCtx({
+      state: {
+        activeGithubRepo: 'owner/repo',
+        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+      },
+    })
     expect(ctx.effectivePullRequests()).toHaveLength(1)
     expect(ctx.effectivePullRequests()[0].id).toBe('gh-pr-99')
   })
@@ -119,12 +134,22 @@ describe('effectivePullRequests()', () => {
 
 describe('findPullRequestById()', () => {
   it('finds a GitHub-synced pull request by id', () => {
-    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    const ctx = makeCtx({
+      state: {
+        activeGithubRepo: 'owner/repo',
+        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+      },
+    })
     expect(ctx.findPullRequestById('gh-pr-99').title).toBe('Add PR support')
   })
 
   it('returns undefined for an unknown pull request id', () => {
-    const ctx = makeCtx({ state: { githubPullRequests: [SAMPLE_GH_PR] } })
+    const ctx = makeCtx({
+      state: {
+        activeGithubRepo: 'owner/repo',
+        githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+      },
+    })
     expect(ctx.findPullRequestById('gh-pr-nope')).toBeUndefined()
   })
 })

@@ -10,7 +10,7 @@ function renderIssues() {
 }
 
 function updateIssuesSub() {
-  const all = effectiveBlockers();
+  const all = effectiveActiveGithubBlockers();
   const open = all.filter(b => b.status !== "resolved").length;
   const resolved = all.length - open;
   const sub = document.getElementById("issues-sub");

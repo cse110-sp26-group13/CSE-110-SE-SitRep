@@ -1,8 +1,9 @@
-function mapGitHubPullRequest(pr) {
+function mapGitHubPullRequest(pr, repoPath) {
   const status = pr.merged_at ? "merged" : pr.state;
 
   return {
     id: `gh-pr-${pr.id}`,
+    repoPath,
     ghNumber: pr.number,
     title: pr.title,
     status,
@@ -22,5 +23,5 @@ function mapGitHubPullRequest(pr) {
 async function fetchGitHubPullRequests(repoPath, token) {
   const response = await ghFetch(`/repos/${repoPath}/pulls?state=all`, { token });
   const data = await response.json();
-  return data.map(mapGitHubPullRequest);
+  return data.map(pr => mapGitHubPullRequest(pr, repoPath));
 }

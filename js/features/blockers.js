@@ -28,7 +28,7 @@ function statusMatchesFilter(status, filter) {
 }
 
 function renderBlockers() {
-  const all = effectiveBlockers();
+  const all = effectiveActiveGithubBlockers();
   const filtered = all
     .filter(b => state.severityFilter === "all" || b.severity === state.severityFilter)
     .filter(b => statusMatchesFilter(b.status, state.statusFilter))
@@ -90,15 +90,57 @@ function renderBlockers() {
 
 function updateGitHubSyncActions() {
   const unsyncButton = document.getElementById("unsync-gh-btn");
-  if (!unsyncButton) return;
+  const repoSelect = document.getElementById("gh-repo-select");
+  const repos = state.githubRepos || [];
+  const activeRepo = activeGithubRepo();
 
-  const hasSyncedRepo = Boolean(sessionStorage.getItem("sitrep_gh_repo"));
-  if (!hasSyncedRepo && ((state.githubIssues || []).length || (state.githubPullRequests || []).length)) {
-    setGithubIssues([]);
-    setGithubPullRequests([]);
+  if (repoSelect) {
+    repoSelect.hidden = repos.length === 0;
+    repoSelect.innerHTML = repos.map(repo => `
+      <option value="${escapeHTML(repo.repoPath)}"${repo.repoPath === activeRepo?.repoPath ? " selected" : ""}>
+        ${escapeHTML(repo.repoPath)}
+      </option>
+    `).join("");
   }
 
-  unsyncButton.hidden = !hasSyncedRepo;
+  if (unsyncButton) unsyncButton.hidden = !activeRepo;
+  if (activeRepo) sessionStorage.setItem("sitrep_gh_repo", activeRepo.repoPath);
+  else sessionStorage.removeItem("sitrep_gh_repo");
+}
+
+function normalizeRepoPaths(value) {
+  return [...new Set(value
+    .split(/[\s,]+/)
+    .map(repo => repo.trim())
+    .filter(Boolean)
+    .map(parseGitHubRepoPath)
+  )];
+}
+
+function parseGitHubRepoPath(value) {
+  const normalized = value.replace(/\/+$/, "");
+  const githubUrl = normalized.match(/^https?:\/\/(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)(?:[/?#].*)?$/i);
+  if (githubUrl) return `${githubUrl[1]}/${githubUrl[2].replace(/\.git$/i, "")}`;
+
+  const shorthand = normalized.match(/^([^/\s]+)\/([^/\s#?]+)$/);
+  if (shorthand) return `${shorthand[1]}/${shorthand[2].replace(/\.git$/i, "")}`;
+
+  throw new Error(`Use owner/repo or a GitHub repo URL: ${value}`);
+}
+
+function updateActiveGithubIssues(issues) {
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  const repos = (state.githubRepos || []).map(repo =>
+    repo.repoPath === activeRepo.repoPath ? { ...repo, issues } : repo
+  );
+  setGithubRepos(repos);
+}
+
+function appendIssueToActiveGithubRepo(issue) {
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  updateActiveGithubIssues([...(activeRepo.issues || []), issue]);
 }
 
 function teammateOptions(selectedId) {
@@ -219,6 +261,7 @@ function openCreateModal() {
       const ownerSelect = document.getElementById("issue-owner");
       const newGhIssue = {
         id: `gh-${ghIssue.id}`,
+        repoPath: activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "",
         ghNumber: ghIssue.number,
         title: ghIssue.title,
         description: ghIssue.body || "",
@@ -232,7 +275,7 @@ function openCreateModal() {
         comments: [],
         isExternal: true,
       };
-      setGithubIssues([...(state.githubIssues || []), newGhIssue]);
+      appendIssueToActiveGithubRepo(newGhIssue);
       closeModal();
       renderAll();
     } catch (err) {
@@ -258,7 +301,7 @@ async function openDetailModal(id) {
   let displayComments = b.comments;
   if (isGithubIssue && b.ghNumber) {
     try {
-      displayComments = await fetchGitHubComments(b.ghNumber);
+      displayComments = await fetchGitHubComments(b.ghNumber, b.repoPath);
     } catch (err) {
       console.error("Failed to fetch GitHub comments:", err);
     }
@@ -331,12 +374,12 @@ async function openDetailModal(id) {
     if (newStatus === b.status) return;
     if (isGithubIssue) {
       if (newStatus === "resolved") {
-        try { await closeGitHubIssue(b.ghNumber); }
+        try { await closeGitHubIssue(b.ghNumber, b.repoPath); }
         catch (err) { console.error("Failed to close GitHub issue:", err); }
-        const updated = (state.githubIssues || []).map(issue =>
+        const updated = (activeGithubIssues() || []).map(issue =>
           issue.ghNumber === b.ghNumber ? { ...issue, status: "resolved" } : issue
         );
-        setGithubIssues(updated);
+        updateActiveGithubIssues(updated);
         renderAll();
         closeModal();
       }
@@ -376,7 +419,7 @@ async function openDetailModal(id) {
     const text = input.value.trim();
     if (!text) return;
     if (isGithubIssue) {
-      try { await addGitHubComment(b.ghNumber, text); }
+      try { await addGitHubComment(b.ghNumber, text, b.repoPath); }
       catch (err) { console.error("Failed to post GitHub comment:", err); }
       await openDetailModal(id);
       return;
@@ -402,6 +445,10 @@ function bindBlockerControls() {
     }
   });
   document.getElementById("unsync-gh-btn")?.addEventListener("click", unsyncGitHub);
+  document.getElementById("gh-repo-select")?.addEventListener("change", e => {
+    setActiveGithubRepo(e.target.value);
+    renderAll();
+  });
   document.querySelectorAll("#severity-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
       state.severityFilter = c.dataset.sev;
@@ -429,16 +476,19 @@ function bindBlockerControls() {
 }
 
 async function unsyncGitHub() {
-  const syncedIssues = (state.githubIssues || []).length;
-  const syncedPullRequests = (state.githubPullRequests || []).length;
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  const syncedIssues = (activeRepo.issues || []).length;
+  const syncedPullRequests = (activeRepo.pullRequests || []).length;
+  const repoPath = activeRepo.repoPath;
 
-  setGithubIssues([]);
-  setGithubPullRequests([]);
-  sessionStorage.removeItem("sitrep_gh_repo");
+  removeGithubRepo(repoPath);
+  sessionStorage.setItem("sitrep_gh_repo", activeGithubRepo()?.repoPath || "");
+  if (!activeGithubRepo()) sessionStorage.removeItem("sitrep_gh_repo");
   sessionStorage.removeItem("sitrep_gh_token");
 
   try {
-    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs`);
+    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs from ${repoPath}`);
     await db.loadAll();
   } catch (err) {
     console.error("Failed to log GitHub unsync:", err);
@@ -448,14 +498,14 @@ async function unsyncGitHub() {
 }
 
 function openGitHubSyncModal() {
-  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
+  const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
   
-  openModal("Sync with GitHub (v2)", `
+  openModal("Sync with GitHub", `
     <form id="gh-sync-form" class="issue-form">
       <div class="field-row">
         <label class="field">
-          <span>Repository Path (owner/repo)</span>
-          <input type="text" id="gh-repo" value="${escapeHTML(savedRepo)}" required />
+          <span>Repository Paths (owner/repo)</span>
+          <textarea id="gh-repos" rows="6" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
         </label>
       </div>
       <div class="field-row">
@@ -467,40 +517,59 @@ function openGitHubSyncModal() {
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues + PRs</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Repos</button>
       </div>
     </form>
   `);
 
   document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const repo = document.getElementById("gh-repo").value.trim();
+    let repos;
     const token = document.getElementById("gh-token").value.trim();
     const errorEl = document.getElementById("gh-error");
     const btn = document.getElementById("gh-sync-btn");
+
+    try {
+      repos = normalizeRepoPaths(document.getElementById("gh-repos").value);
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      return;
+    }
+
+    if (!repos.length) {
+      errorEl.textContent = "Add at least one repository path.";
+      errorEl.hidden = false;
+      return;
+    }
 
     try {
       btn.textContent = "Syncing...";
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const [issues, pullRequests] = await Promise.all([
-        fetchGitHubIssues(repo, token),
-        fetchGitHubPullRequests(repo, token),
-      ]);
-      sessionStorage.setItem("sitrep_gh_repo", repo);
-      sessionStorage.setItem("sitrep_gh_token", token);
-      setGithubIssues(issues);
-      setGithubPullRequests(pullRequests);
+      const syncedRepos = await Promise.all(repos.map(async repoPath => {
+        const [issues, pullRequests] = await Promise.all([
+          fetchGitHubIssues(repoPath, token),
+          fetchGitHubPullRequests(repoPath, token),
+        ]);
+        return { repoPath, issues, pullRequests };
+      }));
 
-      await db.addActivity("checkin", `Synced ${issues.length} issues and ${pullRequests.length} PRs from GitHub (${repo})`);
+      syncedRepos.forEach(upsertGithubRepo);
+      sessionStorage.setItem("sitrep_gh_repo", syncedRepos.at(-1).repoPath);
+      sessionStorage.setItem("sitrep_gh_token", token);
+
+      const issueCount = syncedRepos.reduce((sum, repo) => sum + repo.issues.length, 0);
+      const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
+      await db.addActivity("checkin", `Synced ${issueCount} issues and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
       await db.loadAll();
       closeModal();
       renderAll();
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
-      btn.textContent = "Pull Issues + PRs";
+      btn.textContent = "Pull Repos";
       btn.disabled = false;
     }
   });

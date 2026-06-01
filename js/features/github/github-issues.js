@@ -9,12 +9,13 @@ function labelToSeverity(labels) {
 async function fetchGitHubIssues(repoPath, token) {
   const response = await ghFetch(`/repos/${repoPath}/issues?state=all`, { token });
   const data = await response.json();
-  return data.filter((issue) => !issue.pull_request).map(mapGitHubIssue);
+  return data.filter((issue) => !issue.pull_request).map(issue => mapGitHubIssue(issue, repoPath));
 }
 
-function mapGitHubIssue(issue) {
+function mapGitHubIssue(issue, repoPath) {
   return {
     id: `gh-${issue.id}`,
+    repoPath,
     ghNumber: issue.number,
     title: issue.title,
     description: issue.body || "",
@@ -39,24 +40,24 @@ async function createGitHubIssue(title, body) {
   return response.json();
 }
 
-async function addGitHubComment(ghNumber, text) {
-  const repo = getGHRepo();
+async function addGitHubComment(ghNumber, text, repoPath = getGHRepo()) {
+  const repo = repoPath;
   return ghFetch(`/repos/${repo}/issues/${ghNumber}/comments`, {
     method: "POST",
     body: JSON.stringify({ body: text }),
   });
 }
 
-async function closeGitHubIssue(ghNumber) {
-  const repo = getGHRepo();
+async function closeGitHubIssue(ghNumber, repoPath = getGHRepo()) {
+  const repo = repoPath;
   return ghFetch(`/repos/${repo}/issues/${ghNumber}`, {
     method: "PATCH",
     body: JSON.stringify({ state: "closed" }),
   });
 }
 
-async function fetchGitHubComments(ghNumber) {
-  const repo = getGHRepo();
+async function fetchGitHubComments(ghNumber, repoPath = getGHRepo()) {
+  const repo = repoPath;
   const response = await ghFetch(`/repos/${repo}/issues/${ghNumber}/comments`);
   const data = await response.json();
   return data.map((comment) => ({
