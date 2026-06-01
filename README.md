@@ -4,28 +4,65 @@ A lightweight dashboard for small Agile software teams to answer the everyday qu
 
 Inspired by tools like [Steady (formerly Status Hero)](https://runsteady.com/), Geekbot, and Range, with a focus on low-friction daily standups, blocker tracking, mood/burnout signals, and team availability.
 
-> **Status:** early prototype (v0.1.1). See [CHANGELOG.md](CHANGELOG.md) for release history.
+> **Status:** v0.2.0 — splash/auth flow live, dashboard wired to Supabase. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Quick start
 
-This is a static site — no build step required.
+The runtime is plain HTML/CSS/JS — no bundler, no build step. The npm scripts only exist for linting and tests; the site itself runs straight from the files.
 
 ```bash
 git clone https://github.com/cse110-sp26-group13/CSE-110-SE-SitRep.git
 cd CSE-110-SE-SitRep
-open index.html        # or just double-click index.html
+
+# Serve the static files (any static server works)
+npx serve .                      # or: python3 -m http.server 8000
 ```
 
-For local development with live reload, any static server works (e.g. `python3 -m http.server 8000`).
+Open `http://localhost:3000/splash.html` (or whatever port your server uses). [index.html](index.html) is the authenticated dashboard — visiting it without a session bounces you to [splash.html](splash.html) via the client-side auth gate ([js/auth-guard.js](js/auth-guard.js)). Sign up with any email + password, then create or join a circle to land on the dashboard.
 
-## Features (current)
+**Demo account** — skip the signup and use:
+
+```
+email:    demo@hi.com
+password: Demo1234
+```
+
+Already a member of a circle with seeded check-ins, blockers, and activity, so the dashboard lands populated.
+
+Supabase is preconfigured in [js/config.js](js/config.js) (publishable/anon key — RLS enforces access on the backend); no `.env` step is required.
+
+### Running tests and lint
+
+```bash
+npm install        # one-time, installs eslint / vitest / playwright
+npm run lint
+npm run test:unit  # vitest
+npm run test:e2e   # playwright
+```
+
+## Current status
+
+What's actually wired up vs. what's still in motion as of v0.2.0:
+
+| Area | State |
+| --- | --- |
+| Splash / auth (signup, login, password strength, create / join circle) | **Live** against Supabase |
+| Dashboard shell, rail navigation, theme toggle, circle switcher | **Live** |
+| Check-ins, blockers, availability slots, mood trend, KPI strip, activity feed | **Live** — read/write against Supabase per-circle |
+| Settings page (display name, password) | **Live** |
+| GitHub Issues sync | **Live** — pulls issues from any public repo via the sync modal in [issues.html](issues.html); PAT optional for higher rate limits / private repos. Synced issues live in `sessionStorage`, comments on them are not yet persisted ([js/features/blockers.js:267](js/features/blockers.js#L267)) |
+| Notification preferences | **In progress** — toggles in [settings.html](settings.html) (standup reminders, mentions, daily digest) round-trip through `localStorage` so the prefs persist, but nothing actually fires notifications yet ([js/pages/settings.js](js/pages/settings.js) `bindNotifications`) |
+| Standup page, calendar page | **In progress** |
+
+## Features
 
 - **Daily check-ins** — yesterday / today / blockers per teammate
-- **Blockers panel** — severity + status filtering
+- **Blockers panel** — severity + status filtering, GitHub Issues sync
 - **Availability grid** — when2meet-style slot picker, scoped to the current user
 - **Mood trend** — 7-day rolling mood visualization
 - **KPI strip** — team summary metrics at a glance
 - **Activity feed** — recent updates across the team
+- **Circles** — create or join with a 6-digit code; switch between circles from the rail
 
 ## Tech stack
 
@@ -35,21 +72,34 @@ Vanilla HTML, CSS, and JavaScript — no framework, no build step. This is a cou
 
 ```
 .
-├── index.html              # App shell
-├── data.js                 # Mock team data
+├── splash.html, index.html, standup.html,    # Per-page HTML at the repo root
+│   issues.html, calendar.html, settings.html
+├── data.js                 # Seed data used only as a fallback when no circle is loaded
 ├── css/                    # One stylesheet per feature
 ├── js/
-│   ├── app.js              # Bootstraps the dashboard
+│   ├── supabaseClient.js   # Supabase bootstrap (window.sbClient)
+│   ├── auth.js             # Auth helpers with normalized error mapping
+│   ├── auth-guard.js       # Client-side route gate (redirects to splash)
+│   ├── db.js               # Persistence layer (Supabase reads/writes)
 │   ├── state.js            # In-memory state
 │   ├── selectors.js        # Derived state helpers
 │   ├── utils.js            # Shared utilities
-│   └── features/           # Per-feature modules (checkins, blockers, slots, ...)
+│   ├── nav.js, theme.js    # Rail navigation, theme toggle
+│   ├── features/           # Per-feature modules (checkins, blockers, slots, ...)
+│   └── pages/              # Per-page entrypoints
+├── supabase/               # Schema, RLS policies, migrations
 ├── docs/
 │   ├── adr/                # Architectural Decision Records (MADR format)
-│   ├── MVP/                # MVP scope and screenshots
+│   ├── wireframes/         # Pre-implementation design notes
+│   ├── MVP/                # MVP scope and early screenshots
 │   └── UserStories.md
+├── tests/                  # Vitest unit tests + Playwright e2e specs
+├── scripts/check.js        # Custom CI checks (no external lint deps)
+├── .github/workflows/      # CI: lint, unit tests, e2e, asset checks
 ├── Research/               # Per-teammate research notes on prior art
 ├── StandupMeetings/        # Captured standup notes
+├── SprintPlanning/         # Weekly sprint plans
+├── admin/feedback/         # Peer reviews (incoming and outgoing)
 └── CHANGELOG.md
 ```
 

@@ -1,6 +1,24 @@
+/**
+ * Blockers panel — issue list, create/detail modals, and the GitHub
+ * sync dialog. Reads from effectiveBlockers() (Supabase + GH-synced)
+ * and writes to Supabase through db.* helpers.
+ *
+ * GitHub-synced rows have ids prefixed `gh-` and live in localStorage;
+ * status/comment edits on those are blocked because there's no
+ * persistence target yet.
+ */
+
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
 const STATUS_LABEL = { open: "Open", "in-progress": "In progress", resolved: "Resolved" };
 
+/**
+ * Format a YYYY-MM-DD date string as a short local date ("May 18").
+ * The `T00:00:00` suffix anchors the date to local midnight so it
+ * doesn't drift across timezones when rendered.
+ *
+ * @param {string} dateString
+ * @returns {string}
+ */
 function formatIssueDate(dateString) {
   if (!dateString) return "";
   const date = new Date(`${dateString}T00:00:00`);
@@ -10,6 +28,13 @@ function formatIssueDate(dateString) {
   });
 }
 
+/**
+ * True if the issue has a due date in the past and is not yet resolved.
+ * Resolved issues are never "overdue" even if their due date passed.
+ *
+ * @param {{dueDate?: string, status: string}} issue
+ * @returns {boolean}
+ */
 function isIssueOverdue(issue) {
   if (!issue.dueDate || issue.status === "resolved") return false;
 
@@ -20,6 +45,15 @@ function isIssueOverdue(issue) {
   return due < today;
 }
 
+/**
+ * Whether a blocker's status matches the active filter chip.
+ * The "open" filter intentionally folds in "in-progress" so users
+ * don't lose track of work they've already started.
+ *
+ * @param {"open"|"in-progress"|"resolved"} status
+ * @param {"all"|"open"|"resolved"} filter
+ * @returns {boolean}
+ */
 function statusMatchesFilter(status, filter) {
   if (filter === "all") return true;
   if (filter === "open") return status === "open" || status === "in-progress";
@@ -27,6 +61,14 @@ function statusMatchesFilter(status, filter) {
   return true;
 }
 
+/**
+ * Render the filtered blocker list into `#blocker-list`, refresh the
+ * active state on the severity/status filter chips, and rebind row
+ * click handlers to open the detail modal.
+ *
+ * Sort order: resolved sink to the bottom, then by severity
+ * (critical → high → medium).
+ */
 function renderBlockers() {
   const all = effectiveActiveGithubBlockers();
   const filtered = all
@@ -143,18 +185,39 @@ function appendIssueToActiveGithubRepo(issue) {
   updateActiveGithubIssues([...(activeRepo.issues || []), issue]);
 }
 
+/**
+ * `<option>` list of every teammate, with the given id pre-selected.
+ *
+ * @param {string} [selectedId]
+ * @returns {string} HTML safe to drop into a `<select>`.
+ */
 function teammateOptions(selectedId) {
   return teammates.map(t =>
     `<option value="${escapeHTML(t.id)}"${t.id === selectedId ? " selected" : ""}>${escapeHTML(t.name)}</option>`
   ).join("");
 }
 
+/**
+ * `<option>` list of severities (critical / high / medium) with one
+ * pre-selected. Order is the same as SEVERITY_ORDER so the dropdown
+ * matches the sort order in the list.
+ *
+ * @param {"critical"|"high"|"medium"} [selected]
+ * @returns {string}
+ */
 function severityOptions(selected) {
   return ["critical", "high", "medium"].map(s =>
     `<option value="${s}"${s === selected ? " selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`
   ).join("");
 }
 
+/**
+ * `<option>` list of categories with a disabled placeholder when
+ * nothing is selected — forces a deliberate choice on create.
+ *
+ * @param {"ui"|"swe"|"backend"|""} [selected]
+ * @returns {string}
+ */
 function categoryOptions(selected) {
   const placeholder = `<option value="" disabled${!selected ? " selected" : ""}>Select category</option>`;
   return placeholder + ["ui", "swe", "backend"].map(c =>
@@ -162,17 +225,31 @@ function categoryOptions(selected) {
   ).join("");
 }
 
+/**
+ * Show the shared issue modal with the given title and body HTML.
+ * The caller is responsible for binding any handlers inside `bodyHTML`
+ * after this returns.
+ *
+ * @param {string} titleText
+ * @param {string} bodyHTML
+ */
 function openModal(titleText, bodyHTML) {
   document.getElementById("issue-modal-title").textContent = titleText;
   document.getElementById("issue-modal-body").innerHTML = bodyHTML;
   document.getElementById("issue-modal").hidden = false;
 }
 
+/** Hide the issue modal and clear its body so old handlers don't linger. */
 function closeModal() {
   document.getElementById("issue-modal").hidden = true;
   document.getElementById("issue-modal-body").innerHTML = "";
 }
 
+/**
+ * Open the "New issue" form, validate dates on submit, and persist
+ * the new blocker + an activity event. Re-loads from Supabase and
+ * re-renders before closing the modal so the new row appears.
+ */
 function openCreateModal() {
   const me = teammates.find(t => t.id === team.currentUserId);
   openModal("New issue", `
@@ -287,7 +364,19 @@ function openCreateModal() {
   bindModalDismissers();
 }
 
-async function openDetailModal(id) {
+/**
+ * Open the issue detail modal for a blocker. Lets the user edit
+ * status / start / due / category and post comments inline; each
+ * change persists to Supabase and re-renders.
+ *
+ * GitHub-synced issues (id prefixed `gh-`) are read-only here —
+ * edits are no-ops and comments show an alert, because there's no
+ * place to persist the change ([state.js](../state.js)'s
+ * `state.githubIssues` is rewritten wholesale on next sync).
+ *
+ * @param {string} id - blocker id from effectiveBlockers().
+ */
+function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
@@ -433,11 +522,22 @@ async function openDetailModal(id) {
   bindModalDismissers();
 }
 
+/**
+ * Wire every `[data-modal-cancel]` button inside the currently-open
+ * modal to closeModal(). Called once after each openModal() so newly
+ * injected cancel buttons are bound.
+ */
 function bindModalDismissers() {
   document.querySelectorAll("[data-modal-cancel]").forEach(el =>
     el.addEventListener("click", closeModal));
 }
 
+/**
+ * One-time setup for the blockers panel: filter chips, the GitHub
+ * sync button, the "new issue" button, and modal dismissers
+ * (close button, backdrop click, Escape key). Called once per page
+ * load — handlers persist for the lifetime of the page.
+ */
 function bindBlockerControls() {
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'sync-gh-btn') {
@@ -497,6 +597,15 @@ async function unsyncGitHub() {
   renderAll();
 }
 
+/**
+ * Show the GitHub sync dialog. On submit, fetch every issue for the
+ * given `owner/repo` (optionally with a PAT for higher rate limits or
+ * private repos), drop them into state.githubIssues, log an activity
+ * event, and re-render. The chosen repo is remembered in
+ * sessionStorage so the next sync defaults to it.
+ *
+ * @see fetchGitHubIssues in [./github-api.js](github-api.js)
+ */
 function openGitHubSyncModal() {
   const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
   

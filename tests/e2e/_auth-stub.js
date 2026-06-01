@@ -1,95 +1,95 @@
 // Short-circuit auth + DB loading during e2e tests so pages render
-// without a real Supabase session or team data.
+// without a real Supabase session.
 //
 // - js/auth-guard.js is replaced with an empty body so the redirect
 //   to splash.html never fires.
-// - js/db.js is replaced with a minimal stub that defines the same
-//   globals (team / teammates / blockers / meetingSlots / activity)
-//   as in-memory values and a tiny window.db API. Pages render and
-//   update without crashing, redirecting, or hitting Supabase.
+// - js/db.js is replaced with a stub that owns a tiny in-memory team
+//   (one user) and persists mutations into localStorage so reloads
+//   carry state forward — matching what the real Supabase layer
+//   would do.
 //
 // Underscore prefix keeps Playwright's default test-file glob from
 // picking this up as a spec.
 
 const DB_STUB = `
-  window.team = { id: 'team-test', name: 'Test Team', joinCode: 'TEST', currentUserId: 'u1' };
-  const STANDUP_KEY = 'sitrep_e2e_standup';
-  const BASE_TEAMMATE = { id: 'u1', name: 'Test User', role: 'Engineer', moodHistory: [] };
-  function readStandup() {
-    try {
-      return JSON.parse(localStorage.getItem(STANDUP_KEY)) || {};
-    } catch {
-      return {};
-    }
+  const STUB_KEY = 'sitrep-e2e-stub';
+  function _read() {
+    try { return JSON.parse(localStorage.getItem(STUB_KEY)) || {}; }
+    catch { return {}; }
   }
-  function writeStandup(patch) {
-    localStorage.setItem(STANDUP_KEY, JSON.stringify({ ...readStandup(), ...patch }));
+  function _write(s) {
+    try { localStorage.setItem(STUB_KEY, JSON.stringify(s)); } catch {}
   }
-  function hydrateTeammates() {
-    const standup = readStandup();
-    const hasCheckIn = Boolean(standup.yesterday || standup.today || standup.blockers);
-    window.teammates = [{
-      ...BASE_TEAMMATE,
-      mood: standup.mood ?? null,
-      moodHistory: [null, null, null, null, null, null, standup.mood ?? null],
-      lastCheckIn: hasCheckIn ? {
-        time: standup.time || 'Now',
-        yesterday: standup.yesterday || '',
-        today: standup.today || '',
-        blockers: standup.blockers || '',
-      } : null,
-    }];
-  }
-  hydrateTeammates();
-  window.blockers = [];
+
+  window.team = {
+    id: 'test-team',
+    name: 'Test Team',
+    joinCode: 'TEST-0001',
+    currentUserId: 'test-user',
+  };
   window.meetingSlots = [];
   window.activity = [];
-  let blockerId = 0;
+
+  function _hydrate() {
+    const s = _read();
+    window.teammates = [{
+      id: 'test-user',
+      name: 'Test User',
+      role: '',
+      mood: s.mood ?? null,
+      moodHistory: Array.from({ length: 14 }, () => null),
+      lastCheckIn: s.lastCheckIn ?? null,
+      coverNeeded: false,
+      coverNote: '',
+    }];
+    window.blockers = s.blockers || [];
+  }
+  _hydrate();
+
   window.db = {
-    loadAll:            async () => { hydrateTeammates(); },
-    saveMood:           async (score) => {
-      writeStandup({ mood: score });
-      hydrateTeammates();
+    loadAll: async () => { _hydrate(); },
+    saveMood: async (score) => {
+      const s = _read();
+      s.mood = score;
+      _write(s);
     },
     saveStandupCompose: async ({ yesterday, today, blockersNote }) => {
-      writeStandup({
+      const s = _read();
+      s.lastCheckIn = {
+        time: 'just now',
         yesterday: yesterday || '',
         today: today || '',
         blockers: blockersNote || '',
-        time: 'Now',
-      });
-      hydrateTeammates();
+      };
+      _write(s);
     },
-    addActivity:        async (type, text) => {
-      window.activity.unshift({ type, text, who: 'Test User', time: 'Now' });
-    },
-    createBlocker:      async ({ title, description, severity, ownerId, startDate, dueDate, category }) => {
-      const owner = window.teammates.find(t => t.id === ownerId);
-      window.blockers.unshift({
-        id: 'b-test-' + (++blockerId),
-        title,
-        description,
-        severity,
+    addActivity: async () => {},
+    createBlocker: async (b) => {
+      const s = _read();
+      s.blockers = s.blockers || [];
+      s.blockers.push({
+        id: 'b-' + s.blockers.length + '-' + (b.title || '').slice(0, 8),
+        title: b.title,
+        description: b.description || '',
+        severity: b.severity || 'high',
         status: 'open',
-        owner: owner?.name || 'Test User',
-        postedAt: 'Now',
-        startDate,
-        dueDate,
-        category,
+        owner: 'Test User',
+        ownerId: b.ownerId || 'test-user',
+        startDate: b.startDate || null,
+        dueDate: b.dueDate || null,
+        category: b.category || null,
         comments: [],
+        postedAt: 'just now',
       });
+      _write(s);
     },
-    updateBlocker:      async (id, patch) => {
-      window.blockers = window.blockers.map(b => b.id === id ? { ...b, ...patch } : b);
+    updateBlocker: async (id, patch) => {
+      const s = _read();
+      const i = (s.blockers || []).findIndex(b => b.id === id);
+      if (i >= 0) { Object.assign(s.blockers[i], patch); _write(s); }
     },
-    addBlockerComment:  async (id, text) => {
-      window.blockers = window.blockers.map(b =>
-        b.id === id
-          ? { ...b, comments: [...(b.comments || []), { who: 'Test User', text, time: 'Now' }] }
-          : b
-      );
-    },
-    setSlotAvailability:async () => {},
+    addBlockerComment: async () => {},
+    setSlotAvailability: async () => {},
   };
 `;
 
