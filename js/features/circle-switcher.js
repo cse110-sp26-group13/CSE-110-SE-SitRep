@@ -13,6 +13,7 @@
   'use strict';
 
   const KEY = 'sitrep-active-team';
+  const MARK_KEY = 'sitrep-active-team-mark';
   const EVENT = 'sitrep:active-team';
 
   const state = {
@@ -42,6 +43,17 @@
     try {
       if (id) localStorage.setItem(KEY, id);
       else localStorage.removeItem(KEY);
+    } catch (_e) { /* private mode */ }
+  }
+
+  function readStoredMark() {
+    try { return localStorage.getItem(MARK_KEY) || null; } catch (_e) { return null; }
+  }
+
+  function writeStoredMark(mark) {
+    try {
+      if (mark) localStorage.setItem(MARK_KEY, mark);
+      else localStorage.removeItem(MARK_KEY);
     } catch (_e) { /* private mode */ }
   }
 
@@ -102,10 +114,11 @@
     if (!btn || !pop) return;
 
     const active = activeCircle();
-    btn.querySelector('.circle-switcher-mark').textContent =
-      active ? initials(active.name) : '+';
+    const mark = active ? initials(active.name) : '+';
+    btn.querySelector('.circle-switcher-mark').textContent = mark;
     btn.title = active ? `Active circle: ${active.name}` : 'No active circle';
     btn.setAttribute('aria-label', btn.title);
+    writeStoredMark(active ? mark : null);
 
     if (!state.circles.length) {
       pop.innerHTML = `
@@ -207,10 +220,14 @@
     if (!mount) return;
     state.mount = mount;
 
+    // Paint the last-known initials immediately so cross-page navigation
+    // doesn't flash `…` while we wait for Supabase. Falls back to `…`
+    // on the very first sign-in when nothing is cached yet.
+    const cachedMark = readStoredMark();
     mount.innerHTML = `
       <button type="button" class="rail-icon circle-switcher-btn"
               aria-haspopup="menu" aria-expanded="false" title="Switch circle">
-        <span class="circle-switcher-mark">…</span>
+        <span class="circle-switcher-mark">${escapeHtml(cachedMark || '…')}</span>
       </button>
       <div class="circle-pop" role="menu"></div>
     `;
