@@ -150,7 +150,6 @@
     return data || [];
   }
 
-<<<<<<< HEAD
   async function loadCalendarEvents(teamId) {
     const { data, error } = await sb()
       .from('calendar_events')
@@ -171,7 +170,26 @@
     return data || [];
   }
 
-=======
+  async function loadCalendarEvents(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_events')
+      .select('*')
+      .or(`team_id.is.null,team_id.eq.${teamId}`)
+      .order('date', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function loadCalendarGroups(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_groups')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
   /**
    * Hydrate every global the dashboard reads from — `team`, `teammates`,
    * `blockers`, `meetingSlots`, `activity`. Each page calls this once
@@ -183,7 +201,6 @@
    *
    * @returns {Promise<void>}
    */
->>>>>>> e69b29e16aad2bff839bfd280285244f64ba5645
   async function loadAll() {
     console.log('db.loadAll starting...');
     const { data: { session } } = await sb().auth.getSession();
