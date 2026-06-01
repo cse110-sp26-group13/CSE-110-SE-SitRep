@@ -187,11 +187,12 @@ function getContrastColor(color) {
   // 1. Check our hardcoded semantic map
   const semanticMap = {
     "var(--good)":   { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--warn)":   { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--warn)":   { light: "var(--paper)", dark: "var(--paper)" },
     "var(--bad)":    { light: "var(--paper)", dark: "var(--paper)" },
     "var(--ink)":    { light: "var(--paper)", dark: "var(--paper)" },
     "var(--ink-2)":  { light: "var(--paper)", dark: "var(--paper)" },
     "var(--muted)":  { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--subtle)": { light: "var(--ink)",   dark: "var(--paper)" },
   };
 
   if (semanticMap[color]) {
@@ -897,7 +898,7 @@ function renderCalTimeline() {
   const container = document.getElementById("timeline-container");
   const scrollWrapper = document.querySelector(".cal-timeline-view");
   const hd = document.getElementById("timeline-hd");
-  const allIssues = effectiveBlockers().filter(b => b.status?.toLowerCase() !== "resolved");
+  const allIssues = effectiveBlockers(); // Include resolved issues
   const teammates = effectiveTeammates();
 
   // Range: Current month bounds
@@ -979,9 +980,18 @@ function renderCalTimeline() {
     const owner = teammates.find(t => t.id === issue.ownerId) || { name: issue.owner, id: "unknown" };
     const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
     const barDateRange = duration > 1 ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` : `${visibleStart.getDate()}`;
-    const color = issue.color || "var(--ink)";
+    
+    // Status-based color coding
+    const status = (issue.status || "open").toLowerCase();
+    let color = issue.color;
+    if (!color) {
+      if (status === "in-progress") color = "var(--warn)";
+      else if (status === "resolved") color = "var(--good)";
+      else color = "var(--subtle)";
+    }
+
     const textColor = getContrastColor(color);
-    const tooltipText = `${escapeHTML(issue.title)}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
+    const tooltipText = `${escapeHTML(issue.title)}\nStatus: ${status}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
       <div class="timeline-row">
