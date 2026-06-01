@@ -1,6 +1,16 @@
-// Dashboard page orchestrator.
-// Summary view: KPIs, standup + issues snapshots, mood trend, activity, next-up.
+/**
+ * Dashboard page orchestrator ([index.html](../../index.html)).
+ *
+ * Summary view: KPIs, standup + issues snapshots, mood trend, activity.
+ * Lighter-weight than the standup or issues pages — most cards are
+ * read-only previews that link out to the full pages for editing.
+ */
 
+/**
+ * "Standup" snapshot card on the dashboard. Shows how many teammates
+ * have checked in today, the team mood average, who's still pending,
+ * and the most recent blocker note as a heads-up.
+ */
 function renderStandupSnapshot() {
   const tm = effectiveTeammates();
   const checkedIn = tm.filter(t => t.lastCheckIn).length;
@@ -38,6 +48,11 @@ function renderStandupSnapshot() {
   body.innerHTML = html;
 }
 
+/**
+ * "Issues" snapshot card on the dashboard. Open-blocker count, severity
+ * breakdown, and the top 2 most-severe issues as quick links into the
+ * full issues page.
+ */
 function renderIssuesSnapshot() {
   const open = effectiveBlockers().filter(b => b.status !== "resolved");
   const counts = {
@@ -71,6 +86,7 @@ function renderIssuesSnapshot() {
     : `<div class="empty" style="padding:8px 0">Team's unblocked.</div>`;
 }
 
+/** Re-render every card on the dashboard. Reads from the loaded globals. */
 function renderDashboard() {
   renderHeader();
   renderKPIs();
@@ -80,19 +96,7 @@ function renderDashboard() {
   renderIssuesSnapshot();
 }
 
-function bindResetDash() {
-  const btn = document.getElementById("reset-btn");
-  if (!btn) return;
-  btn.textContent = "Refresh";
-  btn.title = "Re-fetch live data";
-  btn.addEventListener("click", async () => {
-    await db.loadAll();
-    renderDashboard();
-  });
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderDashboard();
-  bindResetDash();
 });

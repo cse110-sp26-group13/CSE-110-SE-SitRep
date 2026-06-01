@@ -39,7 +39,7 @@ test.describe('Daily standup page', () => {
   });
 
   test('meeting slots and mood sparkline render in the side rail', async ({ page }) => {
-    await expect(page.locator('#slots-list')).toBeVisible();
+    await expect(page.locator('#team-overlap')).toBeVisible();
     await expect(page.locator('#sparkline-wrap')).toBeVisible();
   });
 });

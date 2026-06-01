@@ -198,6 +198,16 @@ function todayISO() {
 }
 
 /**
+ * Returns the current local time as "HH:MM" (24h), used as the
+ * display time on AI session cards.
+ * @returns {string}
+ */
+function nowTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/**
  * Loads all AI sessions from state (localStorage).
  * Integration point: replace with Supabase fetch when table is ready.
  * @returns {Array<Object>}
@@ -575,12 +585,6 @@ function bindAILogForm() {
     };
 
     saveAISession(session);
-
-    pushActivity({
-      type: "ai",
-      who:  "You",
-      text: `logged ${AGENT_LABELS[agentName] || agentName} session — ${taskDesc.slice(0, 60)}${taskDesc.length > 60 ? "…" : ""}`,
-    });
 
     form.hidden = true;
     form.reset();

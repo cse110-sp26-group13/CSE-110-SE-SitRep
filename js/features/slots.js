@@ -48,6 +48,11 @@ function renderSlots() {
   const currentUser = teammates.find(
     t => t.id === team.currentUserId
   );
+  if (!currentUser) {
+    if (personalList) personalList.innerHTML = "";
+    if (overlapList) overlapList.innerHTML = "";
+    return;
+  }
 
   const personalGrid = HOURS.map(hour => {
     const hourLabel = `

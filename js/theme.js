@@ -1,16 +1,34 @@
-// Light/dark theme. Loaded in <head> so the stored choice is applied to
-// <html> before first paint (no flash). Toggle lives at the bottom of the
-// rail; wiring waits for the DOM since the button is in <body>.
+/**
+ * Light/dark theme controller.
+ *
+ * Loaded in `<head>` of every page so the persisted choice is applied
+ * to `<html data-theme>` before first paint — no flash of wrong theme.
+ * The rail's `#theme-toggle` button (in `<body>`) is wired up after
+ * DOMContentLoaded since it isn't in the DOM yet when this runs.
+ *
+ * Storage key: `sitrep-theme` ("light" | "dark").
+ * Default: light (cream paper). Dark is opt-in; we don't follow the
+ * OS theme so a fresh visit is predictable.
+ */
 
 (function () {
   const KEY = "sitrep-theme";
 
+  /**
+   * Read the persisted theme.
+   *
+   * @returns {"light"|"dark"}
+   */
   function resolve() {
-    // Default to the canonical light (cream paper) theme; dark is opt-in so a
-    // fresh load is predictable and never surprises with an OS-driven theme.
     return localStorage.getItem(KEY) === "dark" ? "dark" : "light";
   }
 
+  /**
+   * Apply a theme to `<html data-theme>`. CSS variables in
+   * [css/base.css](../css/base.css) switch off this attribute.
+   *
+   * @param {"light"|"dark"} theme
+   */
   function apply(theme) {
     document.documentElement.dataset.theme = theme;
   }
