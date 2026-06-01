@@ -107,9 +107,7 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
-            
             ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
-            
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
             ${dueBadge}
             ${commentBadge}
@@ -376,7 +374,7 @@ function openCreateModal() {
  *
  * @param {string} id - blocker id from effectiveBlockers().
  */
-function openDetailModal(id) {
+async function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
@@ -387,7 +385,7 @@ function openDetailModal(id) {
   // GitHub-synced issues live in localStorage, not Postgres — guard those.
   const isGithubIssue = String(id).startsWith("gh-");
 
-  let displayComments = b.comments;
+  let displayComments = b.comments ?? [];
   if (isGithubIssue && b.ghNumber) {
     try {
       displayComments = await fetchGitHubComments(b.ghNumber, b.repoPath);
@@ -539,11 +537,7 @@ function bindModalDismissers() {
  * load — handlers persist for the lifetime of the page.
  */
 function bindBlockerControls() {
-  document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'sync-gh-btn') {
-      openGitHubSyncModal();
-    }
-  });
+  document.getElementById("sync-gh-btn")?.addEventListener("click", openGitHubSyncModal);
   document.getElementById("unsync-gh-btn")?.addEventListener("click", unsyncGitHub);
   document.getElementById("gh-repo-select")?.addEventListener("change", e => {
     setActiveGithubRepo(e.target.value);
@@ -608,7 +602,7 @@ async function unsyncGitHub() {
  */
 function openGitHubSyncModal() {
   const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
-  
+
   openModal("Sync with GitHub", `
     <form id="gh-sync-form" class="issue-form">
       <div class="field-row">
