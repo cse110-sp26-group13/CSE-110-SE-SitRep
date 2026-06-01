@@ -488,9 +488,13 @@
 .assignee-pill {
   width: 2rem; height: 2rem; background: var(--paper); 
   border-radius: 0.125rem; /* Squished square */
-  display: flex; align-items: center; justify-content: center; border: 0.125rem solid var(--ink);
+  display: flex; align-items: center; justify-content: center; border: 0.0625rem solid var(--hairline);
   flex-shrink: 0;
-  box-shadow: 0.15rem 0.15rem 0 var(--ink);
+  box-shadow: 0.125rem 0.125rem 0 rgba(0,0,0,0.1);
+}
+:root[data-theme="dark"] .assignee-pill {
+  border-color: var(--ink);
+  box-shadow: 0.125rem 0.125rem 0 var(--ink);
 }
 .avatar { font-family: var(--mono); font-size: 0.75rem; font-weight: 900; color: var(--ink); }
 

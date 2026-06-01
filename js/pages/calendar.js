@@ -1001,7 +1001,8 @@ function renderCalTimeline() {
     }
 
     const textColor = getContrastColor(color);
-    const borderColor = isDark ? "var(--ink)" : "var(--hairline)";
+    const borderColor = isDark ? "var(--ink)" : "white";
+    const shadowStyle = isDark ? "" : "box-shadow: none;";
     const tooltipText = `${escapeHTML(issue.title)}\nStatus: ${status}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
@@ -1012,7 +1013,7 @@ function renderCalTimeline() {
         <div class="days-col">
           ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}"></div>`).join("")}
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${borderColor}; cursor: pointer;" title="${tooltipText}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${borderColor}; ${shadowStyle} cursor: pointer;" title="${tooltipText}">
               <div class="assignee-pill">
                 <span class="avatar">${initials}</span>
               </div>
