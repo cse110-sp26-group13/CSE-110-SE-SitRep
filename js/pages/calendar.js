@@ -985,22 +985,20 @@ function renderCalTimeline() {
     const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
     const barDateRange = duration > 1 ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` : `${visibleStart.getDate()}`;
     
-    // Status-based color coding
+    // Status-based color coding (revert to vibrant colors)
     const status = (issue.status || "open").toLowerCase();
     const isDark = document.documentElement.dataset.theme === "dark";
     
     let color = issue.color;
     if (!color) {
-      if (status === "in-progress") {
-        color = isDark ? "var(--warn)" : "var(--warn-soft)";
-      } else if (status === "resolved") {
-        color = isDark ? "var(--good)" : "var(--good-soft)";
-      } else {
-        color = isDark ? "var(--subtle)" : "var(--card-3)";
-      }
+      if (status === "in-progress") color = "var(--warn)";
+      else if (status === "resolved") color = "var(--good)";
+      else color = "var(--ink)";
     }
 
-    const textColor = getContrastColor(color);
+    // Force text to be the high-contrast opposite (var(--paper))
+    // This is Cream in Light Mode and Black in Dark Mode.
+    const textColor = "var(--paper)"; 
     const borderColor = isDark ? "var(--ink)" : "white";
     const shadowStyle = isDark ? "" : "box-shadow: none;";
     const tooltipText = `${escapeHTML(issue.title)}\nStatus: ${status}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
