@@ -186,14 +186,17 @@ function getContrastColor(color) {
 
   // 1. Check our hardcoded semantic map
   const semanticMap = {
-    "var(--good)":   { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--warn)":   { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--bad)":    { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--ink)":    { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--ink-2)":  { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--muted)":  { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--subtle)": { light: "var(--ink)",   dark: "var(--paper)" },
-    "var(--card-3)": { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--good)":      { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--good-soft)": { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--warn)":      { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--warn-soft)": { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--bad)":       { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--bad-soft)":  { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--ink)":       { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--ink-2)":     { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--muted)":     { light: "var(--paper)", dark: "var(--paper)" },
+    "var(--subtle)":    { light: "var(--ink)",   dark: "var(--paper)" },
+    "var(--card-3)":    { light: "var(--ink)",   dark: "var(--paper)" },
   };
 
   if (semanticMap[color]) {
@@ -984,14 +987,21 @@ function renderCalTimeline() {
     
     // Status-based color coding
     const status = (issue.status || "open").toLowerCase();
+    const isDark = document.documentElement.dataset.theme === "dark";
+    
     let color = issue.color;
     if (!color) {
-      if (status === "in-progress") color = "var(--warn)";
-      else if (status === "resolved") color = "var(--good)";
-      else color = "var(--subtle)";
+      if (status === "in-progress") {
+        color = isDark ? "var(--warn)" : "var(--warn-soft)";
+      } else if (status === "resolved") {
+        color = isDark ? "var(--good)" : "var(--good-soft)";
+      } else {
+        color = isDark ? "var(--subtle)" : "var(--card-3)";
+      }
     }
 
     const textColor = getContrastColor(color);
+    const borderColor = isDark ? "var(--ink)" : "var(--hairline)";
     const tooltipText = `${escapeHTML(issue.title)}\nStatus: ${status}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
@@ -1002,7 +1012,7 @@ function renderCalTimeline() {
         <div class="days-col">
           ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}"></div>`).join("")}
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: var(--ink); cursor: pointer;" title="${tooltipText}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${borderColor}; cursor: pointer;" title="${tooltipText}">
               <div class="assignee-pill">
                 <span class="avatar">${initials}</span>
               </div>
