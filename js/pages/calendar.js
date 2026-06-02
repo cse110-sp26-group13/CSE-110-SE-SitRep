@@ -332,6 +332,8 @@ function renderCalWeek() {
   const start = calState.weekStart;
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
+  const weekStartStr = isoDate(start);
+  const weekEndStr = isoDate(end);
 
   // Update header label
   const startM = MONTH_NAMES[start.getMonth()].slice(0, 3);
@@ -341,38 +343,137 @@ function renderCalWeek() {
 
   const events = filterEvents();
   const weekDays = [];
+  const weekCells = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     weekDays.push(d);
+    weekCells.push({ date: d });
+  }
+
+  // Filter events active in THIS week
+  const weekEvents = events.filter(e => {
+    const s = e.date;
+    const evEnd = e.endDate || e.date;
+    return s <= weekEndStr && evEnd >= weekStartStr;
+  });
+
+  // Calculate slots day-by-day for this week (same logic as month view)
+  const usedSlotsByDay = {}; 
+  const dayOverflowCounts = {};
+
+  for (let c = 0; c < 7; c++) {
+    const dayDate = weekCells[c].date;
+    const key = isoDate(dayDate);
+    const dayEvents = weekEvents.filter(e => key >= e.date && key <= (e.endDate || e.date));
+    
+    dayEvents.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      const aEnd = a.endDate || a.date;
+      const bEnd = b.endDate || b.date;
+      const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
+      const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
+      return bDur - aDur;
+    });
+
+    const daySlots = [];
+    const prevKey = c > 0 ? isoDate(weekCells[c - 1].date) : null;
+    const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
+
+    for (let s = 0; s < 15; s++) { // Week view has more vertical room, allowing more slots before overflow
+      const prevId = prevSlots[s];
+      if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
+        daySlots[s] = prevId;
+      }
+    }
+
+    let overflowCount = 0;
+    dayEvents.forEach(event => {
+      const id = String(event.id);
+      if (daySlots.includes(id)) return;
+
+      let assigned = false;
+      for (let s = 0; s < 15; s++) {
+        if (!daySlots[s]) {
+          daySlots[s] = id;
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) overflowCount++;
+    });
+
+    usedSlotsByDay[key] = daySlots;
+    dayOverflowCounts[key] = overflowCount;
   }
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
-  
-  const gridHTML = weekDays.map(date => {
-    const key = isoDate(date);
-    // Find events that overlap this day
-    const dayEvents = events.filter(e => {
-      const s = e.date;
-      const end = e.endDate || e.date;
-      return key >= s && key <= end;
-    });
-    const isToday = isSameDay(date, today);
+  let gridHTML = dayHeader;
 
-    let html = `<div class="cal-cell ${isToday ? "today" : ""}" data-date="${key}">
-      <div class="cal-cell-header" data-date="${key}">
-        <div class="cal-date">${date.getDate()}</div>
+  // 1. Background Cells & Day Headers
+  weekCells.forEach((cell, colIndex) => {
+    const key = isoDate(cell.date);
+    const isToday = isSameDay(cell.date, today);
+
+    gridHTML += `<div class="cal-cell ${isToday ? "today" : ""}" 
+                      data-date="${key}"
+                      style="grid-column: ${colIndex + 1}; grid-row: 2 / span 20"></div>`;
+
+    gridHTML += `<div class="cal-cell-header" data-date="${key}" style="grid-column: ${colIndex + 1}; grid-row: 2; z-index: 5;">
+      <div class="cal-date">${cell.date.getDate()}</div>
+    </div>`;
+
+    const overflow = dayOverflowCounts[key];
+    if (overflow > 0) {
+      gridHTML += `<div class="cal-more-indicator" data-date="${key}" 
+                        style="grid-column: ${colIndex + 1}; grid-row: 18; z-index: 10;">
+        +${overflow} more
       </div>`;
-    
-    dayEvents.forEach(e => {
-      html += `<button class="${eventBarClasses(e)}" type="button" data-event-id="${escapeHTML(e.id)}" title="${escapeHTML(eventTooltip(e))}" style="${eventColorStyle(e)}">${escapeHTML(e.title)}</button>`;
-    });
+    }
+  });
 
-    html += `</div>`;
-    return html;
-  }).join("");
+  // 2. Event Bars
+  for (let slot = 0; slot < 15; slot++) {
+    let currentEventId = null;
+    let startCol = -1;
 
-  container.innerHTML = dayHeader + gridHTML;
+    for (let c = 0; c <= 7; c++) {
+      const key = c < 7 ? isoDate(weekCells[c].date) : null;
+      const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
+
+      if (eventIdAtSlot !== currentEventId) {
+        if (currentEventId) {
+          const event = weekEvents.find(e => String(e.id) === currentEventId);
+          if (event) {
+            const span = c - startCol;
+            const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
+            const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === currentEventId;
+            const nextDayKey = c < 7 ? isoDate(weekCells[c].date) : null;
+            const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === currentEventId;
+
+            const classes = [eventBarClasses(event)];
+            if (event.endDate && event.endDate !== event.date) {
+              if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
+                classes.push("connect-left");
+              }
+              if (continuesToNextDay || (c === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
+                classes.push("connect-right");
+              }
+            }
+
+            gridHTML += `<button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}" 
+                            style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${2 + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
+              ${escapeHTML(event.title)}
+            </button>`;
+          }
+        }
+        currentEventId = eventIdAtSlot;
+        startCol = c;
+      }
+    }
+  }
+
+  container.innerHTML = gridHTML;
 
   const countEl = document.getElementById("week-foot-count");
   if (countEl) countEl.textContent = `${events.length} events in view`;
@@ -907,11 +1008,11 @@ function renderCalTimeline() {
   const allIssues = effectiveBlockers(); // Include resolved issues
   const teammates = effectiveTeammates();
 
-  // Range: Current month bounds
-  const monthStart = new Date(calState.year, calState.month, 1);
-  const monthEnd = new Date(calState.year, calState.month + 1, 0);
+  // Range: Current month bounds PLUS previous and next month for context
+  const monthStart = new Date(calState.year, calState.month - 1, 1);
+  const monthEnd = new Date(calState.year, calState.month + 2, 0);
 
-  // 1. Filter and Sort issues active in this month
+  // 1. Filter and Sort issues active in this 3-month window
   const issues = allIssues.filter(issue => {
     const s = issue.startDate || issue.dueDate;
     const e = issue.dueDate || issue.startDate;
@@ -926,33 +1027,29 @@ function renderCalTimeline() {
   }
 
   if (issues.length === 0) {
-    container.innerHTML = '<div class="timeline-empty">No active issues found for this month.</div>';
+    container.innerHTML = '<div class="timeline-empty">No active issues found for this period.</div>';
     return;
   }
 
-  // 2. Determine "Relevant Range" (earliest start to latest end within month)
-  let firstRelevantDay = monthStart.getDate();
-  let lastRelevantDay = monthEnd.getDate();
-
+  // 2. Determine "Relevant Range" based on the actual dates of the issues found
   const issueDates = issues.flatMap(i => {
     const s = new Date(`${i.startDate || i.dueDate}T00:00:00`);
     const e = new Date(`${i.dueDate || i.startDate}T00:00:00`);
     return [s < monthStart ? monthStart : s, e > monthEnd ? monthEnd : e];
   });
 
-  firstRelevantDay = Math.min(...issueDates.map(d => d.getDate()));
-  lastRelevantDay = Math.max(...issueDates.map(d => d.getDate()));
-
-  // Always include today if it's in the month
-  const today = new Date();
-  if (today.getFullYear() === calState.year && today.getMonth() === calState.month) {
-    firstRelevantDay = Math.min(firstRelevantDay, today.getDate());
-    lastRelevantDay = Math.max(lastRelevantDay, today.getDate());
-  }
+  const minDate = new Date(Math.min(...issueDates));
+  const maxDate = new Date(Math.max(...issueDates));
+  
+  // Ensure we at least show the current month even if no issues are in it
+  const viewMin = minDate < monthStart ? minDate : monthStart;
+  const viewMax = maxDate > monthEnd ? maxDate : monthEnd;
 
   const daysArr = [];
-  for (let d = firstRelevantDay; d <= lastRelevantDay; d++) {
-    daysArr.push(new Date(calState.year, calState.month, d));
+  let curr = new Date(viewMin);
+  while (curr <= viewMax) {
+    daysArr.push(new Date(curr));
+    curr.setDate(curr.getDate() + 1);
   }
 
   const totalVisibleDays = daysArr.length;
@@ -962,7 +1059,11 @@ function renderCalTimeline() {
       <div class="timeline-header">
         <div class="label-col">Issue Timelines</div>
         <div class="days-col">
-          ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}" data-day="${d.getDate()}"><span>${d.getDate()}</span></div>`).join("")}
+          ${daysArr.map(d => {
+            const isFirstOfMonth = d.getDate() === 1;
+            const monthLabel = isFirstOfMonth ? `<div class="month-marker">${MONTH_NAMES[d.getMonth()].slice(0, 3)}</div>` : '';
+            return `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}" data-date="${isoDate(d)}">${monthLabel}<span>${d.getDate()}</span></div>`;
+          }).join("")}
         </div>
       </div>
       <div class="timeline-body">
@@ -977,7 +1078,7 @@ function renderCalTimeline() {
     const visibleStart = iStart < daysArr[0] ? daysArr[0] : iStart;
     const visibleEnd = iEnd > daysArr[totalVisibleDays - 1] ? daysArr[totalVisibleDays - 1] : iEnd;
 
-    const startIdx = visibleStart.getDate() - firstRelevantDay;
+    const startIdx = Math.round((visibleStart - daysArr[0]) / (1000 * 60 * 60 * 24));
     const duration = Math.round((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)) + 1;
 
     const leftPct = (startIdx / totalVisibleDays) * 100;
@@ -985,9 +1086,8 @@ function renderCalTimeline() {
 
     const owner = teammates.find(t => t.id === issue.ownerId) || { name: issue.owner, id: "unknown" };
     const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
-    const barDateRange = duration > 1 ? `${visibleStart.getDate()}–${visibleEnd.getDate()} (${duration}d)` : `${visibleStart.getDate()}`;
     
-    // Status-based color coding (revert to vibrant colors)
+    // Status-based color coding
     const status = (issue.status || "open").toLowerCase();
     const isDark = document.documentElement.dataset.theme === "dark";
     
@@ -998,11 +1098,8 @@ function renderCalTimeline() {
       else color = "var(--ink)";
     }
 
-    // Force text to be the high-contrast opposite (var(--paper))
-    // This is Cream in Light Mode and Black in Dark Mode.
     const textColor = "var(--paper)"; 
     const borderColor = isDark ? "var(--ink)" : "white";
-    const shadowStyle = isDark ? "" : "box-shadow: none;";
     const tooltipText = `${escapeHTML(issue.title)}\nStatus: ${status}\nDates: ${sStr} to ${eStr}\nAssignee: ${escapeHTML(owner.name)}`;
 
     html += `
@@ -1013,12 +1110,12 @@ function renderCalTimeline() {
         <div class="days-col">
           ${daysArr.map(d => `<div class="day-tick ${d.getDay() === 0 || d.getDay() === 6 ? "weekend" : ""}"></div>`).join("")}
           <div class="timeline-bar-wrap" style="left: ${leftPct}%; width: ${widthPct}%">
-            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${borderColor}; ${shadowStyle} cursor: pointer;" title="${tooltipText}">
+            <div class="timeline-bar" data-issue-id="${escapeHTML(issue.id)}" style="background: ${color}; border-color: ${borderColor}; cursor: pointer;" title="${tooltipText}">
               <div class="assignee-pill">
                 <span class="avatar">${initials}</span>
               </div>
               <span class="bar-title" style="color: ${textColor}">${escapeHTML(issue.title)}</span>
-              <span class="bar-dates" style="color: ${textColor}">${barDateRange}</span>
+              <span class="bar-dates" style="color: ${textColor}">${visibleStart.getDate()}–${visibleEnd.getDate()}</span>
             </div>
           </div>
         </div>
@@ -1033,18 +1130,17 @@ function renderCalTimeline() {
 
   container.innerHTML = html;
 
-  // Auto-scroll to today if today is in the visible range
-  if (today.getFullYear() === calState.year && today.getMonth() === calState.month) {
-    setTimeout(() => {
-      const todayTick = container.querySelector(`.timeline-header [data-day="${today.getDate()}"]`);
-      if (todayTick && scrollWrapper) {
-        const labelWidth = 256; // 16rem in px
-        scrollWrapper.scrollLeft = todayTick.offsetLeft - labelWidth - 100; // Center it a bit
-      }
-    }, 0);
-  }
+  // Auto-scroll to today
+  const today = new Date();
+  const todayStr = isoDate(today);
+  setTimeout(() => {
+    const todayTick = container.querySelector(`.timeline-header [data-date="${todayStr}"]`);
+    if (todayTick && scrollWrapper) {
+      const labelWidth = 256; 
+      scrollWrapper.scrollLeft = todayTick.offsetLeft - labelWidth - 100; 
+    }
+  }, 0);
 
-  // Add click listeners to timeline bars
   container.querySelectorAll(".timeline-bar").forEach(bar => {
     bar.addEventListener("click", () => {
       const issueId = bar.dataset.issueId;
