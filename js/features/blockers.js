@@ -620,7 +620,7 @@ function openGitHubSyncModal() {
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Repos</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues + PRs</button>
       </div>
     </form>
   `);
@@ -651,13 +651,37 @@ function openGitHubSyncModal() {
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const syncedRepos = await Promise.all(repos.map(async repoPath => {
-        const [issues, pullRequests] = await Promise.all([
+      const warnings = [];
+      const existingRepos = currentGithubRepos();
+      const syncedRepos = (await Promise.all(repos.map(async repoPath => {
+        const previousRepo = existingRepos.find(repo => repo.repoPath === repoPath);
+        const [issuesResult, pullRequestsResult] = await Promise.allSettled([
           fetchGitHubIssues(repoPath, token),
           fetchGitHubPullRequests(repoPath, token),
         ]);
-        return { repoPath, issues, pullRequests };
-      }));
+
+        if (issuesResult.status === "rejected" && pullRequestsResult.status === "rejected") {
+          warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message} Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+          return null;
+        }
+
+        if (issuesResult.status === "rejected") {
+          warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message}`);
+        }
+        if (pullRequestsResult.status === "rejected") {
+          warnings.push(`${repoPath}: Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+        }
+
+        return {
+          repoPath,
+          issues: issuesResult.status === "fulfilled" ? issuesResult.value : previousRepo?.issues || [],
+          pullRequests: pullRequestsResult.status === "fulfilled" ? pullRequestsResult.value : previousRepo?.pullRequests || [],
+        };
+      }))).filter(Boolean);
+
+      if (!syncedRepos.length) {
+        throw new Error(`GitHub sync failed. ${warnings.join(" ")}`);
+      }
 
       syncedRepos.forEach(upsertGithubRepo);
       sessionStorage.setItem("sitrep_gh_repo", syncedRepos.at(-1).repoPath);
@@ -667,12 +691,21 @@ function openGitHubSyncModal() {
       const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
       await db.addActivity("checkin", `Synced ${issueCount} issues and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
       await db.loadAll();
-      closeModal();
       renderAll();
+
+      if (warnings.length) {
+        errorEl.textContent = `Partial sync completed. ${warnings.join(" ")}`;
+        errorEl.hidden = false;
+        btn.textContent = "Pull Issues + PRs";
+        btn.disabled = false;
+        return;
+      }
+
+      closeModal();
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
-      btn.textContent = "Pull Repos";
+      btn.textContent = "Pull Issues + PRs";
       btn.disabled = false;
     }
   });
