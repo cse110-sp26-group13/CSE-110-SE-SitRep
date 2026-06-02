@@ -152,6 +152,7 @@
 
 .sev-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   font-family: var(--mono);
   font-size: 12px;
@@ -161,7 +162,12 @@
   border-bottom: 1px dashed var(--hairline);
   padding: 8px 0;
 }
-.sev-row span { display: inline-flex; align-items: center; gap: 6px; }
+.sev-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .dot {
   width: 10px;
   height: 10px;
