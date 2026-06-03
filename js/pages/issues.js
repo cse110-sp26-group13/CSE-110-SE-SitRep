@@ -14,6 +14,18 @@ function renderIssues() {
   renderBlockers();
   renderPullRequests();
   updateIssuesSub();
+  checkUrlParams();
+}
+
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id) {
+    // Small delay to ensure blockers are rendered and DOM is ready
+    setTimeout(() => {
+      openDetailModal(id);
+    }, 100);
+  }
 }
 
 /**
