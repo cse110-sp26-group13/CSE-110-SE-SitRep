@@ -1,7 +1,9 @@
 /**
  * Unit tests for js/utils.js
- * Tests pure utility functions: escapeHTML, moodClass, nowTime, avatar
+ * Tests pure utility functions: escapeHTML, moodClass, avatar
  */
+
+import { describe, test, expect } from "vitest";
 
 // -- inline the functions under test so Jest doesn't need a module bundler --
 

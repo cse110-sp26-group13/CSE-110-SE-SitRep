@@ -6,6 +6,7 @@
   <title>SE SitRep — Sign in</title>
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/splash.css" />
+  <link rel="stylesheet" href="css/pw-strength.css" />
 </head>
 <body>
   <main class="splash">
@@ -60,16 +61,16 @@
                  aria-describedby="signup-password-error" />
           <span id="signup-password-error" class="splash-field-error" hidden></span>
 
-          <div id="signup-strength" class="splash-strength" aria-live="polite">
-            <div class="splash-strength-bar">
-              <div id="signup-strength-fill" class="splash-strength-fill"
+          <div id="signup-strength" class="pw-strength" aria-live="polite">
+            <div class="pw-strength-bar">
+              <div id="signup-strength-fill" class="pw-strength-fill"
                    data-level="0"></div>
             </div>
-            <div class="splash-strength-label">
+            <div class="pw-strength-label">
               <span>Password strength</span>
               <span id="signup-strength-text"></span>
             </div>
-            <ul class="splash-strength-reqs">
+            <ul class="pw-strength-reqs">
               <li data-req="length">At least 8 characters</li>
               <li data-req="letter">Contains a letter</li>
               <li data-req="number">Contains a number</li>
@@ -153,6 +154,7 @@
   <script src="js/config.js"></script>
   <script src="js/supabaseClient.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/features/pw-strength.js"></script>
   <script src="js/features/splash.js"></script>
 </body>
 </html>

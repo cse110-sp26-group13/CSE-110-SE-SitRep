@@ -39,7 +39,22 @@ test.describe('Daily standup page', () => {
   });
 
   test('meeting slots and mood sparkline render in the side rail', async ({ page }) => {
-    await expect(page.locator('#slots-list')).toBeVisible();
+    await expect(page.locator('#team-overlap')).toBeVisible();
     await expect(page.locator('#sparkline-wrap')).toBeVisible();
+  });
+
+  test('availability tiles update while dragging before mouseup', async ({ page }) => {
+    await page.locator('#edit-mine-btn').click();
+
+    const firstCell = page.locator('#personal-availability .w2m-calendar-cell[data-slot="Sun-8 AM"]');
+    const secondCell = page.locator('#personal-availability .w2m-calendar-cell[data-slot="Mon-8 AM"]');
+
+    await firstCell.dispatchEvent('mousedown', { button: 0 });
+    await secondCell.dispatchEvent('mouseenter');
+
+    await expect(firstCell).toHaveClass(/(^|\s)available(\s|$)/);
+    await expect(secondCell).toHaveClass(/(^|\s)available(\s|$)/);
+
+    await page.mouse.up();
   });
 });

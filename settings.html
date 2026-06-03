@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SitRep — Settings</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400;12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/rail.css" />
+  <link rel="stylesheet" href="css/page.css" />
+  <link rel="stylesheet" href="css/settings.css" />
+  <link rel="stylesheet" href="css/pw-strength.css" />
+
+  <script src="js/theme.js"></script>
+</head>
+<body data-page="settings">
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <div class="circle-switcher" data-circle-switcher></div>
+      <div class="rail-divider" aria-hidden="true"></div>
+      <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
+      </a>
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
+      </a>
+      <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="5" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      </a>
+      <a class="rail-icon" data-route="ai-agents" href="ai-agents.html" title="AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+      </a>
+      <div class="rail-spacer"></div>
+      <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+    </aside>
+
+    <main class="main">
+      <header class="page-intro">
+        <div>
+          <div class="eyebrow">
+            <span class="live-dot"></span>
+            <span id="header-sub">loading…</span>
+          </div>
+          <h1>Settings.</h1>
+          <p class="lede">Account, appearance, and notifications — changes save instantly.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn-secondary" href="index.html">← Dashboard</a>
+        </div>
+      </header>
+
+      <div class="settings-content">
+        <!-- Account ───────────────────────────────────────── -->
+        <section class="card settings-card" aria-labelledby="settings-account-title">
+          <div class="card-head">
+            <div>
+              <h2 id="settings-account-title">Account</h2>
+              <span class="card-sub" id="settings-account-sub">—</span>
+            </div>
+          </div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Display name</div>
+                <div class="settings-row-help">Shown on standups, comments, and check-ins.</div>
+              </div>
+              <div class="settings-input-wrap">
+                <input class="settings-input" id="settings-display-name" type="text" placeholder="—" />
+                <div class="settings-input-status" id="settings-name-status" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Email</div>
+                <div class="settings-row-help">Linked to your sign-in.</div>
+              </div>
+              <div class="settings-static" id="settings-email">—</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Sign out</div>
+                <div class="settings-row-help">Ends this session on this device.</div>
+              </div>
+              <button class="btn-secondary" id="settings-signout" type="button">Sign out</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Circles ───────────────────────────────────────── -->
+        <section class="card settings-card" id="circles" aria-labelledby="settings-circles-title">
+          <div class="card-head">
+            <div>
+              <h2 id="settings-circles-title">Circles</h2>
+              <span class="card-sub">Join more circles, then switch from the top of the rail.</span>
+            </div>
+          </div>
+
+          <div class="settings-rows">
+            <div class="settings-row settings-row--stack">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Your circles</div>
+                <div class="settings-row-help">The active circle is what every page filters to. Click one to make it active.</div>
+              </div>
+              <ul class="circles-list" id="circles-list" aria-live="polite">
+                <li class="circles-empty">Loading…</li>
+              </ul>
+            </div>
+
+            <div class="settings-row settings-row--stack">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Join another circle</div>
+                <div class="settings-row-help">Enter the 6-digit invite code your team lead sent.</div>
+              </div>
+              <form class="circles-form" id="circles-join-form" autocomplete="off">
+                <input class="settings-input" id="circles-join-code"
+                       type="text" inputmode="numeric" pattern="\d{6}"
+                       maxlength="6" placeholder="123456" required />
+                <button class="btn-secondary" type="submit">Join</button>
+                <span class="settings-input-status" id="circles-join-status" role="status" aria-live="polite"></span>
+              </form>
+            </div>
+
+            <div class="settings-row settings-row--stack">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Create a new circle</div>
+                <div class="settings-row-help">Spin up a brand-new circle — you'll be added as its lead.</div>
+              </div>
+              <form class="circles-form" id="circles-create-form" autocomplete="off">
+                <input class="settings-input" id="circles-create-name"
+                       type="text" maxlength="80"
+                       placeholder="Group 13 — HardCoders" required />
+                <button class="btn-secondary" type="submit">Create</button>
+                <span class="settings-input-status" id="circles-create-status" role="status" aria-live="polite"></span>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Security ──────────────────────────────────────── -->
+        <section class="card settings-card" aria-labelledby="settings-security-title">
+          <div class="card-head">
+            <div>
+              <h2 id="settings-security-title">Security</h2>
+              <span class="card-sub">Change your password — you'll stay signed in.</span>
+            </div>
+          </div>
+          <form class="settings-password-form" id="settings-password-form" autocomplete="off">
+            <div class="field">
+              <span>Current password</span>
+              <div class="pw-reveal">
+                <input id="pw-current" type="password" autocomplete="current-password" required />
+                <button type="button" class="pw-reveal-btn" data-pw-target="pw-current" aria-label="Show password" aria-pressed="false">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M3 3l18 18"/><path d="M10.6 5.2A10 10 0 0 1 12 5c6 0 10 7 10 7a16.9 16.9 0 0 1-3.1 3.7"/><path d="M6.6 6.6A16.9 16.9 0 0 0 2 12s4 7 10 7c1.3 0 2.5-.3 3.6-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <span>New password</span>
+              <div class="pw-reveal">
+                <input id="pw-new" type="password" autocomplete="new-password" minlength="8" required />
+                <button type="button" class="pw-reveal-btn" data-pw-target="pw-new" aria-label="Show password" aria-pressed="false">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M3 3l18 18"/><path d="M10.6 5.2A10 10 0 0 1 12 5c6 0 10 7 10 7a16.9 16.9 0 0 1-3.1 3.7"/><path d="M6.6 6.6A16.9 16.9 0 0 0 2 12s4 7 10 7c1.3 0 2.5-.3 3.6-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+              </div>
+              <div id="pw-new-strength" class="pw-strength" aria-live="polite">
+                <div class="pw-strength-bar">
+                  <div id="pw-new-strength-fill" class="pw-strength-fill" data-level="0"></div>
+                </div>
+                <div class="pw-strength-label">
+                  <span>Password strength</span>
+                  <span id="pw-new-strength-text"></span>
+                </div>
+                <ul class="pw-strength-reqs">
+                  <li data-req="length">At least 8 characters</li>
+                  <li data-req="letter">Contains a letter</li>
+                  <li data-req="number">Contains a number</li>
+                  <li data-req="strong">Mixed case or a symbol (for a stronger password)</li>
+                </ul>
+              </div>
+            </div>
+            <div class="field">
+              <span>Confirm new password</span>
+              <div class="pw-reveal">
+                <input id="pw-confirm" type="password" autocomplete="new-password" minlength="8" required />
+                <button type="button" class="pw-reveal-btn" data-pw-target="pw-confirm" aria-label="Show password" aria-pressed="false">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M3 3l18 18"/><path d="M10.6 5.2A10 10 0 0 1 12 5c6 0 10 7 10 7a16.9 16.9 0 0 1-3.1 3.7"/><path d="M6.6 6.6A16.9 16.9 0 0 0 2 12s4 7 10 7c1.3 0 2.5-.3 3.6-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="settings-password-actions">
+              <span class="settings-password-status" id="pw-status" role="status" aria-live="polite"></span>
+              <button class="btn-primary" type="submit" id="pw-submit">Change password</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Appearance ────────────────────────────────────── -->
+        <section class="card settings-card" aria-labelledby="settings-appearance-title">
+          <div class="card-head">
+            <div>
+              <h2 id="settings-appearance-title">Appearance</h2>
+              <span class="card-sub">Theme stays consistent across pages.</span>
+            </div>
+          </div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Theme</div>
+                <div class="settings-row-help">Light's the canonical look; dark inverts the halftone.</div>
+              </div>
+              <div class="settings-segmented" id="settings-theme" role="tablist">
+                <button data-theme="light" type="button">Light</button>
+                <button data-theme="dark" type="button">Dark</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notifications ─────────────────────────────────── -->
+        <section class="card settings-card" aria-labelledby="settings-notify-title">
+          <div class="card-head">
+            <div>
+              <h2 id="settings-notify-title">Notifications</h2>
+              <span class="card-sub">Stored locally — server delivery lands in v2.</span>
+            </div>
+          </div>
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Standup reminders</div>
+                <div class="settings-row-help">Daily nudge to post your standup.</div>
+              </div>
+              <label class="settings-toggle">
+                <input type="checkbox" id="notify-standup" />
+                <span class="settings-toggle-track"><span class="settings-toggle-knob"></span></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Issue mentions</div>
+                <div class="settings-row-help">When someone @-mentions you on an issue.</div>
+              </div>
+              <label class="settings-toggle">
+                <input type="checkbox" id="notify-mentions" />
+                <span class="settings-toggle-track"><span class="settings-toggle-knob"></span></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <div class="settings-row-title">Weekly digest</div>
+                <div class="settings-row-help">Monday morning summary of last week.</div>
+              </div>
+              <label class="settings-toggle">
+                <input type="checkbox" id="notify-digest" />
+                <span class="settings-toggle-track"><span class="settings-toggle-knob"></span></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Auth + Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth-guard.js"></script>
+
+  <!-- Shared infra -->
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/selectors.js"></script>
+  <script src="js/nav.js"></script>
+
+  <!-- Features used on this page -->
+  <script src="js/auth.js"></script>
+  <script src="js/features/circle-switcher.js"></script>
+  <script src="js/features/header.js"></script>
+  <script src="js/features/pw-strength.js"></script>
+
+  <!-- Page orchestrator -->
+  <script src="js/pages/settings.js"></script>
+</body>
+</html>

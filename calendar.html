@@ -13,13 +13,15 @@
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/rail.css" />
   <link rel="stylesheet" href="css/page.css" />
-  <link rel="stylesheet" href="css/calendar.css" />
+  <link rel="stylesheet" href="css/calendar.css?v=5" />
 
   <script src="js/theme.js"></script>
 </head>
 <body data-page="calendar">
   <div class="app">
     <aside class="rail" aria-label="Primary navigation">
+      <div class="circle-switcher" data-circle-switcher></div>
+      <div class="rail-divider" aria-hidden="true"></div>
       <a class="rail-icon" data-route="dashboard" href="index.html" title="Dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       </a>
@@ -36,13 +38,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><rect x="3" y="8" width="18" height="12"/><rect x="9" y="2" width="6" height="6"/><line x1="12" y1="2" x2="12" y2="8"/><circle cx="8.5" cy="14" r="1.5"/><circle cx="15.5" cy="14" r="1.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
       </a>
       <div class="rail-spacer"></div>
-      <a class="rail-icon" data-route="settings" href="#" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-      </a>
       <button class="rail-icon theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-pressed="false">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg>
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
       </button>
+      <a class="rail-icon" data-route="settings" href="settings.html" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
     </aside>
 
     <main class="main">
@@ -53,10 +55,11 @@
             <span id="header-sub">loading…</span>
           </div>
           <h1>Calendar.</h1>
-          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>personal</em> vs <em>team</em>; click an issue bar to jump into the tracker.</p>
+          <p class="lede">Project timelines, issue due dates, and personal milestones in one view. Toggle <em>Personal</em> vs <em>Global</em>; click an issue bar to jump into the tracker.</p>
         </div>
         <div class="page-actions">
           <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <button class="btn-secondary" id="new-group-btn">+ New group</button>
           <button class="btn-primary" id="new-event-btn">+ New event</button>
         </div>
       </header>
@@ -64,49 +67,184 @@
       <div class="deep-content">
         <div class="cal-layout">
           <aside class="cal-side">
-            <div>
-              <h4>View</h4>
-              <div class="cal-toggle" id="cal-toggle" role="tablist">
-                <button class="on" data-view="all">All</button>
-                <button data-view="personal">Personal</button>
-                <button data-view="team">Team</button>
+            <section class="card">
+              <div class="card-head">
+                <div><h4>View & Filters</h4></div>
               </div>
-            </div>
 
-            <div>
-              <h4>Projects</h4>
-              <div class="cal-projects" id="cal-projects"></div>
-            </div>
-
-            <div>
-              <h4>Legend</h4>
-              <div class="cal-legend">
-                <div class="row"><span class="swatch bar-team"></span> Team milestone</div>
-                <div class="row"><span class="swatch bar-personal"></span> Personal due</div>
-                <div class="row"><span class="swatch bar-stretch"></span> At risk</div>
-                <div class="row"><span class="swatch bar-blocked"></span> Blocked</div>
+              <div class="cal-side-section" id="cal-legend-section">
+                <h6 id="cal-legend-title">GROUPS</h6>
+                <div class="cal-legend" id="cal-legend"></div>
               </div>
-            </div>
+
+              <div class="cal-side-section" id="cal-team-section" hidden>
+                <h6>TEAM MEMBERS</h6>
+                <div class="cal-people-list readonly" id="cal-team-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </section>
           </aside>
 
-          <section class="cal-main">
-            <div class="cal-hd">
-              <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
-              <div class="cal-nav">
-                <button id="cal-prev" aria-label="Previous month">‹</button>
-                <button class="today-btn" id="cal-today">Today</button>
-                <button id="cal-next" aria-label="Next month">›</button>
-              </div>
+          <div class="cal-container">
+            <nav class="cal-tabs" role="tablist" aria-label="Calendar modes">
+              <button class="cal-tab active" data-tab="month" role="tab" aria-selected="true">
+                <span class="tab-label">Month View</span>
+              </button>
+              <button class="cal-tab" data-tab="week" role="tab" aria-selected="false">
+                <span class="tab-label">Week View</span>
+              </button>
+              <button class="cal-tab" data-tab="timeline" role="tab" aria-selected="false">
+                <span class="tab-label">Projects Timeline</span>
+              </button>
+              <div class="tab-spacer"></div>
+            </nav>
+
+            <div class="cal-content">
+              <!-- Month View -->
+              <section class="cal-main" id="view-month">
+                <div class="cal-hd">
+                  <div class="cal-month" id="cal-month">May<span class="yr">2026</span></div>
+                  <div class="cal-nav">
+                    <button id="cal-prev" aria-label="Previous month">‹</button>
+                    <button class="today-btn" id="cal-today">Today</button>
+                    <button id="cal-next" aria-label="Next month">›</button>
+                  </div>
+                </div>
+                <div class="cal-grid" id="cal-grid"></div>
+                <div class="cal-foot">
+                  <span id="cal-foot-count">—</span>
+                </div>
+              </section>
+
+              <!-- Week View -->
+              <section class="cal-main" id="view-week" style="display:none">
+                <div class="cal-hd">
+                  <div class="cal-month" id="week-range-label">Week of May 24<span class="yr">2026</span></div>
+                  <div class="cal-nav">
+                    <button id="week-prev" aria-label="Previous week">‹</button>
+                    <button class="today-btn" id="week-today">Today</button>
+                    <button id="week-next" aria-label="Next week">›</button>
+                  </div>
+                </div>
+                <div class="cal-week-grid" id="cal-week-grid"></div>
+                <div class="cal-foot">
+                  <span id="week-foot-count">—</span>
+                </div>
+              </section>
+
+              <!-- Timeline View -->
+              <section class="cal-timeline-view" id="view-timeline" style="display:none">
+                <div class="cal-hd" id="timeline-hd">
+                  <!-- Timeline header will be rendered here -->
+                </div>
+                <div class="timeline-container" id="timeline-container">
+                  <!-- Timeline grid will be rendered here -->
+                </div>
+              </section>
             </div>
-            <div class="cal-grid" id="cal-grid"></div>
-            <div class="cal-foot">
-              <span id="cal-foot-count">—</span>
-              <span>Drag-to-create &amp; recurring events land in v2</span>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
     </main>
+  </div>
+
+  <div class="modal-backdrop" id="calendar-event-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-event-modal-title">
+      <div class="modal-head">
+        <h3 id="calendar-event-modal-title">New event</h3>
+        <button class="modal-close" id="calendar-event-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="calendar-event-form" class="issue-form cal-event-form">
+          <label class="field">
+            <span>Name</span>
+            <input type="text" id="calendar-event-name" required maxlength="80" placeholder="Event name" />
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span>Start Date</span>
+              <input type="date" id="calendar-event-date" required />
+            </label>
+            <label class="field">
+              <span>End Date (Optional)</span>
+              <input type="date" id="calendar-event-end-date" />
+            </label>
+          </div>
+          <label class="field">
+            <span>Visibility</span>
+            <select id="calendar-event-group" required>
+              <option value="global">Team</option>
+              <option value="personal">Personal</option>
+            </select>
+          </label>
+          <div class="field" id="calendar-event-team-field" hidden>
+            <span>Team Members</span>
+            <div id="calendar-event-team-list" class="cal-people-list readonly">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <p id="calendar-event-error" class="field-error" hidden></p>
+          <div class="form-actions">
+            <button type="button" class="btn-danger" id="calendar-event-delete" hidden>Delete event</button>
+            <button type="button" class="btn-secondary" id="calendar-event-cancel">Cancel</button>
+            <button type="submit" class="btn-primary" id="calendar-event-submit">Create event</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="calendar-group-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-group-modal-title">
+      <div class="modal-head">
+        <h3 id="calendar-group-modal-title">New group</h3>
+        <button class="modal-close" id="calendar-group-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="calendar-group-form" class="issue-form cal-group-form">
+          <label class="field">
+            <span>Group Name</span>
+            <input type="text" id="calendar-group-name" required maxlength="60" placeholder="e.g. Frontend Team" />
+          </label>
+          <label class="field cal-color-field">
+            <span>Group Color</span>
+            <input type="color" id="calendar-group-color" class="project-color-picker" value="#4f8cff" />
+          </label>
+          
+          <div class="field">
+            <span>People to Add</span>
+            <div id="calendar-group-people-list" class="cal-people-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <p id="calendar-group-error" class="field-error" hidden></p>
+          <div class="form-actions">
+            <button type="button" class="btn-danger" id="calendar-group-delete" hidden>Delete group</button>
+            <button type="button" class="btn-danger" id="calendar-group-leave" hidden>Leave group</button>
+            <button type="button" class="btn-secondary" id="calendar-group-cancel">Cancel</button>
+            <button type="submit" class="btn-primary" id="calendar-group-submit">Create group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="calendar-day-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-day-modal-title">
+      <div class="modal-head">
+        <h3 id="calendar-day-modal-title">May 24, 2026</h3>
+        <button class="modal-close" id="calendar-day-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="calendar-day-events-list" class="cal-day-events-list"></div>
+        <div class="form-actions">
+          <button type="button" class="btn-primary" id="calendar-day-add-btn">+ Add event for this day</button>
+          <button type="button" class="btn-secondary" id="calendar-day-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Auth + Supabase -->
@@ -123,9 +261,10 @@
   <script src="js/nav.js"></script>
 
   <!-- Features used on this page -->
+  <script src="js/features/circle-switcher.js"></script>
   <script src="js/features/header.js"></script>
 
   <!-- Page orchestrator -->
-  <script src="js/pages/calendar.js"></script>
+  <script src="js/pages/calendar.js?v=5"></script>
 </body>
 </html>

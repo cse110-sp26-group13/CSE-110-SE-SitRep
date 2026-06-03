@@ -28,6 +28,8 @@
   window.meetingSlots = SLOT_DEFS.map(s => ({ ...s, availability: {} }));
   window.slotAvailability = {};
   window.activity = [];
+  window.calendarEvents = [];
+  window.calendarGroups = [];
 
   const sb = () => window.sbClient;
 
@@ -52,14 +54,37 @@
 
   // -------- loaders --------
 
+  const ACTIVE_TEAM_KEY = 'sitrep-active-team';
+
+  function readActiveTeamId() {
+    try { return window.localStorage.getItem(ACTIVE_TEAM_KEY) || null; }
+    catch (_e) { return null; }
+  }
+
+  function writeActiveTeamId(id) {
+    try {
+      if (id) window.localStorage.setItem(ACTIVE_TEAM_KEY, id);
+      else window.localStorage.removeItem(ACTIVE_TEAM_KEY);
+    } catch (_e) { /* private mode */ }
+  }
+
   async function loadCurrentTeam(userId) {
     const { data, error } = await sb()
       .from('memberships')
-      .select('team_id, teams ( id, name, join_code )')
+      .select('team_id, teams ( id, name, join_code ), joined_at')
       .eq('user_id', userId)
-      .limit(1);
+      .order('joined_at', { ascending: true });
     if (error) throw error;
-    return data && data[0] ? data[0].teams : null;
+    const rows = (data || []).filter(r => r.teams);
+    if (!rows.length) return null;
+
+    const wantId = readActiveTeamId();
+    const match = wantId ? rows.find(r => r.teams.id === wantId) : null;
+    const chosen = (match || rows[0]).teams;
+    // Keep the stored id in sync — covers first load, stale ids from a
+    // since-left circle, and the rail switcher reading the same key.
+    if (chosen.id !== wantId) writeActiveTeamId(chosen.id);
+    return chosen;
   }
 
   async function loadTeamMembers(teamId) {
@@ -125,6 +150,37 @@
     return data || [];
   }
 
+  async function loadCalendarEvents(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_events')
+      .select('*')
+      .or(`team_id.is.null,team_id.eq.${teamId}`)
+      .order('date', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function loadCalendarGroups(teamId) {
+    const { data, error } = await sb()
+      .from('calendar_groups')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  /**
+   * Hydrate every global the dashboard reads from — `team`, `teammates`,
+   * `blockers`, `meetingSlots`, `activity`. Each page calls this once
+   * inside its DOMContentLoaded handler before the first render.
+   *
+   * If there's no session or the user has no team, the page redirects
+   * to splash.html instead of returning — callers can `await` and
+   * trust that anything after this line has a populated `team`.
+   *
+   * @returns {Promise<void>}
+   */
   async function loadAll() {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) {
@@ -141,13 +197,27 @@
       id: t.id, name: t.name, joinCode: t.join_code, currentUserId: userId,
     };
 
-    const [members, standups, blockerData, slotAvail, activityRows] = await Promise.all([
-      loadTeamMembers(t.id),
-      loadRecentStandups(t.id),
-      loadBlockers(t.id),
-      loadSlotAvailability(t.id),
-      loadActivity(t.id),
+    async function safeLoad(fn, fallback = []) {
+      try {
+        const res = await fn();
+        return res;
+      } catch (err) {
+        console.error('Data load error for table:', err);
+        return fallback;
+      }
+    }
+
+    const [members, standups, blockerDataRows, slotAvail, activityRows, calendarRows, groupRows] = await Promise.all([
+      safeLoad(() => loadTeamMembers(t.id)),
+      safeLoad(() => loadRecentStandups(t.id)),
+      safeLoad(() => loadBlockers(t.id), { rows: [], comments: [] }),
+      safeLoad(() => loadSlotAvailability(t.id)),
+      safeLoad(() => loadActivity(t.id)),
+      safeLoad(() => loadCalendarEvents(t.id)),
+      safeLoad(() => loadCalendarGroups(t.id)),
     ]);
+
+    const blockerData = blockerDataRows;
 
     const days = last7Days();
     const todayKey = days[6];
@@ -221,6 +291,26 @@
       who: a.profiles?.display_name || 'System',
       text: a.text,
     }));
+
+    window.calendarEvents = (calendarRows || []).map(e => ({
+      id: e.id,
+      ownerId: e.owner_id,
+      teamId: e.team_id,
+      title: e.title,
+      description: e.description || '',
+      date: e.date,
+      endDate: e.end_date || '',
+      group: e.group || 'personal',
+    }));
+
+    window.calendarGroups = (groupRows || []).map(g => ({
+      id: g.id,
+      teamId: g.team_id,
+      creatorId: g.creator_id,
+      name: g.name,
+      color: g.color,
+      members: g.members || [],
+    }));
   }
 
   // -------- mutators --------
@@ -247,10 +337,22 @@
     if (ie) throw ie;
   }
 
+  /**
+   * Upsert the current user's mood for today.
+   *
+   * @param {number} score - 1–10 mood rating.
+   */
   async function saveMood(score) {
     await _writeStandupPatch({ mood: score });
   }
 
+  /**
+   * Upsert today's check-in prose. Empty strings collapse to NULL in
+   * the DB so a partial check-in doesn't pretend to have answers it
+   * doesn't have.
+   *
+   * @param {{yesterday?: string, today?: string, blockersNote?: string}} args
+   */
   async function saveStandupCompose({ yesterday, today, blockersNote }) {
     await _writeStandupPatch({
       yesterday: yesterday || null,
@@ -259,6 +361,13 @@
     });
   }
 
+  /**
+   * Append a row to the activity feed for the current team and user.
+   *
+   * @param {string} kind - one of: "checkin", "blocker", "mood", …
+   *   (free-form; the feed renders by `kind` class).
+   * @param {string} text - human-readable summary.
+   */
   async function addActivity(kind, text) {
     const { error } = await sb()
       .from('activity_events')
@@ -271,6 +380,19 @@
     if (error) throw error;
   }
 
+  /**
+   * Insert a new blocker for the current team. Required: title and
+   * severity. Optional: description, ownerId, category, startDate,
+   * dueDate. Defaults `status` to "open" and `created_by` to the
+   * caller's id.
+   *
+   * @param {{
+   *   title: string, severity: "critical"|"high"|"medium",
+   *   description?: string, ownerId?: string|null, category?: string|null,
+   *   startDate?: string|null, dueDate?: string|null
+   * }} input
+   * @returns {Promise<object>} the inserted row.
+   */
   async function createBlocker(input) {
     const { data, error } = await sb()
       .from('blockers')
@@ -292,6 +414,18 @@
     return data;
   }
 
+  /**
+   * Apply a partial update to a blocker. Only keys present in `patch`
+   * are sent to the DB — passing `{}` is a no-op. UI-shaped keys are
+   * mapped to their DB column names here (e.g. `ownerId` → `owner_id`).
+   *
+   * @param {string} id
+   * @param {Partial<{
+   *   title: string, description: string, status: string, severity: string,
+   *   ownerId: string|null, startDate: string|null, dueDate: string|null,
+   *   category: string|null
+   * }>} patch
+   */
   async function updateBlocker(id, patch) {
     const dbPatch = {};
     if ('title' in patch)       dbPatch.title       = patch.title;
@@ -307,6 +441,12 @@
     if (error) throw error;
   }
 
+  /**
+   * Append a comment to a blocker, authored by the current user.
+   *
+   * @param {string} blockerId
+   * @param {string} text
+   */
   async function addBlockerComment(blockerId, text) {
     const { error } = await sb()
       .from('blocker_comments')
@@ -318,6 +458,14 @@
     if (error) throw error;
   }
 
+  /**
+   * Set the current user's availability for one meeting slot. Upserts
+   * on (team_id, user_id, slot_id) so toggling repeatedly doesn't
+   * accumulate rows.
+   *
+   * @param {string} slotId - one of the SLOT_DEFS ids.
+   * @param {boolean} isAvailable
+   */
   async function setSlotAvailability(slotId, isAvailable) {
     const { error } = await sb()
       .from('slot_availability')
@@ -331,6 +479,78 @@
     if (error) throw error;
   }
 
+  async function createCalendarEvent(input) {
+    const { data, error } = await sb()
+      .from('calendar_events')
+      .insert({
+        owner_id: team.currentUserId,
+        team_id: input.teamId || null,
+        title: input.title,
+        description: input.description || '',
+        date: input.date,
+        end_date: input.endDate || null,
+        group: input.group || 'personal',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateCalendarEvent(id, patch) {
+    const dbPatch = {};
+    if ('title' in patch)       dbPatch.title       = patch.title;
+    if ('description' in patch) dbPatch.description = patch.description;
+    if ('date' in patch)        dbPatch.date        = patch.date;
+    if ('endDate' in patch)     dbPatch.end_date    = patch.endDate || null;
+    if ('group' in patch)       dbPatch.group       = patch.group;
+    if ('teamId' in patch)      dbPatch.team_id     = patch.teamId || null;
+    if (Object.keys(dbPatch).length === 0) return;
+    const { error } = await sb().from('calendar_events').update(dbPatch).eq('id', id);
+    if (error) throw error;
+  }
+
+  async function deleteCalendarEvent(id) {
+    const { error } = await sb().from('calendar_events').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async function createCalendarGroup(input) {
+    const { data, error } = await sb()
+      .from('calendar_groups')
+      .insert({
+        team_id: team.id,
+        creator_id: team.currentUserId,
+        name: input.name,
+        color: input.color,
+        members: input.members || [],
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateCalendarGroup(id, patch) {
+    const dbPatch = {};
+    if ('name' in patch)    dbPatch.name    = patch.name;
+    if ('color' in patch)   dbPatch.color   = patch.color;
+    if ('members' in patch) dbPatch.members = patch.members;
+    if (Object.keys(dbPatch).length === 0) return;
+    const { error } = await sb().from('calendar_groups').update(dbPatch).eq('id', id);
+    if (error) throw error;
+  }
+
+  async function deleteCalendarGroup(id) {
+    const { error } = await sb().from('calendar_groups').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async function leaveCalendarGroup(id) {
+    const { error } = await sb().rpc('leave_calendar_group', { group_uuid: id });
+    if (error) throw error;
+  }
+
   window.db = {
     loadAll,
     saveMood,
@@ -340,5 +560,12 @@
     updateBlocker,
     addBlockerComment,
     setSlotAvailability,
+    createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
+    createCalendarGroup,
+    updateCalendarGroup,
+    deleteCalendarGroup,
+    leaveCalendarGroup,
   };
 })();

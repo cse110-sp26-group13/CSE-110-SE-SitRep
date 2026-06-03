@@ -1,13 +1,17 @@
+
+/**
+ * Activity feed — last 10 events for the current team, rendered into
+ * `#activity-list`. Each event row gets an icon glyph keyed off its
+ * `kind`; unknown kinds fall back to a middle dot.
+ */
 const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" };
 const ACTIVITY_LIMIT = 10;
 
-<<<<<<< Updated upstream
-=======
 /**
- * Re-render the activity feed from effectiveActivity(). Also updates
- * `#activity-sub` with the count of displayed events.
+ * Re-render the activity feed.
+ * Displays the most recent ACTIVITY_LIMIT events and updates
+ * #activity-sub with the displayed event count.
  */
->>>>>>> Stashed changes
 function renderActivity() {
   const items = effectiveActivity().slice(0, ACTIVITY_LIMIT);
   const label = items.length === 1 ? "event" : "events";
