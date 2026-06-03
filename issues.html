@@ -59,7 +59,9 @@
         </div>
         <div class="page-actions">
           <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <select class="gh-repo-select" id="gh-repo-select" aria-label="GitHub repository" hidden></select>
           <button class="btn-secondary" id="sync-gh-btn">Sync GitHub</button>
+          <button class="btn-secondary btn-danger" id="unsync-gh-btn" hidden>Unsync GitHub</button>
           <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
         </div>
       </header>
@@ -86,6 +88,17 @@
             </div>
           </div>
           <ul class="blocker-list" id="blocker-list"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="pull-requests-title">
+          <div class="card-head blockers-head">
+            <div>
+              <h2 id="pull-requests-title">Pull requests</h2>
+              <span class="card-sub" id="pull-requests-sub">—</span>
+            </div>
+            <button class="btn-secondary" id="new-pr-btn" type="button">+ New PR</button>
+          </div>
+          <ul class="pull-request-list" id="pull-request-list"></ul>
         </section>
       </div>
     </main>
@@ -115,10 +128,13 @@
   <script src="js/nav.js"></script>
 
   <!-- Features used on this page -->
+  <script src="js/features/github/github-client.js"></script>
+  <script src="js/features/github/github-issues.js"></script>
+  <script src="js/features/github/github-pulls.js"></script>
   <script src="js/features/circle-switcher.js"></script>
-  <script src="js/features/github-api.js"></script>
   <script src="js/features/header.js"></script>
   <script src="js/features/blockers.js"></script>
+  <script src="js/features/pull-requests.js"></script>
 
   <!-- Page orchestrator -->
   <script src="js/pages/issues.js"></script>

@@ -3,6 +3,8 @@
  * Tests pure utility functions: escapeHTML, moodClass, avatar
  */
 
+import { describe, test, expect } from "vitest";
+
 // -- inline the functions under test so Jest doesn't need a module bundler --
 
 const AVATAR_COLORS = ["#4f8cff", "#34c759", "#ffb020", "#ff453a", "#af52de", "#5ac8fa"];

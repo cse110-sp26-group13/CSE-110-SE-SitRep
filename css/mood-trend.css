@@ -84,6 +84,12 @@
   gap: 10px;
 }
 
+@media (max-width: 520px) {
+  .mood-card-actions {
+    flex-wrap: wrap;
+  }
+}
+
 .view-mood-btn {
   appearance: none;
   background: transparent;

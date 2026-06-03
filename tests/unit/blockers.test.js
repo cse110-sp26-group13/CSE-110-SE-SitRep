@@ -3,6 +3,8 @@
  * and js/selectors.js — pure functions only, no DOM required.
  */
 
+import { describe, test, expect } from "vitest";
+
 // -- inline functions under test --
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2 };
@@ -20,6 +22,26 @@ function overlapClass(count, total) {
   if (count * 2 >= total) return "some";
   if (count === 0) return "none";
   return "few";
+}
+
+function parseGitHubRepoPath(value) {
+  const normalized = value.replace(/\/+$/, "");
+  const githubUrl = normalized.match(/^https?:\/\/(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)(?:[/?#].*)?$/i);
+  if (githubUrl) return `${githubUrl[1]}/${githubUrl[2].replace(/\.git$/i, "")}`;
+
+  const shorthand = normalized.match(/^([^/\s]+)\/([^/\s#?]+)$/);
+  if (shorthand) return `${shorthand[1]}/${shorthand[2].replace(/\.git$/i, "")}`;
+
+  throw new Error(`Use owner/repo or a GitHub repo URL: ${value}`);
+}
+
+function normalizeRepoPaths(value) {
+  return [...new Set(value
+    .split(/[\s,]+/)
+    .map(repo => repo.trim())
+    .filter(Boolean)
+    .map(parseGitHubRepoPath)
+  )];
 }
 
 // -- tests --
@@ -76,5 +98,24 @@ describe("SEVERITY_ORDER", () => {
 
   test("high sorts before medium", () => {
     expect(SEVERITY_ORDER.high).toBeLessThan(SEVERITY_ORDER.medium);
+  });
+});
+
+describe("normalizeRepoPaths", () => {
+  test("accepts owner/repo and full GitHub URLs", () => {
+    expect(normalizeRepoPaths(`
+      cse110-sp26-group13/CSE-110-SE-SitRep
+      https://github.com/octocat/Hello-World
+    `)).toEqual([
+      "cse110-sp26-group13/CSE-110-SE-SitRep",
+      "octocat/Hello-World",
+    ]);
+  });
+
+  test("accepts comma-separated repos and removes duplicates", () => {
+    expect(normalizeRepoPaths("octocat/Hello-World, octocat/Hello-World, owner/repo.git")).toEqual([
+      "octocat/Hello-World",
+      "owner/repo",
+    ]);
   });
 });
