@@ -581,6 +581,9 @@ function renderCalHeader() {
 /**
  * Renders the sidebar legend with filter checkboxes and color pickers.
  */
+/**
+ * Renders the sidebar legend with filter checkboxes and color pickers.
+ */
 function renderCalLegend() {
   const container = document.getElementById("cal-legend");
   if (!container) return;
@@ -588,31 +591,43 @@ function renderCalLegend() {
   const groupColors = state.calendarGroupColors || {};
   const customGroups = getCalendarGroups();
 
-  let html = CAL_KINDS.map(kind => {
+  let html = "";
+
+  // 1. Kinds (Team, Personal) First
+  html += CAL_KINDS.map(kind => {
     const currentColor = groupColors[kind] || (kind === "personal" ? "var(--muted)" : "var(--ink)");
     let pickerValue = currentColor;
-    
+
     if (currentColor.startsWith("var(")) {
       pickerValue = (kind === "personal" ? "#6e6655" : "#39352e");
     }
 
+    const colorStyle = currentColor.startsWith("var(") ? `background: ${currentColor}` : `background: ${currentColor}`;
+
     return `
       <div class="cal-project">
         <input type="checkbox" data-kind="${kind}" ${calState.kinds.has(kind) ? "checked" : ""} />
-        <input type="color" class="swatch-picker" data-kind-color="${kind}" value="${pickerValue}" title="Change ${kind} color" />
-        <button type="button" class="cal-project-name truncate" ${kind === 'global' ? 'id="btn-team-info"' : ''} title="${EVENT_KIND_LABELS[kind]}">${EVENT_KIND_LABELS[kind]}</button>
+        <div style="position: relative; display: flex;">
+          <button type="button" class="swatch-btn" data-kind-swatch="${kind}" style="${colorStyle}" title="Change ${kind} color"></button>
+          <input type="color" class="hidden-picker" data-kind-color="${kind}" value="${pickerValue}" />
+        </div>
+        <button type="button" class="cal-project-name truncate" data-kind-name="${kind}" title="${EVENT_KIND_LABELS[kind]}">${EVENT_KIND_LABELS[kind]}</button>
         ${kind === 'global' ? `<button type="button" class="btn-info-sm" id="toggle-team-list" title="View Team Members">i</button>` : ''}
       </div>
     `;
   }).join("");
 
+  // 2. Custom Groups Second
   if (customGroups.length > 0) {
     html += '<div class="legend-divider"></div>';
     html += customGroups.map(group => {
       return `
         <div class="cal-project">
           <input type="checkbox" data-group-id="${group.id}" ${calState.customGroups.has(group.id) ? "checked" : ""} />
-          <button type="button" class="swatch-btn" data-edit-group="${group.id}" style="background: ${group.color}" title="Edit group"></button>
+          <div style="position: relative; display: flex;">
+            <button type="button" class="swatch-btn" data-group-swatch="${group.id}" style="background: ${group.color}" title="Change group color"></button>
+            <input type="color" class="hidden-picker" data-group-color-input="${group.id}" value="${group.color}" />
+          </div>
           <button type="button" class="cal-project-name truncate" data-edit-group="${group.id}" title="${escapeHTML(group.name)}">${escapeHTML(group.name)}</button>
         </div>
       `;
@@ -621,49 +636,107 @@ function renderCalLegend() {
 
   container.innerHTML = html;
 
-  container.querySelectorAll("input[data-kind]").forEach(cb => {
+  // --- Event Listeners ---
+
+  // Visibility Checkboxes
+  container.querySelectorAll("input[data-kind], input[data-group-id]").forEach(cb => {
     cb.addEventListener("change", () => {
       const kind = cb.dataset.kind;
-      if (cb.checked) calState.kinds.add(kind);
-      else calState.kinds.delete(kind);
+      const groupId = cb.dataset.groupId;
+      
+      if (kind) {
+        if (cb.checked) calState.kinds.add(kind);
+        else calState.kinds.delete(kind);
+      } else if (groupId) {
+        if (cb.checked) calState.customGroups.add(groupId);
+        else calState.customGroups.delete(groupId);
+      }
       refreshActiveView();
     });
   });
 
-  container.querySelectorAll("input[data-group-id]").forEach(cb => {
-    cb.addEventListener("change", () => {
-      const id = cb.dataset.groupId;
-      if (cb.checked) calState.customGroups.add(id);
-      else calState.customGroups.delete(id);
-      refreshActiveView();
-    });
+  // Helper: Toggle Team Section
+  const toggleTeam = () => {
+    const teamSection = document.getElementById("cal-team-section");
+    if (teamSection) {
+      teamSection.hidden = !teamSection.hidden;
+      const infoBtn = container.querySelector("#toggle-team-list");
+      if (infoBtn) infoBtn.classList.toggle("active", !teamSection.hidden);
+    }
+  };
+
+  // Interactions (Swatches and Labels)
+  container.addEventListener("click", (e) => {
+    const target = e.target;
+    
+    // Kind Name/Swatch
+    const kindName = target.closest("[data-kind-name]")?.dataset.kindName;
+    const kindSwatch = target.closest("[data-kind-swatch]")?.dataset.kindSwatch;
+    const kindId = kindName || kindSwatch;
+
+    if (kindId) {
+      if (kindId === 'global' && kindName) {
+        toggleTeam();
+      } else if (kindId === 'personal' && kindName) {
+        const cb = container.querySelector(`input[data-kind="personal"]`);
+        if (cb) {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event("change"));
+        }
+      } else {
+        container.querySelector(`input[data-kind-color="${kindId}"]`)?.click();
+      }
+      return;
+    }
+
+    // Group Swatch
+    const groupSwatch = target.closest("[data-group-swatch]")?.dataset.groupSwatch;
+    if (groupSwatch) {
+      container.querySelector(`input[data-group-color-input="${groupSwatch}"]`)?.click();
+      return;
+    }
+
+    // Edit Group (Name click)
+    const editGroupId = target.closest("[data-edit-group]")?.dataset.editGroup;
+    if (editGroupId) {
+      openGroupModal(editGroupId);
+      return;
+    }
+
+    // Info Button
+    if (target.closest("#toggle-team-list")) {
+      toggleTeam();
+    }
   });
 
+  // Live Color Feedback (Kinds)
   container.querySelectorAll("input[data-kind-color]").forEach(picker => {
-    picker.addEventListener("change", () => {
-      const kind = picker.dataset.kindColor;
+    const kind = picker.dataset.kindColor;
+    picker.addEventListener("input", () => {
       if (!state.calendarGroupColors) state.calendarGroupColors = {};
       state.calendarGroupColors[kind] = picker.value;
+      container.querySelector(`button[data-kind-swatch="${kind}"]`).style.background = picker.value;
+    });
+    picker.addEventListener("change", () => {
       saveState();
       refreshActiveView();
     });
   });
 
-  container.querySelectorAll("#toggle-team-list, #btn-team-info").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const teamSection = document.getElementById("cal-team-section");
-      if (teamSection) {
-        teamSection.hidden = !teamSection.hidden;
-        const infoBtn = container.querySelector("#toggle-team-list");
-        if (infoBtn) infoBtn.classList.toggle("active", !teamSection.hidden);
-      }
+  // Live Color Feedback & Persistence (Groups)
+  container.querySelectorAll("input[data-group-color-input]").forEach(picker => {
+    const id = picker.dataset.groupColorInput;
+    picker.addEventListener("input", () => {
+      container.querySelector(`button[data-group-swatch="${id}"]`).style.background = picker.value;
     });
-  });
-
-  container.querySelectorAll("[data-edit-group]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      openGroupModal(btn.dataset.editGroup);
+    picker.addEventListener("change", async () => {
+      try {
+        await db.updateCalendarGroup(id, { color: picker.value });
+        await db.loadAll();
+        refreshActiveView();
+      } catch (err) {
+        console.error("Failed to update group color:", err);
+      }
     });
   });
 }
