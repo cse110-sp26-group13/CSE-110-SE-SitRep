@@ -259,6 +259,7 @@
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
+  position: relative;
 }
 .standup-side {
   display: flex;
@@ -272,6 +273,9 @@
 @media (max-width: 1200px) {
   .standup-layout { grid-template-columns: 1fr; }
   .standup-side { position: static; }
+  /* Restore the left column to normal flow so the absolutely-positioned
+     card (used only in two-column mode) doesn't collapse the row to 0. */
+  .standup-column { position: static; }
 }
 @media (max-width: 900px) {
   .dash-row-snaps, .dash-row-bottom { grid-template-columns: 1fr; }

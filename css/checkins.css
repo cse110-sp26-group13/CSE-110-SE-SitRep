@@ -2,7 +2,8 @@
 
 /* ── Mood quick (five faces) ─────────────────────────────── */
 .mood-unified-card {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   gap: 14px;
   display: flex;
   flex-direction: column;
@@ -176,6 +177,20 @@
 
 .mood-unified-card .mood-sub:last-child .checkin-form {
   flex-shrink: 0;
+}
+
+/* In single-column mode (≤1200px / 125%+ zoom on common screens), restore the
+   card to normal document flow so it doesn't overlap the right-side cards. */
+@media (max-width: 1200px) {
+  .mood-unified-card {
+    position: relative;
+    inset: auto;
+  }
+  /* Give the checkin list a viewport-relative cap so it scrolls instead
+     of making the card grow arbitrarily tall in single-column mode. */
+  .checkin-list {
+    max-height: 50vh;
+  }
 }
 
 .checkin-list::-webkit-scrollbar        { width: 4px; }

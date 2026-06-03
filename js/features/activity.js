@@ -5,15 +5,17 @@
  * `kind`; unknown kinds fall back to a middle dot.
  */
 const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" };
+const ACTIVITY_LIMIT = 10;
 
 /**
- * Re-render the activity feed from effectiveActivity(). Also updates
- * `#activity-sub` with the total event count (across the full feed,
- * not just the 10 shown).
+ * Re-render the activity feed.
+ * Displays the most recent ACTIVITY_LIMIT events and updates
+ * #activity-sub with the displayed event count.
  */
 function renderActivity() {
-  const items = effectiveActivity().slice(0, 10);
-  document.getElementById("activity-sub").textContent = `${effectiveActivity().length} events`;
+  const items = effectiveActivity().slice(0, ACTIVITY_LIMIT);
+  const label = items.length === 1 ? "event" : "events";
+  document.getElementById("activity-sub").textContent = `Last ${items.length} ${label}`;
   document.getElementById("activity-list").innerHTML = items.length
     ? items.map(a => `
       <li class="activity-row">
