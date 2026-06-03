@@ -389,9 +389,12 @@
   border-right: 0.0625rem solid var(--hairline-2);
   border-bottom: 0.0625rem solid var(--hairline-2); background: var(--paper); position: relative;
   cursor: pointer;
+  transition: background .1s ease;
 }
 .cal-cell.muted { background: var(--card-2); opacity: 0.6; }
 .cal-cell.today { box-shadow: inset 0 0 0 0.125rem var(--ink); z-index: 0; }
+/* Hover highlights the day, surface filling to the cell edges. */
+.cal-cell:hover { background: var(--card-2); }
 
 .cal-cell-header {
   padding: 0.25rem 0.5rem;
