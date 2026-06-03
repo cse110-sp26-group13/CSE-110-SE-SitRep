@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Interactive Calendar Legend:** Group and team names in the legend are now functional buttons.
+    - Clicking a custom group name opens the **Group Edit Modal**.
+    - Clicking the "Team" name toggles the **Team Members** list in the sidebar.
+- **Projects Timeline Synchronization:** The timeline now respects the group visibility filters from the sidebar. Hiding a group in the legend also hides its corresponding issues from the timeline.
+
+### Changed
+- Refactored `renderCalLegend` in `js/pages/calendar.js` to separate visibility toggling from editing actions.
+- Updated `renderCalTimeline` in `js/pages/calendar.js` to filter issues based on `calState.kinds` and `calState.customGroups`.
+
 ## [0.2.0] - 2026-05-18
 
 ### Added

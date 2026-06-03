@@ -1,30 +1,6 @@
-// Calendar page orchestrator — wireframe scaffold for Stephanie's feature.
-//
-// What this gives the feature owner:
-//   • A month-view grid that renders correctly for any (year, month).
-//   • Sample events in CAL_EVENTS — wire to real data via blockers.js or a
-//     new calendarEvents table when ready.
-//   • View toggle (All / Personal / Team) wired through filterEvents().
-//   • Project filter list driven by CAL_PROJECTS.
-//   • Prev/next/today nav.
-//
-// Things still to build (v2 — handoff to Stephanie):
-//   • Multi-day timeline bars that visually span across cells (not just per-day).
-//   • Drag-to-create new event.
-//   • Click-into-issue cross-page nav.
-//   • Recurring events.
+// Calendar page orchestrator — handles month, week, and timeline views.
 
-// ─── Sample data (replace with real source later) ──────────────────────
-const CAL_PROJECTS = [
-  { id: "onboarding", name: "Onboarding flow", color: "#39352e",  on: true },
-  { id: "auth",       name: "Auth refactor",   color: "#2f6b3a",    on: true },
-  { id: "ios",        name: "iOS app",         color: "#b56a14",    on: true },
-  { id: "design",     name: "Design system",   color: "#6e6655",   on: false },
-];
-
-// Each event: { date: "YYYY-MM-DD", title, kind: team|personal|blocked|risk, project }
-const CAL_EVENTS = [];
-
+// ─── Constants ────────────────────────────────────────────────────────
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -41,10 +17,9 @@ let calState = {};
  */
 function initCalState() {
   calState = {
-    // Default to today (page loads on current month). Easy to override for demo.
+    // Default to today (page loads on current month).
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
-    projects: new Set(getCalendarProjects().filter(p => p.on).map(p => p.id)),
     kinds: new Set(CAL_KINDS),
     customGroups: new Set(),
     editingEventId: null,
@@ -54,15 +29,6 @@ function initCalState() {
   
   // Initialize customGroups to show all by default
   getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
-}
-
-/**
- * Returns an array of IDs for all custom calendar groups.
- * @returns {string[]} Array of group IDs.
- */
-function getCustomGroupIds() {
-  const groups = Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
-  return groups.map(g => g.id);
 }
 
 const EVENT_KIND_LABELS = {
@@ -140,17 +106,6 @@ function filterEvents() {
     }
     return true;
   });
-}
-
-/**
- * Merges sample projects with custom project data.
- * @returns {Object[]} Combined project list.
- */
-function getCalendarProjects() {
-  const customProjects = Array.isArray(state.extraCalendarProjects) ? state.extraCalendarProjects : [];
-  const deletedSampleIds = new Set(Array.isArray(state.deletedSampleProjectIds) ? state.deletedSampleProjectIds : []);
-  const samples = CAL_PROJECTS.filter(p => !deletedSampleIds.has(p.id));
-  return [...samples, ...customProjects];
 }
 
 /**
@@ -309,9 +264,71 @@ function findCalendarGroup(id) {
 }
 
 /**
- * Calculates the Sunday starting a week for any given date.
- * @param {Date} d 
- * @returns {Date}
+ * Calculates event slots for a range of dates to support multi-day bars.
+ * Standard priority sort: earlier start date first, then longer duration.
+ * 
+ * @param {Object[]} events - Filtered events to stack.
+ * @param {Date[]} days - Array of Date objects representing the columns.
+ * @param {number} maxSlots - Maximum number of visible slots before overflow.
+ * @returns {Object} { usedSlotsByDay: { dateKey: string[] }, dayOverflowCounts: { dateKey: number } }
+ */
+function calculateEventSlots(events, days, maxSlots) {
+  const usedSlotsByDay = {}; 
+  const dayOverflowCounts = {};
+  const dateKeys = days.map(d => isoDate(d));
+
+  dateKeys.forEach((key, c) => {
+    // Find all events active on this specific day
+    const dayEvents = events.filter(e => key >= e.date && key <= (e.endDate || e.date));
+    
+    // Sort by start date, then duration (descending)
+    dayEvents.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      const aEnd = a.endDate || a.date;
+      const bEnd = b.endDate || b.date;
+      const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
+      const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
+      return bDur - aDur;
+    });
+
+    const daySlots = [];
+    const prevKey = c > 0 ? dateKeys[c - 1] : null;
+    const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
+
+    // Pass 1: Maintain continuity (prefer same slot as previous day)
+    for (let s = 0; s < maxSlots; s++) {
+      const prevId = prevSlots[s];
+      if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
+        daySlots[s] = prevId;
+      }
+    }
+
+    // Pass 2: Fill remaining visible slots
+    let overflowCount = 0;
+    dayEvents.forEach(event => {
+      const id = String(event.id);
+      if (daySlots.includes(id)) return;
+
+      let assigned = false;
+      for (let s = 0; s < maxSlots; s++) {
+        if (!daySlots[s]) {
+          daySlots[s] = id;
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) overflowCount++;
+    });
+
+    usedSlotsByDay[key] = daySlots;
+    dayOverflowCounts[key] = overflowCount;
+  });
+
+  return { usedSlotsByDay, dayOverflowCounts };
+}
+
+/**
+ * Sunday starting a week for any given date.
  */
 function getStartOfWeek(d) {
   const date = new Date(d);
@@ -342,12 +359,10 @@ function renderCalWeek() {
   label.innerHTML = `${startM} ${start.getDate()} – ${endM} ${end.getDate()}<span class="yr">${yearText}</span>`;
 
   const events = filterEvents();
-  const weekDays = [];
   const weekCells = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    weekDays.push(d);
     weekCells.push({ date: d });
   }
 
@@ -358,54 +373,8 @@ function renderCalWeek() {
     return s <= weekEndStr && evEnd >= weekStartStr;
   });
 
-  // Calculate slots day-by-day for this week (same logic as month view)
-  const usedSlotsByDay = {}; 
-  const dayOverflowCounts = {};
-
-  for (let c = 0; c < 7; c++) {
-    const dayDate = weekCells[c].date;
-    const key = isoDate(dayDate);
-    const dayEvents = weekEvents.filter(e => key >= e.date && key <= (e.endDate || e.date));
-    
-    dayEvents.sort((a, b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      const aEnd = a.endDate || a.date;
-      const bEnd = b.endDate || b.date;
-      const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
-      const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
-      return bDur - aDur;
-    });
-
-    const daySlots = [];
-    const prevKey = c > 0 ? isoDate(weekCells[c - 1].date) : null;
-    const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
-
-    for (let s = 0; s < 15; s++) { // Week view has more vertical room, allowing more slots before overflow
-      const prevId = prevSlots[s];
-      if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
-        daySlots[s] = prevId;
-      }
-    }
-
-    let overflowCount = 0;
-    dayEvents.forEach(event => {
-      const id = String(event.id);
-      if (daySlots.includes(id)) return;
-
-      let assigned = false;
-      for (let s = 0; s < 15; s++) {
-        if (!daySlots[s]) {
-          daySlots[s] = id;
-          assigned = true;
-          break;
-        }
-      }
-      if (!assigned) overflowCount++;
-    });
-
-    usedSlotsByDay[key] = daySlots;
-    dayOverflowCounts[key] = overflowCount;
-  }
+  // Calculate slots
+  const { usedSlotsByDay, dayOverflowCounts } = calculateEventSlots(weekEvents, weekCells.map(c => c.date), 15);
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
   let gridHTML = dayHeader;
@@ -512,58 +481,8 @@ function renderCalGrid() {
       return s <= weekEndStr && end >= weekStartStr;
     });
 
-    // Calculate slots day-by-day for this week
-    const usedSlotsByDay = {}; // dateKey -> [eventId, null, eventId]
-    const dayOverflowCounts = {}; // dateKey -> count
-
-    for (let c = 0; c < 7; c++) {
-      const dayDate = weekCells[c].date;
-      const key = isoDate(dayDate);
-      // Find all events active on this specific day
-      const dayEvents = weekEvents.filter(e => key >= e.date && key <= (e.endDate || e.date));
-      
-      // Standard priority sort (earlier start, then longer duration)
-      dayEvents.sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        const aEnd = a.endDate || a.date;
-        const bEnd = b.endDate || b.date;
-        const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
-        const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
-        return bDur - aDur;
-      });
-
-      const daySlots = [];
-      const prevKey = c > 0 ? isoDate(weekCells[c - 1].date) : null;
-      const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
-
-      // Pass 1: Maintain continuity (prefer same slot as previous day)
-      for (let s = 0; s < 3; s++) {
-        const prevId = prevSlots[s];
-        if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
-          daySlots[s] = prevId;
-        }
-      }
-
-      // Pass 2: Fill remaining visible slots (0, 1, 2)
-      let overflowCount = 0;
-      dayEvents.forEach(event => {
-        const id = String(event.id);
-        if (daySlots.includes(id)) return; // Already assigned continuity
-
-        let assigned = false;
-        for (let s = 0; s < 3; s++) {
-          if (!daySlots[s]) {
-            daySlots[s] = id;
-            assigned = true;
-            break;
-          }
-        }
-        if (!assigned) overflowCount++;
-      });
-
-      usedSlotsByDay[key] = daySlots;
-      dayOverflowCounts[key] = overflowCount;
-    }
+    // Calculate slots
+    const { usedSlotsByDay, dayOverflowCounts } = calculateEventSlots(weekEvents, weekCells.map(c => c.date), 3);
 
     // Determine if any day in this week has overflow
     const hasWeekOverflow = Object.keys(dayOverflowCounts).some(dateKey => {
@@ -613,11 +532,9 @@ function renderCalGrid() {
             if (event) {
               const span = c - startCol;
               
-              // Check if this event actually continues from the previous day in this specific week
+              // Check continuity
               const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
               const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === currentEventId;
-              
-              // Check if this event actually continues to the next day in this specific week
               const nextDayKey = c < 7 ? isoDate(weekCells[c].date) : null;
               const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === currentEventId;
 
@@ -680,11 +597,12 @@ function renderCalLegend() {
     }
 
     return `
-      <label class="cal-project">
+      <div class="cal-project">
         <input type="checkbox" data-kind="${kind}" ${calState.kinds.has(kind) ? "checked" : ""} />
         <input type="color" class="swatch-picker" data-kind-color="${kind}" value="${pickerValue}" title="Change ${kind} color" />
-        <span>${EVENT_KIND_LABELS[kind]}</span>
-      </label>
+        <button type="button" class="cal-project-name truncate" ${kind === 'global' ? 'id="btn-team-info"' : ''} title="${EVENT_KIND_LABELS[kind]}">${EVENT_KIND_LABELS[kind]}</button>
+        ${kind === 'global' ? `<button type="button" class="btn-info-sm" id="toggle-team-list" title="View Team Members">i</button>` : ''}
+      </div>
     `;
   }).join("");
 
@@ -692,11 +610,11 @@ function renderCalLegend() {
     html += '<div class="legend-divider"></div>';
     html += customGroups.map(group => {
       return `
-        <label class="cal-project">
+        <div class="cal-project">
           <input type="checkbox" data-group-id="${group.id}" ${calState.customGroups.has(group.id) ? "checked" : ""} />
           <button type="button" class="swatch-btn" data-edit-group="${group.id}" style="background: ${group.color}" title="Edit group"></button>
-          <span class="truncate" title="${escapeHTML(group.name)}">${escapeHTML(group.name)}</span>
-        </label>
+          <button type="button" class="cal-project-name truncate" data-edit-group="${group.id}" title="${escapeHTML(group.name)}">${escapeHTML(group.name)}</button>
+        </div>
       `;
     }).join("");
   }
@@ -731,6 +649,18 @@ function renderCalLegend() {
     });
   });
 
+  container.querySelectorAll("#toggle-team-list, #btn-team-info").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const teamSection = document.getElementById("cal-team-section");
+      if (teamSection) {
+        teamSection.hidden = !teamSection.hidden;
+        const infoBtn = container.querySelector("#toggle-team-list");
+        if (infoBtn) infoBtn.classList.toggle("active", !teamSection.hidden);
+      }
+    });
+  });
+
   container.querySelectorAll("[data-edit-group]").forEach(btn => {
     btn.addEventListener("click", () => {
       openGroupModal(btn.dataset.editGroup);
@@ -745,7 +675,29 @@ function renderCalendar() {
   renderHeader();
   renderCalHeader();
   renderCalLegend();
+  renderTeamList();
   refreshActiveView();
+}
+
+/**
+ * Renders the team members list in the sidebar.
+ */
+function renderTeamList() {
+  const container = document.getElementById("cal-team-list");
+  if (!container) return;
+
+  const teammates = effectiveTeammates();
+  container.innerHTML = teammates.map(t => `
+    <div class="people-row readonly">
+      <div class="people-info">
+        ${avatar(t.name, t.id)}
+        <div class="people-meta">
+          <span class="name">${escapeHTML(t.name)}</span>
+          <span class="role">${escapeHTML(t.role || "")}</span>
+        </div>
+      </div>
+    </div>
+  `).join("");
 }
 
 /**
@@ -954,11 +906,14 @@ function openDayModal(dateStr) {
   } else {
     list.innerHTML = dayEvents.map(e => {
       const style = eventColorStyle(e);
+      const customGroup = findCalendarGroup(e.group);
+      const groupLabel = customGroup ? customGroup.name : (EVENT_KIND_LABELS[e.group] || "Event");
+      
       return `
         <div class="cal-day-event-item" data-event-id="${e.id}">
           <span class="swatch bar-${e.group}" style="${style} background: var(--event-color)"></span>
           <span class="title">${escapeHTML(e.title)}</span>
-          <span class="group-tag" style="${style} border-color: var(--event-color); color: var(--event-color)">${e.group}</span>
+          <span class="group-tag" style="${style} border-color: var(--event-color); color: var(--event-color)">${escapeHTML(groupLabel)}</span>
         </div>
       `;
     }).join("");
@@ -1014,6 +969,15 @@ function renderCalTimeline() {
 
   // 1. Filter and Sort issues active in this 3-month window
   const issues = allIssues.filter(issue => {
+    // Sync: Respect group visibility filters
+    if (issue.group) {
+      if (CAL_KINDS.includes(issue.group)) {
+        if (!calState.kinds.has(issue.group)) return false;
+      } else {
+        if (!calState.customGroups.has(issue.group)) return false;
+      }
+    }
+
     const s = issue.startDate || issue.dueDate;
     const e = issue.dueDate || issue.startDate;
     if (!s) return false;
@@ -1212,6 +1176,52 @@ function openEventModal(eventId = null, defaultDate = null) {
   date.value = event?.date || defaultDate || getDefaultEventDate();
   endDate.value = event?.endDate || "";
   groupSelect.value = currentGroup;
+
+  // Handle Group Members Field
+  const teamField = document.getElementById("calendar-event-team-field");
+  const teamList = document.getElementById("calendar-event-team-list");
+  const teamLabel = teamField.querySelector('span');
+  
+  function updateTeamVisibility() {
+    const val = groupSelect.value;
+    
+    if (val === 'personal') {
+      teamField.hidden = true;
+      return;
+    }
+
+    teamField.hidden = false;
+    let members = [];
+    
+    if (val === 'global') {
+      teamLabel.textContent = "Team Members";
+      members = effectiveTeammates();
+    } else {
+      teamLabel.textContent = "Group Members";
+      const group = findCalendarGroup(val);
+      if (group) {
+        // Map member IDs to teammate objects
+        members = (group.members || [])
+          .map(uid => window.teammates.find(t => t.id === uid))
+          .filter(Boolean);
+      }
+    }
+
+    teamList.innerHTML = members.map(t => `
+      <div class="people-row readonly">
+        <div class="people-info">
+          ${avatar(t.name, t.id)}
+          <div class="people-meta">
+            <span class="name">${escapeHTML(t.name)}</span>
+            <span class="role">${escapeHTML(t.role || "")}</span>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  groupSelect.onchange = updateTeamVisibility;
+  updateTeamVisibility();
   
   // Permissions: Owner OR Group Leader can edit
   const currentUserId = window.team.currentUserId;
@@ -1437,11 +1447,8 @@ async function leaveCalendarGroup() {
 
   if (!confirm("Are you sure you want to leave this group? You will no longer see its events.")) return;
 
-  console.log("Leaving group via RPC:", id);
-
   try {
     await db.leaveCalendarGroup(id);
-    console.log("Leave group successful");
     await db.loadAll();
     
     calState.customGroups.delete(id);
@@ -1557,15 +1564,6 @@ async function deleteCalendarEvent() {
     alert("Failed to delete event.");
     console.error(err);
   }
-}
-
-/**
- * Basic hex color validation.
- * @param {string} value 
- * @returns {boolean}
- */
-function isHexColor(value) {
-  return /^#[0-9a-f]{6}$/i.test(value);
 }
 
 // Initial entry point

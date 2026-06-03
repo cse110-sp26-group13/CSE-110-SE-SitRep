@@ -2,7 +2,18 @@
 
 This document tracks the development and features of the SitRep Calendar.
 
-## Latest Enhancements (May 31 - June 1, 2026)
+## Latest Enhancements (June 3, 2026)
+
+### Sidebar & Legend Interactivity
+- **Interactive Group Editing:** Upgraded the calendar legend to allow direct editing of custom groups. Clicking a group name button now opens the **Group Edit Modal** for immediate modifications.
+- **Team Info Toggling:** Clicking the **"Team"** name in the legend now toggles the visibility of the **Team Members** list in the sidebar, providing a faster alternative to the info ("i") button.
+- **Improved Action Separation:** Refactored the legend row structure to separate visibility toggling (checkbox) from management actions (buttons), preventing accidental visibility changes during group edits.
+
+### Projects Timeline Synchronization
+- **Global Visibility Sync:** Synchronized the Projects Timeline with the calendar's global visibility filters. Hiding a group or team in the sidebar legend now correctly filters its corresponding issues from the timeline view.
+- **Real-time Filter Updates:** The timeline now automatically re-renders upon any filter change, ensuring visual consistency across all calendar views.
+
+## Previous Enhancements (May 31 - June 1, 2026)
 
 ### UI & Sidebar Refinement
 - **Relative Unit Migration:** Refactored the entire `calendar.css` to use relative units (`rem`, `em`, `%`) instead of absolute `px`, ensuring better scalability and consistency with modern design standards.
@@ -36,6 +47,10 @@ This document tracks the development and features of the SitRep Calendar.
 - **Standardized Header Structure:** Updated the cell rendering logic to use a consistent `.cal-cell-header` across all views, ensuring uniform alignment of date labels and interaction targets.
 
 ## Implementation History
+
+### Phase 7: Interactive Management & Filter Sync (June 3, 2026)
+- **Interactive Legend Actions:** Transformed legend text into functional buttons for editing groups and toggling team info.
+- **Timeline Synchronization:** Integrated the Projects Timeline with the global state and sidebar filters to ensure data consistency across all views.
 
 ### Phase 6: Interactive Parity & Visual Polish (May 31 - June 1, 2026)
 - **Week-Month Parity:** Aligned the Week View's event creation logic and DOM structure with the Month View.
@@ -74,12 +89,10 @@ This document tracks the development and features of the SitRep Calendar.
 ## Technical Details
 
 ### Files Modified
-- `css/calendar.css`: Complete refactor to `rem`/`em` units. Added folder tab structure, uniform sizing, custom kind indicator borders, and global grid overflow clipping. Added styling for `.cal-cell-header`.
-- `js/pages/calendar.js`: Major refactor to support grid-column/row spanning for issue bars. Removed duplicate logic, updated timeline rendering for date labels, and improved state initialization.
-- `calendar.html`: Structure for the calendar grid, folder tabs, and various view sections.
+- `js/pages/calendar.js`: Refactored legend rendering for interactivity and updated `renderCalTimeline` for filter synchronization.
+- `css/calendar.css`: (Prior changes) Refactor to `rem`/`em` units, folder tab structure, and grid overflow clipping.
 
 ### Verification
-- Manual verification of layout stability across multiple zoom levels.
-- Visual check of tab folder symmetry and text centering.
-- Confirmation of multi-day bar continuity and date-clipping in Month view.
-- Success check for zero-overlap between calendar dates and issue tracker bars.
+- Manual verification of legend interactivity (buttons vs checkboxes).
+- Confirmation of timeline filtering synchronization with sidebar state.
+- Syntax check of `js/pages/calendar.js` using `node --check`.

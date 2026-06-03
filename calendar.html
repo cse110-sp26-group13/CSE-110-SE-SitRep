@@ -76,6 +76,13 @@
                 <h6 id="cal-legend-title">GROUPS</h6>
                 <div class="cal-legend" id="cal-legend"></div>
               </div>
+
+              <div class="cal-side-section" id="cal-team-section" hidden>
+                <h6>TEAM MEMBERS</h6>
+                <div class="cal-people-list readonly" id="cal-team-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
             </section>
           </aside>
 
@@ -171,6 +178,12 @@
               <option value="personal">Personal</option>
             </select>
           </label>
+          <div class="field" id="calendar-event-team-field" hidden>
+            <span>Team Members</span>
+            <div id="calendar-event-team-list" class="cal-people-list readonly">
+              <!-- Populated by JS -->
+            </div>
+          </div>
           <p id="calendar-event-error" class="field-error" hidden></p>
           <div class="form-actions">
             <button type="button" class="btn-danger" id="calendar-event-delete" hidden>Delete event</button>

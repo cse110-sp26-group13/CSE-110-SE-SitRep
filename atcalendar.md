@@ -2,7 +2,16 @@
 
 This document tracks the development and features of the SitRep Calendar.
 
-## Latest Enhancements (May 2026)
+## Latest Enhancements (June 2026)
+
+### Sidebar & Legend Interactivity
+- **Interactive Group Editing:** Upgraded the calendar legend to allow direct editing of custom groups. Clicking a group name button now opens the **Group Edit Modal** for immediate modifications.
+- **Team Info Toggling:** Clicking the **"Team"** name in the legend now toggles the visibility of the **Team Members** list in the sidebar, providing a faster alternative to the info ("i") button.
+- **Improved Action Separation:** Refactored the legend row structure to separate visibility toggling (checkbox) from management actions (buttons), preventing accidental visibility changes during group edits.
+
+### Projects Timeline Synchronization
+- **Global Visibility Sync:** Synchronized the Projects Timeline with the calendar's global visibility filters. Hiding a group or team in the sidebar legend now correctly filters its corresponding issues from the timeline view.
+- **Real-time Filter Updates:** The timeline now automatically re-renders upon any filter change, ensuring visual consistency across all calendar views.
 
 ### Shared Group Management System
 - **Custom Groups:** Replaced the legacy "Project" button with a robust **"+ New group"** system.
@@ -48,6 +57,10 @@ This document tracks the development and features of the SitRep Calendar.
 
 ## Implementation History
 
+### Phase 4: Interactive Management & Filter Sync (June 2026)
+- **Interactive Legend Actions:** Transformed legend text into functional buttons for editing groups and toggling team info.
+- **Timeline Synchronization:** Integrated the Projects Timeline with the global state and sidebar filters to ensure data consistency across all views.
+
 ### Phase 3: Project System Integration
 - **New Project Feature:** Added a "+ New project" button to the page header.
 - **Centralized Coloring:** Moved the color picker from individual events to the Project level.
@@ -70,7 +83,7 @@ This document tracks the development and features of the SitRep Calendar.
 
 ### Files Modified
 - `calendar.html`: Structure for the calendar grid, group modals, and header buttons.
-- `js/pages/calendar.js`: Orchestration logic for groups, visibility transitions, and leader permissions.
+- `js/pages/calendar.js`: Orchestration logic for groups, visibility transitions, and legend interactivity.
 - `js/db.js`: Database layer for shared groups and RPC calls.
 - `css/calendar.css`: Layout and visual styling for groups, visual member lists, and interactive rows.
 - `supabase/migrations/`: New migrations for `calendar_groups` table, RLS policies, and `leave_calendar_group` function.
@@ -81,3 +94,4 @@ This document tracks the development and features of the SitRep Calendar.
 - Syntax checks performed using `node --check`.
 - State persistence verified via local storage.
 - UI responsiveness and interaction flow tested manually across various data states.
+- Confirmation of timeline filtering synchronization with sidebar state.
