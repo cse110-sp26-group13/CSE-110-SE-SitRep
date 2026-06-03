@@ -10,7 +10,9 @@
 /** Re-render the issues page from the loaded globals. */
 function renderIssues() {
   renderHeader();
+  updateGitHubSyncActions();
   renderBlockers();
+  renderPullRequests();
   updateIssuesSub();
 }
 
@@ -19,7 +21,7 @@ function renderIssues() {
  * (open / resolved / total). Called whenever the list changes.
  */
 function updateIssuesSub() {
-  const all = effectiveBlockers();
+  const all = effectiveActiveGithubBlockers();
   const open = all.filter(b => b.status !== "resolved").length;
   const resolved = all.length - open;
   const sub = document.getElementById("issues-sub");
@@ -33,4 +35,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderIssues();
   bindBlockerControls();
+  bindPullRequestControls();
 });

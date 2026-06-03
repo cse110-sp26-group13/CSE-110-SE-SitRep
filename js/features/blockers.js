@@ -70,7 +70,7 @@ function statusMatchesFilter(status, filter) {
  * (critical → high → medium).
  */
 function renderBlockers() {
-  const all = effectiveBlockers();
+  const all = effectiveActiveGithubBlockers();
   const filtered = all
     .filter(b => state.severityFilter === "all" || b.severity === state.severityFilter)
     .filter(b => statusMatchesFilter(b.status, state.statusFilter))
@@ -107,9 +107,7 @@ function renderBlockers() {
           <div class="blocker-title">${escapeHTML(b.title)}</div>
           <div class="blocker-meta">
             <span class="status-pill status-${b.status}">${STATUS_LABEL[b.status] || b.status}</span>
-            
             ${b.category ? `<span class="cat-badge cat-${b.category}">${escapeHTML(b.category.toUpperCase())}</span>` : ""}
-            
             <span>${escapeHTML(b.owner)} · ${escapeHTML(b.postedAt)}</span>
             ${dueBadge}
             ${commentBadge}
@@ -128,6 +126,61 @@ function renderBlockers() {
   document.querySelectorAll("#status-filters .chip").forEach(c => {
     c.classList.toggle("active", c.dataset.status === state.statusFilter);
   });
+}
+
+function updateGitHubSyncActions() {
+  const unsyncButton = document.getElementById("unsync-gh-btn");
+  const repoSelect = document.getElementById("gh-repo-select");
+  const repos = currentGithubRepos();
+  const activeRepo = activeGithubRepo();
+
+  if (repoSelect) {
+    repoSelect.hidden = repos.length === 0;
+    repoSelect.innerHTML = repos.map(repo => `
+      <option value="${escapeHTML(repo.repoPath)}"${repo.repoPath === activeRepo?.repoPath ? " selected" : ""}>
+        ${escapeHTML(repo.repoPath)}
+      </option>
+    `).join("");
+  }
+
+  if (unsyncButton) unsyncButton.hidden = !activeRepo;
+  if (activeRepo) sessionStorage.setItem("sitrep_gh_repo", activeRepo.repoPath);
+  else sessionStorage.removeItem("sitrep_gh_repo");
+}
+
+function normalizeRepoPaths(value) {
+  return [...new Set(value
+    .split(/[\s,]+/)
+    .map(repo => repo.trim())
+    .filter(Boolean)
+    .map(parseGitHubRepoPath)
+  )];
+}
+
+function parseGitHubRepoPath(value) {
+  const normalized = value.replace(/\/+$/, "");
+  const githubUrl = normalized.match(/^https?:\/\/(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)(?:[/?#].*)?$/i);
+  if (githubUrl) return `${githubUrl[1]}/${githubUrl[2].replace(/\.git$/i, "")}`;
+
+  const shorthand = normalized.match(/^([^/\s]+)\/([^/\s#?]+)$/);
+  if (shorthand) return `${shorthand[1]}/${shorthand[2].replace(/\.git$/i, "")}`;
+
+  throw new Error(`Use owner/repo or a GitHub repo URL: ${value}`);
+}
+
+function updateActiveGithubIssues(issues) {
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  const repos = currentGithubRepos().map(repo =>
+    repo.repoPath === activeRepo.repoPath ? { ...repo, issues } : repo
+  );
+  setGithubRepos(repos);
+}
+
+function appendIssueToActiveGithubRepo(issue) {
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  updateActiveGithubIssues([...(activeRepo.issues || []), issue]);
 }
 
 /**
@@ -234,6 +287,7 @@ function openCreateModal() {
       </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
+        <button type="button" class="btn-secondary" id="create-gh-issue-btn">Create GitHub issue</button>
         <button type="submit" class="btn-primary">Create issue</button>
       </div>
     </form>
@@ -268,6 +322,43 @@ function openCreateModal() {
     renderAll();
   });
 
+  document.getElementById("create-gh-issue-btn").addEventListener("click", async () => {
+    const title = document.getElementById("issue-title").value.trim();
+    const dateError = document.getElementById("date-error");
+    if (!title) {
+      dateError.textContent = "Title is required.";
+      dateError.hidden = false;
+      return;
+    }
+    const description = document.getElementById("issue-desc").value.trim();
+    try {
+      const ghIssue = await createGitHubIssue(title, description);
+      const ownerSelect = document.getElementById("issue-owner");
+      const newGhIssue = {
+        id: `gh-${ghIssue.id}`,
+        repoPath: activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "",
+        ghNumber: ghIssue.number,
+        title: ghIssue.title,
+        description: ghIssue.body || "",
+        severity: document.getElementById("issue-sev").value,
+        status: "open",
+        owner: ownerSelect.options[ownerSelect.selectedIndex].text,
+        postedAt: "GitHub Sync",
+        startDate: document.getElementById("issue-start").value,
+        dueDate: document.getElementById("issue-due").value,
+        category: document.getElementById("issue-category").value,
+        comments: [],
+        isExternal: true,
+      };
+      appendIssueToActiveGithubRepo(newGhIssue);
+      closeModal();
+      renderAll();
+    } catch (err) {
+      dateError.textContent = err.message;
+      dateError.hidden = false;
+    }
+  });
+
   bindModalDismissers();
 }
 
@@ -278,12 +369,12 @@ function openCreateModal() {
  *
  * GitHub-synced issues (id prefixed `gh-`) are read-only here —
  * edits are no-ops and comments show an alert, because there's no
- * place to persist the change ([state.js](../state.js)'s
- * `state.githubIssues` is rewritten wholesale on next sync).
+ * place to persist the change (the active circle's cached repos in
+ * [state.js](../state.js) are rewritten wholesale on next sync).
  *
  * @param {string} id - blocker id from effectiveBlockers().
  */
-function openDetailModal(id) {
+async function openDetailModal(id) {
   const b = findBlockerById(id);
   if (!b) return;
 
@@ -291,8 +382,20 @@ function openDetailModal(id) {
   const currentDueDate = b.dueDate ?? "";
   const currentCategory = b.category ?? "swe";
 
-  const commentsHTML = b.comments.length
-    ? b.comments.map(c => `
+  // GitHub-synced issues live in localStorage, not Postgres — guard those.
+  const isGithubIssue = String(id).startsWith("gh-");
+
+  let displayComments = b.comments ?? [];
+  if (isGithubIssue && b.ghNumber) {
+    try {
+      displayComments = await fetchGitHubComments(b.ghNumber, b.repoPath);
+    } catch (err) {
+      console.error("Failed to fetch GitHub comments:", err);
+    }
+  }
+
+  const commentsHTML = displayComments.length
+    ? displayComments.map(c => `
         <li class="comment">
           <div class="comment-head">
             <span class="comment-who">${escapeHTML(c.who)}</span>
@@ -353,13 +456,22 @@ function openDetailModal(id) {
     </div>
   `);
 
-  // GitHub-synced issues live in localStorage, not Postgres — guard those.
-  const isGithubIssue = String(id).startsWith("gh-");
-
   document.getElementById("issue-status").addEventListener("change", async e => {
     const newStatus = e.target.value;
     if (newStatus === b.status) return;
-    if (isGithubIssue) return;
+    if (isGithubIssue) {
+      if (newStatus === "resolved") {
+        try { await closeGitHubIssue(b.ghNumber, b.repoPath); }
+        catch (err) { console.error("Failed to close GitHub issue:", err); }
+        const updated = (activeGithubIssues() || []).map(issue =>
+          issue.ghNumber === b.ghNumber ? { ...issue, status: "resolved" } : issue
+        );
+        updateActiveGithubIssues(updated);
+        renderAll();
+        closeModal();
+      }
+      return;
+    }
     await db.updateBlocker(id, { status: newStatus });
     await db.addActivity("blocker", `set "${b.title}" to ${STATUS_LABEL[newStatus]}`);
     await db.loadAll();
@@ -394,7 +506,9 @@ function openDetailModal(id) {
     const text = input.value.trim();
     if (!text) return;
     if (isGithubIssue) {
-      alert("Comments on GitHub-synced issues aren't persisted yet.");
+      try { await addGitHubComment(b.ghNumber, text, b.repoPath); }
+      catch (err) { console.error("Failed to post GitHub comment:", err); }
+      await openDetailModal(id);
       return;
     }
     await db.addBlockerComment(id, text);
@@ -423,10 +537,11 @@ function bindModalDismissers() {
  * load — handlers persist for the lifetime of the page.
  */
 function bindBlockerControls() {
-  document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'sync-gh-btn') {
-      openGitHubSyncModal();
-    }
+  document.getElementById("sync-gh-btn")?.addEventListener("click", openGitHubSyncModal);
+  document.getElementById("unsync-gh-btn")?.addEventListener("click", unsyncGitHub);
+  document.getElementById("gh-repo-select")?.addEventListener("change", e => {
+    setActiveGithubRepo(e.target.value);
+    renderAll();
   });
   document.querySelectorAll("#severity-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
@@ -454,24 +569,46 @@ function bindBlockerControls() {
   });
 }
 
+async function unsyncGitHub() {
+  const activeRepo = activeGithubRepo();
+  if (!activeRepo) return;
+  const syncedIssues = (activeRepo.issues || []).length;
+  const syncedPullRequests = (activeRepo.pullRequests || []).length;
+  const repoPath = activeRepo.repoPath;
+
+  removeGithubRepo(repoPath);
+  sessionStorage.setItem("sitrep_gh_repo", activeGithubRepo()?.repoPath || "");
+  if (!activeGithubRepo()) sessionStorage.removeItem("sitrep_gh_repo");
+  sessionStorage.removeItem("sitrep_gh_token");
+
+  try {
+    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs from ${repoPath}`);
+    await db.loadAll();
+  } catch (err) {
+    console.error("Failed to log GitHub unsync:", err);
+  }
+
+  renderAll();
+}
+
 /**
  * Show the GitHub sync dialog. On submit, fetch every issue for the
  * given `owner/repo` (optionally with a PAT for higher rate limits or
- * private repos), drop them into state.githubIssues, log an activity
- * event, and re-render. The chosen repo is remembered in
+ * private repos), store them under the active circle's repo set, log an
+ * activity event, and re-render. The chosen repo is remembered in
  * sessionStorage so the next sync defaults to it.
  *
  * @see fetchGitHubIssues in [./github-api.js](github-api.js)
  */
 function openGitHubSyncModal() {
-  const savedRepo = sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
-  
-  openModal("Sync with GitHub (v2)", `
+  const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
+
+  openModal("Sync with GitHub", `
     <form id="gh-sync-form" class="issue-form">
       <div class="field-row">
         <label class="field">
-          <span>Repository Path (owner/repo)</span>
-          <input type="text" id="gh-repo" value="${escapeHTML(savedRepo)}" required />
+          <span>Repository Paths (owner/repo)</span>
+          <textarea id="gh-repos" rows="6" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
         </label>
       </div>
       <div class="field-row">
@@ -483,35 +620,92 @@ function openGitHubSyncModal() {
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues + PRs</button>
       </div>
     </form>
   `);
 
   document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const repo = document.getElementById("gh-repo").value.trim();
+    let repos;
     const token = document.getElementById("gh-token").value.trim();
     const errorEl = document.getElementById("gh-error");
     const btn = document.getElementById("gh-sync-btn");
+
+    try {
+      repos = normalizeRepoPaths(document.getElementById("gh-repos").value);
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      return;
+    }
+
+    if (!repos.length) {
+      errorEl.textContent = "Add at least one repository path.";
+      errorEl.hidden = false;
+      return;
+    }
 
     try {
       btn.textContent = "Syncing...";
       btn.disabled = true;
       errorEl.hidden = true;
 
-      const issues = await fetchGitHubIssues(repo, token);
-      sessionStorage.setItem("sitrep_gh_repo", repo);
-      setGithubIssues(issues);
+      const warnings = [];
+      const existingRepos = currentGithubRepos();
+      const syncedRepos = (await Promise.all(repos.map(async repoPath => {
+        const previousRepo = existingRepos.find(repo => repo.repoPath === repoPath);
+        const [issuesResult, pullRequestsResult] = await Promise.allSettled([
+          fetchGitHubIssues(repoPath, token),
+          fetchGitHubPullRequests(repoPath, token),
+        ]);
 
-      await db.addActivity("checkin", `Synced ${issues.length} issues from GitHub (${repo})`);
+        if (issuesResult.status === "rejected" && pullRequestsResult.status === "rejected") {
+          warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message} Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+          return null;
+        }
+
+        if (issuesResult.status === "rejected") {
+          warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message}`);
+        }
+        if (pullRequestsResult.status === "rejected") {
+          warnings.push(`${repoPath}: Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+        }
+
+        return {
+          repoPath,
+          issues: issuesResult.status === "fulfilled" ? issuesResult.value : previousRepo?.issues || [],
+          pullRequests: pullRequestsResult.status === "fulfilled" ? pullRequestsResult.value : previousRepo?.pullRequests || [],
+        };
+      }))).filter(Boolean);
+
+      if (!syncedRepos.length) {
+        throw new Error(`GitHub sync failed. ${warnings.join(" ")}`);
+      }
+
+      syncedRepos.forEach(upsertGithubRepo);
+      sessionStorage.setItem("sitrep_gh_repo", syncedRepos.at(-1).repoPath);
+      sessionStorage.setItem("sitrep_gh_token", token);
+
+      const issueCount = syncedRepos.reduce((sum, repo) => sum + repo.issues.length, 0);
+      const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
+      await db.addActivity("checkin", `Synced ${issueCount} issues and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
       await db.loadAll();
-      closeModal();
       renderAll();
+
+      if (warnings.length) {
+        errorEl.textContent = `Partial sync completed. ${warnings.join(" ")}`;
+        errorEl.hidden = false;
+        btn.textContent = "Pull Issues + PRs";
+        btn.disabled = false;
+        return;
+      }
+
+      closeModal();
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
-      btn.textContent = "Pull Issues";
+      btn.textContent = "Pull Issues + PRs";
       btn.disabled = false;
     }
   });

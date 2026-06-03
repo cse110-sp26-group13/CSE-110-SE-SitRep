@@ -3,8 +3,8 @@ import { readFileSync } from 'fs'
 import vm from 'vm'
 
 // js/selectors.js is now a thin layer over the Supabase-backed globals
-// populated by js/db.js. It just merges localStorage'd GitHub issues
-// with the team's DB blockers, and exposes findBlockerById().
+// populated by js/db.js. It merges the active GitHub repo's issues with
+// the team's DB blockers and exposes the active repo's PRs.
 const SELECTORS_CODE = readFileSync('./js/selectors.js', 'utf8')
 
 const SAMPLE_BLOCKER = {
@@ -26,9 +26,23 @@ const SAMPLE_GH_ISSUE = {
   isExternal: true,
 }
 
-function makeCtx({ state = {}, blockers = [], teammates = [], activity = [] } = {}) {
+const SAMPLE_GH_PR = {
+  id: 'gh-pr-99',
+  title: 'Add PR support',
+  status: 'open',
+  author: 'octocat',
+  isExternal: true,
+}
+
+// GitHub repos live in state.js (scoped per circle); selectors read them
+// through currentGithubRepos()/currentActiveRepoPath(). We stub those here
+// to test the selectors in isolation — the per-circle scoping itself is
+// covered in state.test.js.
+function makeCtx({ githubRepos = [], activeRepoPath = '', blockers = [], teammates = [], activity = [] } = {}) {
   const ctx = vm.createContext({
-    state: { githubIssues: [], severityFilter: 'all', statusFilter: 'open', ...state },
+    state: { severityFilter: 'all', statusFilter: 'open' },
+    currentGithubRepos: () => githubRepos,
+    currentActiveRepoPath: () => activeRepoPath,
     blockers,
     teammates,
     activity,
@@ -59,7 +73,8 @@ describe('effectiveBlockers()', () => {
   it('prepends GitHub-synced issues before DB blockers', () => {
     const ctx = makeCtx({
       blockers: [SAMPLE_BLOCKER],
-      state: { githubIssues: [SAMPLE_GH_ISSUE] },
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
     })
     const result = ctx.effectiveBlockers()
     expect(result).toHaveLength(2)
@@ -67,8 +82,8 @@ describe('effectiveBlockers()', () => {
     expect(result[1].id).toBe('b1')
   })
 
-  it('tolerates a missing state.githubIssues field', () => {
-    const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER], state: { githubIssues: undefined } })
+  it('returns DB blockers only when the circle has no synced repos', () => {
+    const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER] })
     expect(ctx.effectiveBlockers()).toHaveLength(1)
   })
 })
@@ -80,13 +95,49 @@ describe('findBlockerById()', () => {
   })
 
   it('finds a GitHub-synced issue by id', () => {
-    const ctx = makeCtx({ state: { githubIssues: [SAMPLE_GH_ISSUE] } })
+    const ctx = makeCtx({
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [SAMPLE_GH_ISSUE], pullRequests: [] }],
+    })
     expect(ctx.findBlockerById('gh-42').title).toBe('GH issue from sync')
   })
 
   it('returns undefined for an unknown id', () => {
     const ctx = makeCtx({ blockers: [SAMPLE_BLOCKER] })
     expect(ctx.findBlockerById('nope')).toBeUndefined()
+  })
+})
+
+describe('effectivePullRequests()', () => {
+  it('returns GitHub-synced pull requests', () => {
+    const ctx = makeCtx({
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+    })
+    expect(ctx.effectivePullRequests()).toHaveLength(1)
+    expect(ctx.effectivePullRequests()[0].id).toBe('gh-pr-99')
+  })
+
+  it('returns empty when the circle has no active repo', () => {
+    expect(makeCtx().effectivePullRequests()).toHaveLength(0)
+  })
+})
+
+describe('findPullRequestById()', () => {
+  it('finds a GitHub-synced pull request by id', () => {
+    const ctx = makeCtx({
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+    })
+    expect(ctx.findPullRequestById('gh-pr-99').title).toBe('Add PR support')
+  })
+
+  it('returns undefined for an unknown pull request id', () => {
+    const ctx = makeCtx({
+      activeRepoPath: 'owner/repo',
+      githubRepos: [{ repoPath: 'owner/repo', issues: [], pullRequests: [SAMPLE_GH_PR] }],
+    })
+    expect(ctx.findPullRequestById('gh-pr-nope')).toBeUndefined()
   })
 })
 
