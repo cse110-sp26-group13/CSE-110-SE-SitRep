@@ -65,18 +65,20 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 12px;
-  padding: 14px 0;
+  padding: 14px 12px;
   border-top: 1px dashed var(--hairline);
   align-items: start;
   cursor: pointer;
-  transition: background .1s;
+  position: relative;
+  transform-origin: center;
+  transition: transform .14s ease, background .1s;
 }
 .blocker-row:first-child { border-top: 0; }
+/* Hover scales the whole row — text and surface — up toward the viewer. */
 .blocker-row:hover {
   background: var(--card-2);
-  margin: 0 -10px;
-  padding-left: 10px;
-  padding-right: 10px;
+  transform: scale(1.03);
+  z-index: 1;
 }
 .blocker-row.status-resolved { opacity: 0.55; }
 .blocker-row.status-resolved .blocker-title { text-decoration: line-through; }
@@ -182,9 +184,18 @@
   gap: 12px;
   align-items: center;
   border-top: 1px dashed var(--hairline);
+  position: relative;
+  transform-origin: center;
+  transition: transform .14s ease, background .1s;
 }
 .pull-request-row:first-child { border-top: 0; }
 .pull-request-row.status-closed { opacity: 0.62; }
+/* Hover scales the whole row — text and surface — up toward the viewer. */
+.pull-request-row:hover {
+  background: var(--card-2);
+  transform: scale(1.03);
+  z-index: 1;
+}
 
 .pull-request-open {
   appearance: none;
@@ -192,17 +203,11 @@
   background: transparent;
   display: block;
   width: 100%;
-  padding: 14px 0;
+  padding: 14px 12px;
   color: var(--ink);
   cursor: pointer;
   text-decoration: none;
   text-align: left;
-}
-.pull-request-open:hover {
-  background: var(--card-2);
-  margin: 0 -10px;
-  padding-left: 10px;
-  padding-right: 10px;
 }
 .pull-request-open:focus-visible {
   outline: 2px solid var(--ink);
@@ -218,6 +223,7 @@
   text-decoration: none;
   border: 1.5px solid var(--hairline);
   padding: 5px 8px;
+  margin-right: 12px;
 }
 .pull-request-github-link:hover {
   border-color: var(--ink);
