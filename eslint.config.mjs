@@ -53,7 +53,11 @@ const projectGlobals = {
   renderMoodTrend: "readonly",
   renderActivity: "readonly",
   renderCheckIns: "readonly",
+  moodBucket: "readonly",
+  moodSVG: "readonly",
+  MOOD_LABELS: "readonly",
   renderBlockers: "readonly",
+  openDetailModal: "readonly",
   renderSlots: "readonly",
   renderAllAI: "readonly",
   moodFace: "readonly",
@@ -111,6 +115,7 @@ const browserGlobals = {
   HTMLInputElement: "readonly",
   SubmitEvent: "readonly",
   Node: "readonly",
+  CSS: "readonly",
 };
 
 export default [
