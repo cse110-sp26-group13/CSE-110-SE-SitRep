@@ -1,6 +1,13 @@
-// Issues page orchestrator.
-// Full blockers list + filters + new-issue + GitHub sync modal + pull requests.
+/**
+ * Issues page orchestrator ([issues.html](../../issues.html)).
+ *
+ * Full blockers list + severity/status filters + new-issue modal +
+ * GitHub sync modal. Stubs out `renderActivity` because this page
+ * doesn't have an activity feed but
+ * [blockers.js](../features/blockers.js) calls it after writes.
+ */
 
+/** Re-render the issues page from the loaded globals. */
 function renderIssues() {
   // One page-level render keeps header, repo controls, assignments, PRs, and counts in sync.
   renderHeader();
@@ -10,6 +17,10 @@ function renderIssues() {
   updateIssuesSub();
 }
 
+/**
+ * Update the page subtitle with the breakdown of issue counts
+ * (open / resolved / total). Called whenever the list changes.
+ */
 function updateIssuesSub() {
   const all = effectiveActiveGithubBlockers();
   // Show both filtered and total counts so hidden synced items are obvious.

@@ -1,0 +1,76 @@
+/* Password strength meter — shared by splash (sign-up) and settings (change password). */
+
+.pw-strength {
+  margin-top: 10px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.25s ease;
+}
+
+.pw-strength.is-active {
+  opacity: 1;
+  max-height: 200px;
+}
+
+.pw-strength-bar {
+  height: 6px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  overflow: hidden;
+}
+
+.pw-strength-fill {
+  height: 100%;
+  width: 0;
+  background: var(--bad);
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.pw-strength-fill[data-level="1"] { width: 25%;  background: var(--bad); }
+.pw-strength-fill[data-level="2"] { width: 50%;  background: var(--warn); }
+.pw-strength-fill[data-level="3"] { width: 75%;  background: #d6c12a; }
+.pw-strength-fill[data-level="4"] { width: 100%; background: var(--good); }
+
+.pw-strength-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.pw-strength-reqs {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.pw-strength-reqs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  transition: color 0.15s;
+}
+
+.pw-strength-reqs li::before {
+  content: '○';
+  display: inline-block;
+  width: 12px;
+  color: var(--subtle);
+  font-size: 10px;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.pw-strength-reqs li.met { color: var(--ink); }
+
+.pw-strength-reqs li.met::before {
+  content: '✓';
+  color: var(--good);
+  transform: scale(1.1);
+}

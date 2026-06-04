@@ -79,8 +79,8 @@ test.describe('Issues Tracker', () => {
     );
 
     await page.locator('#sync-gh-btn').click();
-    await page.locator('#gh-repo').fill('demo/repo');
-    await page.locator('#gh-sync-btn').click();
+    await page.locator('#gh-repos').fill('demo/repo');
+    await page.locator('#gh-sync-form button[type="submit"]').click();
 
     await expect(page.locator('#issue-modal')).toBeHidden();
     await expect(page.locator('#blocker-list')).toContainText('Synced issue from GitHub');

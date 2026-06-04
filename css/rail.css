@@ -11,6 +11,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  z-index: 900;
 }
 
 .rail-icon {
@@ -42,3 +43,173 @@
 .theme-toggle .icon-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+
+/* Thin divider between rail-top circle switcher and page-route icons. */
+.rail-divider {
+  width: 24px;
+  height: 1.5px;
+  background: var(--hairline);
+  margin: 2px 0 4px;
+}
+
+/* Circle switcher — top-of-rail button and floating popover. */
+.circle-switcher {
+  position: relative;
+}
+.circle-switcher-btn {
+  appearance: none;
+  background: var(--paper);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+.circle-switcher.open .circle-switcher-btn,
+.circle-switcher-btn[aria-expanded="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.circle-switcher-mark {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
+}
+
+.circle-pop {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 10px);
+  min-width: 240px;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--hard-shadow);
+  padding: 10px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  /* Top of the stack on every page — above modals (100) and any
+     page-scoped overlay. The rail itself is z-index 900, but because
+     the rail has no z-index on its own positioned context until now,
+     the popover competes at the root and needs a value that beats
+     everything else in the app. */
+  z-index: 9999;
+}
+.circle-switcher.open .circle-pop { display: flex; }
+
+.circle-pop-head {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 2px 4px 6px;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.circle-pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.circle-pop-item {
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid transparent;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--sans);
+  color: var(--ink);
+  transition: background .12s, border-color .12s;
+}
+.circle-pop-item:hover { background: var(--card-2); border-color: var(--ink); }
+.circle-pop-item.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.circle-pop-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1.5px solid currentColor;
+  line-height: 1;
+}
+.circle-pop-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.circle-pop-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.circle-pop-role {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: currentColor;
+  opacity: .7;
+}
+.circle-pop-check {
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.circle-pop-empty {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 6px 4px;
+}
+.circle-pop-manage {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  padding: 8px 10px 4px;
+  border-top: 1px dashed var(--hairline);
+}
+.circle-pop-manage:hover { text-decoration: underline; }
+
+/* Cross-document view transitions. Browsers that support it (Chromium,
+   Safari) snapshot the old page, snapshot the new page, and animate
+   between them. We use it only to smooth the rail — main content still
+   hard-cuts. Firefox ignores the rule and falls back to normal nav. */
+@view-transition { navigation: auto; }
+
+/* Naming the rail pulls it OUT of the root snapshot, so it animates as
+   its own layer — the dark "active" highlight slides from the old icon
+   to the new one instead of disappearing and reappearing. */
+.rail { view-transition-name: rail; }
+
+/* Skip the default crossfade on everything else. Without this, main
+   content also fades old→new; with it, only the rail animates. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
