@@ -247,9 +247,11 @@ function categoryOptions(selected) {
  * @param {string} bodyHTML
  */
 function openModal(titleText, bodyHTML) {
+  const modal = document.getElementById("issue-modal");
+  modal.querySelector(".modal")?.classList.remove("modal--compact");
   document.getElementById("issue-modal-title").textContent = titleText;
   document.getElementById("issue-modal-body").innerHTML = bodyHTML;
-  document.getElementById("issue-modal").hidden = false;
+  modal.hidden = false;
 }
 
 /** Hide the issue modal and clear its body so old handlers don't linger. */
@@ -615,7 +617,7 @@ async function unsyncGitHub() {
  * activity event, and re-render. The chosen repo is remembered in
  * sessionStorage so the next sync defaults to it.
  *
- * @see fetchGitHubIssues in [./github-api.js](github-api.js)
+ * @see fetchGitHubIssues in [./github/github-issues.js](github/github-issues.js)
  */
 function openGitHubSyncModal() {
   const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
@@ -625,7 +627,7 @@ function openGitHubSyncModal() {
       <div class="field-row">
         <label class="field">
           <span>Repository Paths (owner/repo)</span>
-          <textarea id="gh-repos" rows="6" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
+          <textarea id="gh-repos" rows="3" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
         </label>
       </div>
       <div class="field-row">
@@ -641,6 +643,7 @@ function openGitHubSyncModal() {
       </div>
     </form>
   `);
+  document.getElementById("issue-modal").querySelector(".modal")?.classList.add("modal--compact");
 
   document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
     e.preventDefault();
