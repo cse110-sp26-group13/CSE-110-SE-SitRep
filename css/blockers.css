@@ -11,11 +11,16 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  /* Allow filter groups to shrink inside card headers on narrow screens. */
+  min-width: 0;
 }
 .filters {
   display: inline-flex;
   border: 1.5px solid var(--ink);
   background: var(--paper);
+  /* If chip labels ever outgrow the card, scroll the chips instead of the whole page. */
+  max-width: 100%;
+  overflow-x: auto;
 }
 .filters .chip {
   appearance: none;
@@ -55,15 +60,31 @@
 }
 
 /* List */
-.blocker-list {
+.blocker-list,
+.pull-request-list {
+  /* Show about four rows, then let each list scroll so the page stays compact. */
+  --visible-list-height: clamp(220px, 42vh, 300px);
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: var(--visible-list-height);
+  /* Keep wheel/trackpad scroll local to the list once it has more than four rows. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  /* Reserve room for the scrollbar so row content does not jump when it appears. */
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+}
+
+.blocker-list {
+  scroll-padding-top: 8px;
 }
 
 .blocker-row {
   display: grid;
-  grid-template-columns: auto 1fr;
+  /* minmax(0, 1fr) lets long GitHub titles wrap instead of widening the page. */
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   padding: 14px 0;
   border-top: 1px dashed var(--hairline);
@@ -89,6 +110,8 @@
   letter-spacing: -0.01em;
   color: var(--ink);
   line-height: 1.35;
+  /* GitHub issue titles can contain long tokens, branch names, or URLs. */
+  overflow-wrap: anywhere;
 }
 .blocker-meta {
   display: flex;
@@ -98,6 +121,12 @@
   font-family: var(--mono);
   font-size: 11px;
   color: var(--muted);
+  min-width: 0;
+}
+.blocker-meta span {
+  max-width: 100%;
+  /* Prevent repo names and branch refs from creating horizontal page scroll. */
+  overflow-wrap: anywhere;
 }
 
 /* Severity tags */
@@ -169,13 +198,6 @@
   letter-spacing: 0.02em;
 }
 
-/* Pull request list */
-.pull-request-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
 .pull-request-row {
   border-top: 1px dashed var(--hairline);
 }
@@ -209,6 +231,8 @@
   letter-spacing: -0.01em;
   color: var(--ink);
   line-height: 1.35;
+  /* PR titles follow the same wrapping rule as assignments. */
+  overflow-wrap: anywhere;
 }
 
 .status-merged { background: var(--good-soft); color: var(--ink); }
@@ -230,3 +254,42 @@
 /* New-issue accent */
 .new-issue-btn { box-shadow: 3px 3px 0 var(--hairline); }
 .new-issue-btn:hover { box-shadow: 3px 3px 0 var(--ink); }
+
+@media (max-width: 700px) {
+  .blocker-list,
+  .pull-request-list {
+    /* Slightly shorter list windows leave room for controls on phone-sized screens. */
+    --visible-list-height: clamp(200px, 38vh, 270px);
+    padding-right: 4px;
+  }
+
+  .blockers-head {
+    align-items: stretch;
+  }
+
+  .filters-wrap,
+  .filters,
+  .gh-repo-select {
+    width: 100%;
+  }
+
+  .filters .chip {
+    flex: 1 0 auto;
+    padding-inline: 10px;
+  }
+
+  .gh-repo-select {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .blocker-row {
+    /* Stack severity above details when the two-column row gets too tight. */
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .sev-tag {
+    justify-self: start;
+  }
+}

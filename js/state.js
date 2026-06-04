@@ -4,10 +4,15 @@ function defaultState() {
   return {
     githubIssues: [],
     githubPullRequests: [],
+    // Each synced repo owns its own issues and PRs so the repo selector can swap views.
     githubRepos: [],
+    // Empty means "fall back to the first synced repo".
     activeGithubRepo: "",
+    // Persist filters so page reloads keep the user's last view.
     severityFilter: "all",
     statusFilter: "open",
+    // PRs use their own status filter because GitHub PR states differ from issue states.
+    prStatusFilter: "open",
     slotAvailability: {},
     aiSessions: [],
   };
