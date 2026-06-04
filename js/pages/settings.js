@@ -6,7 +6,8 @@
  *     (RLS: profile_self_update).
  *   - Theme buttons mirror the rail's theme-toggle through the same
  *     localStorage key as [theme.js](../theme.js).
- *   - Notification toggles persist to localStorage (UI-only for v1).
+ *   - Notification toggles persist to localStorage and feed the
+ *     dashboard notification center.
  *   - Circles section: list / join / create teams; switching the active
  *     team reloads the page so the rest of the app re-hydrates.
  */
@@ -246,15 +247,14 @@
   }
 
   /**
-   * Wire the notification toggles. UI-only for v1 — the checked state
-   * round-trips through localStorage so the prefs survive a reload,
-   * but nothing actually fires notifications yet. Replace with real
-   * subscription wiring once the notification channel lands.
+   * Wire the notification toggles. The checked state round-trips
+   * through localStorage so dashboard alerts can honor the user's
+   * preferences without a server-side channel.
    */
   function bindNotifications() {
     Object.entries(NOTIFY_KEYS).forEach(([id, key]) => {
       const cb = document.getElementById(id);
-      cb.checked = localStorage.getItem(key) === "1";
+      cb.checked = localStorage.getItem(key) !== "0";
       cb.addEventListener("change", () => {
         localStorage.setItem(key, cb.checked ? "1" : "0");
       });

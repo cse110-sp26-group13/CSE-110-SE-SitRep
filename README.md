@@ -51,7 +51,7 @@ What's actually wired up vs. what's still in motion as of v0.2.0:
 | Check-ins, blockers, availability slots, mood trend, KPI strip, activity feed | **Live** — read/write against Supabase per-circle |
 | Settings page (display name, password) | **Live** |
 | GitHub Issues sync | **Live** — pulls issues from any public repo via the sync modal in [issues.html](issues.html); PAT optional for higher rate limits / private repos. Synced issues live in `sessionStorage`, comments on them are not yet persisted ([js/features/blockers.js:267](js/features/blockers.js#L267)) |
-| Notification preferences | **In progress** — toggles in [settings.html](settings.html) (standup reminders, mentions, daily digest) round-trip through `localStorage` so the prefs persist, but nothing actually fires notifications yet ([js/pages/settings.js](js/pages/settings.js) `bindNotifications`) |
+| Notification preferences | **Live** — toggles in [settings.html](settings.html) (standup reminders, mentions, daily digest) feed the dashboard notification center and persist through `localStorage` |
 | Standup page, calendar page | **In progress** |
 
 ## Features
