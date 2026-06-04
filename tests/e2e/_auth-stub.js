@@ -28,7 +28,6 @@ const DB_STUB = `
     currentUserId: 'test-user',
   };
   window.meetingSlots = [];
-  window.activity = [];
 
   function _hydrate() {
     const s = _read();
@@ -43,6 +42,7 @@ const DB_STUB = `
       coverNote: '',
     }];
     window.blockers = s.blockers || [];
+    window.activity = s.activity || [];
   }
   _hydrate();
 

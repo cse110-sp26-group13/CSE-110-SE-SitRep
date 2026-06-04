@@ -9,6 +9,13 @@ test.describe('Dashboard summary page', () => {
     await page.reload();
   });
 
+  async function seedDashboard(page, data) {
+    await page.evaluate((next) => {
+      localStorage.setItem('sitrep-e2e-stub', JSON.stringify(next));
+    }, data);
+    await page.reload();
+  }
+
   test('page title is correct', async ({ page }) => {
     await expect(page).toHaveTitle(/SitRep/);
   });
@@ -35,6 +42,60 @@ test.describe('Dashboard summary page', () => {
   test('mood sparkline and activity list render', async ({ page }) => {
     await expect(page.locator('#sparkline-wrap')).toBeVisible();
     await expect(page.locator('#activity-list')).toBeVisible();
+  });
+
+  test('dashboard summaries reflect seeded standup, blocker, and activity data', async ({ page }) => {
+    await seedDashboard(page, {
+      mood: 8,
+      lastCheckIn: {
+        time: 'just now',
+        yesterday: 'Finished auth cleanup',
+        today: 'Writing dashboard tests',
+        blockers: '',
+      },
+      blockers: [{
+        id: 'seed-blocker',
+        title: 'Seeded blocker from test',
+        description: 'Needs attention',
+        severity: 'critical',
+        status: 'open',
+        owner: 'Test User',
+        ownerId: 'test-user',
+        postedAt: 'just now',
+        comments: [],
+      }],
+      activity: [{
+        type: 'blocker',
+        who: 'Test User',
+        text: 'opened a critical issue',
+        time: 'just now',
+      }],
+    });
+
+    await expect(page.locator('#kpis')).toContainText('1/1');
+    await expect(page.locator('#kpis')).toContainText('8.0/10');
+    await expect(page.locator('#snap-standup-num')).toContainText('1 / 1');
+    await expect(page.locator('#snap-issues-num')).toContainText('1 open');
+    await expect(page.locator('#snap-issues-body')).toContainText('Seeded blocker from test');
+    await expect(page.locator('#activity-sub')).toHaveText('1 events');
+    await expect(page.locator('#activity-list')).toContainText('opened a critical issue');
+  });
+
+  test('dashboard shows unblocked and no-activity empty states', async ({ page }) => {
+    await seedDashboard(page, {
+      lastCheckIn: {
+        time: 'just now',
+        yesterday: 'Reviewed PRs',
+        today: 'Planning next tasks',
+        blockers: '',
+      },
+      blockers: [],
+      activity: [],
+    });
+
+    await expect(page.locator('#snap-standup-body')).toContainText("Whole team's in.");
+    await expect(page.locator('#snap-issues-body')).toContainText("Team's unblocked.");
+    await expect(page.locator('#activity-list')).toContainText('No activity yet.');
   });
 
   test('rail nav to standup page', async ({ page }) => {
