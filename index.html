@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/checkins.css" />
   <link rel="stylesheet" href="css/mood-trend.css" />
   <link rel="stylesheet" href="css/activity.css" />
+  <link rel="stylesheet" href="css/notifications.css" />
 
   <script src="js/theme.js"></script>
 </head>
@@ -61,6 +62,22 @@
           <p class="lede">A live overview pulled from this morning's standup. Dig into a feature to see the detail.</p>
         </div>
         <div class="page-actions">
+          <div class="notification-popover" data-notification-popover>
+            <button class="notification-toggle" id="notifications-toggle" type="button" aria-expanded="false" aria-controls="notifications-panel" title="Notifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                <path d="M10 19a2 2 0 0 0 4 0"/>
+              </svg>
+              <span class="notification-badge" id="notifications-badge" hidden>0</span>
+            </button>
+            <div class="notification-panel" id="notifications-panel" role="dialog" aria-labelledby="notifications-panel-title" hidden>
+              <div class="notification-panel-head">
+                <h2 id="notifications-panel-title">Notifications</h2>
+                <button class="notification-quiet" type="button" data-notification-mark-all>Mark read</button>
+              </div>
+              <ul class="notification-mini-list" id="notifications-panel-list"></ul>
+            </div>
+          </div>
           <a class="btn-primary" href="standup.html">+ Post standup</a>
         </div>
       </header>
@@ -68,6 +85,17 @@
       <section class="kpis" id="kpis" aria-label="At-a-glance KPIs"></section>
 
       <div class="dash-content">
+        <section class="card notifications-card" id="notifications" aria-labelledby="notifications-title">
+          <div class="card-head">
+            <div>
+              <h2 id="notifications-title">Notifications</h2>
+              <span class="card-sub" id="notifications-sub"></span>
+            </div>
+            <button class="btn-secondary notification-mark-all" id="notifications-mark-read" type="button" data-notification-mark-all>Mark all read</button>
+          </div>
+          <ul class="notification-list" id="notification-list"></ul>
+        </section>
+
         <div class="dash-row-snaps">
           <!-- Standup snapshot -->
           <section class="snapshot" aria-labelledby="snap-standup-title">
@@ -151,6 +179,7 @@
   <script src="js/features/checkins.js"></script>
   <script src="js/features/mood-trend.js"></script>
   <script src="js/features/activity.js"></script>
+  <script src="js/features/notifications.js"></script>
 
   <!-- Page orchestrator -->
   <script src="js/pages/dashboard.js"></script>

@@ -92,6 +92,7 @@ function renderDashboard() {
   renderKPIs();
   renderMoodTrend();
   renderActivity();
+  renderNotifications();
   renderStandupSnapshot();
   renderIssuesSnapshot();
 }
@@ -99,4 +100,5 @@ function renderDashboard() {
 document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderDashboard();
+  bindNotifications();
 });
