@@ -408,8 +408,6 @@
 .cal-timeline-view { 
   overflow-x: auto; 
   background: var(--card); 
-  border: 0.1rem solid var(--ink);
-  box-shadow: 0.375rem 0.375rem 0 var(--ink);
 }
 .timeline-container { width: fit-content; display: flex; flex-direction: column; }
 .timeline-grid {
