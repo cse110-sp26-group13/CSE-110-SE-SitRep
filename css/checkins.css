@@ -179,15 +179,12 @@
   flex-shrink: 0;
 }
 
-/* In single-column mode (≤1200px / 125%+ zoom on common screens), restore the
-   card to normal document flow so it doesn't overlap the right-side cards. */
+/* In single-column mode, restore the card to normal flow and cap the list. */
 @media (max-width: 1200px) {
   .mood-unified-card {
     position: relative;
     inset: auto;
   }
-  /* Give the checkin list a viewport-relative cap so it scrolls instead
-     of making the card grow arbitrarily tall in single-column mode. */
   .checkin-list {
     max-height: 50vh;
   }
