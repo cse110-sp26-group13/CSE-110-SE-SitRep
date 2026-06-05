@@ -27,7 +27,11 @@ function pullRequestBranchText(pr) {
 }
 
 function currentPullRequestRepo() {
-  return sessionStorage.getItem("sitrep_gh_repo") || PR_DEFAULT_REPO;
+  return activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || PR_DEFAULT_REPO;
+}
+
+function repoForPullRequest(pr) {
+  return pr?.repoPath || currentPullRequestRepo();
 }
 
 function currentPullRequestToken() {
@@ -40,9 +44,27 @@ function pullRequestStatusWeight(pr) {
   return 2;
 }
 
-async function refreshPullRequestsFromGitHub(repo, token) {
-  const pullRequests = await fetchGitHubPullRequests(repo, token);
-  setGithubPullRequests(pullRequests);
+function mergePullRequestSnapshot(repo, pullRequests, fallbackPullRequest) {
+  if (!fallbackPullRequest) return pullRequests;
+  const normalizedFallback = { ...fallbackPullRequest, repoPath: fallbackPullRequest.repoPath || repo };
+  const index = pullRequests.findIndex(pr => pr.id === normalizedFallback.id || pr.ghNumber === normalizedFallback.ghNumber);
+  if (index === -1) return [normalizedFallback, ...pullRequests];
+  return pullRequests.map((pr, i) => (i === index ? { ...pr, ...normalizedFallback } : pr));
+}
+
+async function resyncPullRequestsForRepo(repo, token, fallbackPullRequest = null) {
+  const pullRequests = mergePullRequestSnapshot(
+    repo,
+    await fetchGitHubPullRequests(repo, token),
+    fallbackPullRequest,
+  );
+  const existingRepo = currentGithubRepos().find(githubRepo => githubRepo.repoPath === repo);
+  upsertGithubRepo({
+    repoPath: repo,
+    issues: existingRepo?.issues || [],
+    pullRequests,
+  });
+  sessionStorage.setItem("sitrep_gh_repo", repo);
   return pullRequests;
 }
 
@@ -201,8 +223,8 @@ function openNewPullRequestModal() {
 
     try {
       setPullRequestButtonPending(submit, true, "Creating...");
-      await createGitHubPullRequest(repo, { title, body, head, base, draft }, currentPullRequestToken());
-      await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+      const createdPullRequest = await createGitHubPullRequest(repo, { title, body, head, base, draft }, currentPullRequestToken());
+      await resyncPullRequestsForRepo(repo, currentPullRequestToken(), createdPullRequest);
       closeModal();
       renderAll();
     } catch (err) {
@@ -222,7 +244,7 @@ function openPullRequestDetailModal(id, notice = "") {
   const pr = findPullRequestById(id);
   if (!pr) return;
 
-  const repo = currentPullRequestRepo();
+  const repo = repoForPullRequest(pr);
   const updated = formatPullRequestDate(pr.updatedAt);
   const created = formatPullRequestDate(pr.createdAt);
   const body = pr.body
@@ -332,7 +354,7 @@ function pullRequestDangerActionsHTML(repo, pr) {
 
 function bindPullRequestDetailHandlers(pr) {
   const errorEl = document.getElementById("pr-detail-error");
-  const repo = currentPullRequestRepo();
+  const repo = repoForPullRequest(pr);
 
   const editForm = document.getElementById("pr-edit-form");
   if (editForm) {
@@ -352,8 +374,8 @@ function bindPullRequestDetailHandlers(pr) {
 
       try {
         setPullRequestButtonPending(submit, true, "Saving...");
-        await updateGitHubPullRequest(repo, pr.ghNumber, { title, body, base }, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        const updatedPullRequest = await updateGitHubPullRequest(repo, pr.ghNumber, { title, body, base }, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken(), updatedPullRequest);
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request updated.");
       } catch (err) {
@@ -380,8 +402,8 @@ function bindPullRequestDetailHandlers(pr) {
       try {
         errorEl.hidden = true;
         setPullRequestButtonPending(closeConfirmBtn, true, "Closing...");
-        await closeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        const closedPullRequest = await closeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken(), closedPullRequest);
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request closed.");
       } catch (err) {
@@ -418,7 +440,7 @@ function bindPullRequestDetailHandlers(pr) {
         mergeStart.disabled = true;
         setPullRequestButtonPending(mergeConfirmBtn, true, "Merging...");
         await mergeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken());
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request merged.");
       } catch (err) {

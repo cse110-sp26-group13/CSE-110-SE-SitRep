@@ -65,7 +65,7 @@ async function createGitHubPullRequest(repoPath, pullRequest = {}, token) {
     token,
     body: JSON.stringify(payload),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function updateGitHubPullRequest(repoPath, ghNumber, updates = {}, token) {
@@ -85,7 +85,7 @@ async function updateGitHubPullRequest(repoPath, ghNumber, updates = {}, token) 
     token,
     body: JSON.stringify(payload),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function closeGitHubPullRequest(repoPath, ghNumber, token) {
@@ -95,7 +95,7 @@ async function closeGitHubPullRequest(repoPath, ghNumber, token) {
     token,
     body: JSON.stringify({ state: "closed" }),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function mergeGitHubPullRequest(repoPath, ghNumber, token) {
