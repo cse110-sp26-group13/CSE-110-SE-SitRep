@@ -102,11 +102,15 @@
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
+  transition: transform .08s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
 }
 .view-mood-btn:hover {
   background: var(--ink);
   color: var(--paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
 }
+.view-mood-btn:active { transform: none; box-shadow: none; }
 
 /* ── Wide modal variant ─────────────────────────────────────── */
 .modal.modal--wide {

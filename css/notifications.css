@@ -13,16 +13,23 @@
   display: grid;
   place-items: center;
   position: relative;
+  transition: transform .08s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
 }
 .notification-toggle svg {
   width: 20px;
   height: 20px;
 }
-.notification-toggle:hover,
+.notification-toggle:hover {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
 .notification-toggle[aria-expanded="true"] {
   background: var(--ink);
   color: var(--paper);
 }
+.notification-toggle:active { transform: none; box-shadow: none; }
 
 .notification-badge {
   position: absolute;
