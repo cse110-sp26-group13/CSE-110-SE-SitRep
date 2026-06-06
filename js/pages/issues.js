@@ -2,18 +2,21 @@
  * Issues page orchestrator ([issues.html](../../issues.html)).
  *
  * Full blockers list + severity/status filters + new-issue modal +
- * GitHub sync modal. Stubs out `renderActivity` because this page
- * doesn't have an activity feed but
- * [blockers.js](../features/blockers.js) calls it after writes.
+ * GitHub issue sync modal. Pull request rendering is intentionally
+ * disabled on this page and preserved in comments for future restore.
+ * Stubs out `renderActivity` because this page doesn't have an
+ * activity feed but [blockers.js](../features/blockers.js) calls it
+ * after writes.
  */
 
 /** Re-render the issues page from the loaded globals. */
 function renderIssues() {
-  // One page-level render keeps header, repo controls, assignments, PRs, and counts in sync.
+  // One page-level render keeps header, repo controls, assignments, and counts in sync.
   renderHeader();
   updateGitHubSyncActions();
   renderBlockers();
-  renderPullRequests();
+  // PR rendering is disabled on the Issues page.
+  // renderPullRequests();
   updateIssuesSub();
 }
 
@@ -32,12 +35,19 @@ function updateIssuesSub() {
 }
 
 window.renderAll = renderIssues;
+/** No-op activity renderer because issues.html has no activity feed container. */
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
+/**
+ * Load initial page data, render the Issues page, and bind issue-only controls.
+ * PR controls are preserved below as a commented restore point but are not
+ * registered on this page.
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   // Load Supabase-backed local data first, then merge in any GitHub state from localStorage.
   await db.loadAll();
   renderIssues();
   bindBlockerControls();
-  bindPullRequestControls();
+  // PR controls are disabled on the Issues page.
+  // bindPullRequestControls();
 });

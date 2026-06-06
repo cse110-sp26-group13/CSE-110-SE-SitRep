@@ -138,6 +138,11 @@ function renderBlockers() {
   });
 }
 
+/**
+ * Refresh the GitHub repo selector, unsync button, and session storage
+ * for the active issue-sync repo. Pull request UI is no longer mounted
+ * on the Issues page, so this only prepares issue follow-up actions.
+ */
 function updateGitHubSyncActions() {
   const unsyncButton = document.getElementById("unsync-gh-btn");
   const repoSelect = document.getElementById("gh-repo-select");
@@ -155,7 +160,7 @@ function updateGitHubSyncActions() {
   }
 
   if (unsyncButton) unsyncButton.hidden = !activeRepo;
-  // Session storage feeds follow-up GitHub actions like comment/create/close.
+  // Session storage feeds follow-up GitHub issue actions like comment/create/close.
   if (activeRepo) sessionStorage.setItem("sitrep_gh_repo", activeRepo.repoPath);
   else sessionStorage.removeItem("sitrep_gh_repo");
 }
@@ -588,11 +593,18 @@ function bindBlockerControls() {
   });
 }
 
+/**
+ * Remove the active GitHub repo from local issue sync state, clear
+ * session-scoped GitHub credentials, and log the unsync action.
+ * Previously this also reported cached PR counts; that PR-specific
+ * message is preserved in comments below but no longer runs here.
+ */
 async function unsyncGitHub() {
   const activeRepo = activeGithubRepo();
   if (!activeRepo) return;
   const syncedIssues = (activeRepo.issues || []).length;
-  const syncedPullRequests = (activeRepo.pullRequests || []).length;
+  // PR count preserved for restoration if PRs return to the Issues page:
+  // const syncedPullRequests = (activeRepo.pullRequests || []).length;
   const repoPath = activeRepo.repoPath;
 
   removeGithubRepo(repoPath);
@@ -601,7 +613,9 @@ async function unsyncGitHub() {
   sessionStorage.removeItem("sitrep_gh_token");
 
   try {
-    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs from ${repoPath}`);
+    // Previous PR-aware activity text:
+    // await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues and ${syncedPullRequests} PRs from ${repoPath}`);
+    await db.addActivity("checkin", `Unsynced ${syncedIssues} GitHub issues from ${repoPath}`);
     await db.loadAll();
   } catch (err) {
     console.error("Failed to log GitHub unsync:", err);
@@ -611,11 +625,15 @@ async function unsyncGitHub() {
 }
 
 /**
- * Show the GitHub sync dialog. On submit, fetch every issue for the
+ * Show the GitHub issue sync dialog. On submit, fetch every issue for the
  * given `owner/repo` (optionally with a PAT for higher rate limits or
  * private repos), store them under the active circle's repo set, log an
  * activity event, and re-render. The chosen repo is remembered in
  * sessionStorage so the next sync defaults to it.
+ *
+ * Pull request fetch/render code used to live beside this issue sync path.
+ * It is intentionally commented out below because PRs should not run on the
+ * Issues page, but the restoration points remain visible.
  *
  * @see fetchGitHubIssues in [./github/github-issues.js](github/github-issues.js)
  */
@@ -639,7 +657,7 @@ function openGitHubSyncModal() {
       <p id="gh-error" class="field-error" hidden></p>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues + PRs</button>
+        <button type="submit" class="btn-primary" id="gh-sync-btn">Pull Issues</button>
       </div>
     </form>
   `);
@@ -673,30 +691,38 @@ function openGitHubSyncModal() {
 
       const warnings = [];
       const existingRepos = currentGithubRepos();
-      // Fetch issues and PRs together so one repo sync updates both sections at once.
+      // Fetch issues only. PR sync is preserved in comments below but disabled on this page.
       const syncedRepos = (await Promise.all(repos.map(async repoPath => {
         const previousRepo = existingRepos.find(repo => repo.repoPath === repoPath);
-        const [issuesResult, pullRequestsResult] = await Promise.allSettled([
-          fetchGitHubIssues(repoPath, token),
-          fetchGitHubPullRequests(repoPath, token),
-        ]);
-
-        if (issuesResult.status === "rejected" && pullRequestsResult.status === "rejected") {
-          warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message} Pull requests sync failed: ${pullRequestsResult.reason.message}`);
-          return null;
-        }
+        const issuesResult = await fetchGitHubIssues(repoPath, token)
+          .then(value => ({ status: "fulfilled", value }))
+          .catch(reason => ({ status: "rejected", reason }));
+        // Previous PR fetch path:
+        // const [issuesResult, pullRequestsResult] = await Promise.allSettled([
+        //   fetchGitHubIssues(repoPath, token),
+        //   fetchGitHubPullRequests(repoPath, token),
+        // ]);
+        //
+        // if (issuesResult.status === "rejected" && pullRequestsResult.status === "rejected") {
+        //   warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message} Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+        //   return null;
+        // }
 
         if (issuesResult.status === "rejected") {
           warnings.push(`${repoPath}: Issues sync failed: ${issuesResult.reason.message}`);
+          return null;
         }
-        if (pullRequestsResult.status === "rejected") {
-          warnings.push(`${repoPath}: Pull requests sync failed: ${pullRequestsResult.reason.message}`);
-        }
+        // Previous PR warning path:
+        // if (pullRequestsResult.status === "rejected") {
+        //   warnings.push(`${repoPath}: Pull requests sync failed: ${pullRequestsResult.reason.message}`);
+        // }
 
         return {
           repoPath,
           issues: issuesResult.status === "fulfilled" ? issuesResult.value : previousRepo?.issues || [],
-          pullRequests: pullRequestsResult.status === "fulfilled" ? pullRequestsResult.value : previousRepo?.pullRequests || [],
+          // Previous PR refresh/cache path:
+          // pullRequests: pullRequestsResult.status === "fulfilled" ? pullRequestsResult.value : previousRepo?.pullRequests || [],
+          // pullRequests: previousRepo?.pullRequests || [],
         };
       }))).filter(Boolean);
 
@@ -710,7 +736,8 @@ function openGitHubSyncModal() {
       sessionStorage.setItem("sitrep_gh_token", token);
 
       const issueCount = syncedRepos.reduce((sum, repo) => sum + repo.issues.length, 0);
-      const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
+      // Previous PR count:
+      // const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
       // Activity text records raw synced totals, independent of the current visible filters.
       const openIssues = syncedRepos.reduce((sum, repo) => sum + repo.issues.filter(issue => issue.status !== "resolved").length, 0);
       const resolvedIssues = issueCount - openIssues;
@@ -718,14 +745,16 @@ function openGitHubSyncModal() {
       state.statusFilter = "open";
       state.severityFilter = "all";
       saveState();
-      await db.addActivity("checkin", `Synced ${issueCount} issues (${openIssues} open, ${resolvedIssues} resolved) and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
+      // Previous PR-aware activity text:
+      // await db.addActivity("checkin", `Synced ${issueCount} issues (${openIssues} open, ${resolvedIssues} resolved) and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
+      await db.addActivity("checkin", `Synced ${issueCount} issues (${openIssues} open, ${resolvedIssues} resolved) from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
       await db.loadAll();
       renderAll();
 
       if (warnings.length) {
         errorEl.textContent = `Partial sync completed. ${warnings.join(" ")}`;
         errorEl.hidden = false;
-        btn.textContent = "Pull Issues + PRs";
+        btn.textContent = "Pull Issues";
         btn.disabled = false;
         return;
       }
@@ -734,7 +763,7 @@ function openGitHubSyncModal() {
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
-      btn.textContent = "Pull Issues + PRs";
+      btn.textContent = "Pull Issues";
       btn.disabled = false;
     }
   });

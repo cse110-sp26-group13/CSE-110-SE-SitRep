@@ -16,18 +16,26 @@ test.describe('Issues Tracker', () => {
     await expect(page.locator('#blocker-list')).toBeVisible();
   });
 
+  /*
+  PR section test preserved for restoration if pull requests return to issues.html.
+
   test('pull requests section renders below issues', async ({ page }) => {
     await expect(page.locator('.deep-content > section').nth(0).locator('#blocker-list')).toBeVisible();
     await expect(page.locator('.deep-content > section').nth(1).locator('#pull-request-list')).toBeVisible();
     await expect(page.locator('#pull-requests-title')).toHaveText('Pull requests');
   });
+  */
 
   test('status and severity filters are visible', async ({ page }) => {
     await expect(page.locator('#status-filters')).toBeVisible();
     await expect(page.locator('#severity-filters')).toBeVisible();
   });
 
-  test('GitHub sync renders pull requests without mixing them into issues', async ({ page }) => {
+  /**
+   * Verifies that GitHub issue sync still filters PR-shaped issue API rows
+   * without mounting or fetching the disabled PR list on issues.html.
+   */
+  test('GitHub sync renders issues without showing pull requests', async ({ page }) => {
     await page.route(/https:\/\/api\.github\.com\/repos\/demo\/repo\/issues\?state=all/, (route) =>
       route.fulfill({
         status: 200,
@@ -54,6 +62,9 @@ test.describe('Issues Tracker', () => {
       }),
     );
 
+    /*
+    PR sync route preserved for restoration if pull requests return to issues.html.
+
     await page.route(/https:\/\/api\.github\.com\/repos\/demo\/repo\/pulls\?state=all/, (route) =>
       route.fulfill({
         status: 200,
@@ -77,6 +88,7 @@ test.describe('Issues Tracker', () => {
         ]),
       }),
     );
+    */
 
     await page.locator('#sync-gh-btn').click();
     await page.locator('#gh-repos').fill('demo/repo');
@@ -85,8 +97,13 @@ test.describe('Issues Tracker', () => {
     await expect(page.locator('#issue-modal')).toBeHidden();
     await expect(page.locator('#blocker-list')).toContainText('Synced issue from GitHub');
     await expect(page.locator('#blocker-list')).not.toContainText('PR-shaped issue response');
+    await expect(page.locator('#pull-request-list')).toHaveCount(0);
+    /*
+    PR list expectations preserved for restoration if pull requests return to issues.html.
+
     await expect(page.locator('#pull-request-list')).toContainText('#12 View-only PR list');
     await expect(page.locator('#pull-request-list')).toContainText('feature/pr-list -> main');
+    */
   });
 
   test('user creates a new issue and it appears in the issues list', async ({ page }) => {
