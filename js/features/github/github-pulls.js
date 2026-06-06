@@ -1,7 +1,9 @@
 function mapGitHubPullRequest(pr, repoPath) {
+  // GitHub marks merged PRs as closed; merged_at lets the UI distinguish the two outcomes.
   const status = pr.merged_at ? "merged" : pr.state;
 
   return {
+    // Prefix PR ids separately so they never collide with issue ids.
     id: `gh-pr-${pr.id}`,
     repoPath,
     ghNumber: pr.number,
@@ -16,6 +18,7 @@ function mapGitHubPullRequest(pr, repoPath) {
     closedAt: pr.closed_at || "",
     mergedAt: pr.merged_at || "",
     draft: Boolean(pr.draft),
+    // htmlUrl lets the PR row open the real GitHub PR in a new tab.
     htmlUrl: pr.html_url || "",
     mergeable: pr.mergeable ?? null,
     mergeableState: pr.mergeable_state || "",
@@ -24,8 +27,8 @@ function mapGitHubPullRequest(pr, repoPath) {
 }
 
 async function fetchGitHubPullRequests(repoPath, token) {
-  const response = await ghFetch(`/repos/${repoPath}/pulls?state=all`, { token });
-  const data = await response.json();
+  // PR lists are paginated too, so this mirrors issue sync.
+  const data = await ghFetchAllPages(`/repos/${repoPath}/pulls?state=all`, { token });
   return data.map(pr => mapGitHubPullRequest(pr, repoPath));
 }
 
@@ -62,7 +65,7 @@ async function createGitHubPullRequest(repoPath, pullRequest = {}, token) {
     token,
     body: JSON.stringify(payload),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function updateGitHubPullRequest(repoPath, ghNumber, updates = {}, token) {
@@ -82,7 +85,7 @@ async function updateGitHubPullRequest(repoPath, ghNumber, updates = {}, token) 
     token,
     body: JSON.stringify(payload),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function closeGitHubPullRequest(repoPath, ghNumber, token) {
@@ -92,7 +95,7 @@ async function closeGitHubPullRequest(repoPath, ghNumber, token) {
     token,
     body: JSON.stringify({ state: "closed" }),
   });
-  return mapGitHubPullRequest(await response.json());
+  return mapGitHubPullRequest(await response.json(), repo);
 }
 
 async function mergeGitHubPullRequest(repoPath, ghNumber, token) {

@@ -2,6 +2,14 @@ const PR_STATUS_LABEL = { open: "Open", closed: "Closed", merged: "Merged" };
 const PR_DEFAULT_REPO = "cse110-sp26-group13/CSE-110-SE-SitRep";
 const PR_MERGE_CONFIRM_TEXT = "MERGE";
 
+function prStatusMatchesFilter(status, filter) {
+  if (filter === "all") return true;
+  if (filter === "open") return status === "open";
+  // Resolved means no longer active, so both merged and unmerged closed PRs belong here.
+  if (filter === "resolved") return status === "closed" || status === "merged";
+  return true;
+}
+
 function formatPullRequestDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
@@ -19,7 +27,11 @@ function pullRequestBranchText(pr) {
 }
 
 function currentPullRequestRepo() {
-  return sessionStorage.getItem("sitrep_gh_repo") || PR_DEFAULT_REPO;
+  return activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || PR_DEFAULT_REPO;
+}
+
+function repoForPullRequest(pr) {
+  return pr?.repoPath || currentPullRequestRepo();
 }
 
 function currentPullRequestToken() {
@@ -32,14 +44,35 @@ function pullRequestStatusWeight(pr) {
   return 2;
 }
 
-async function refreshPullRequestsFromGitHub(repo, token) {
-  const pullRequests = await fetchGitHubPullRequests(repo, token);
-  setGithubPullRequests(pullRequests);
+function mergePullRequestSnapshot(repo, pullRequests, fallbackPullRequest) {
+  if (!fallbackPullRequest) return pullRequests;
+  const normalizedFallback = { ...fallbackPullRequest, repoPath: fallbackPullRequest.repoPath || repo };
+  const index = pullRequests.findIndex(pr => pr.id === normalizedFallback.id || pr.ghNumber === normalizedFallback.ghNumber);
+  if (index === -1) return [normalizedFallback, ...pullRequests];
+  return pullRequests.map((pr, i) => (i === index ? { ...pr, ...normalizedFallback } : pr));
+}
+
+async function resyncPullRequestsForRepo(repo, token, fallbackPullRequest = null) {
+  const pullRequests = mergePullRequestSnapshot(
+    repo,
+    await fetchGitHubPullRequests(repo, token),
+    fallbackPullRequest,
+  );
+  const existingRepo = currentGithubRepos().find(githubRepo => githubRepo.repoPath === repo);
+  upsertGithubRepo({
+    repoPath: repo,
+    issues: existingRepo?.issues || [],
+    pullRequests,
+  });
+  sessionStorage.setItem("sitrep_gh_repo", repo);
   return pullRequests;
 }
 
 function renderPullRequests() {
-  const pullRequests = effectivePullRequests()
+  const allPullRequests = effectivePullRequests();
+  // Filter first, then sort so each tab keeps a predictable order.
+  const pullRequests = allPullRequests
+    .filter(pr => prStatusMatchesFilter(pr.status, state.prStatusFilter))
     .slice()
     .sort((a, b) => {
       const statusDiff = pullRequestStatusWeight(a) - pullRequestStatusWeight(b);
@@ -51,12 +84,18 @@ function renderPullRequests() {
   if (!list) return;
 
   if (!pullRequests.length) {
-    list.innerHTML = `<li class="empty">No pull requests synced yet.</li>`;
+    // Distinguish "nothing synced" from "the current filter hides everything".
+    const emptyText = allPullRequests.length
+      ? "No pull requests match this view."
+      : "No pull requests synced yet.";
+    list.innerHTML = `<li class="empty">${emptyText}</li>`;
     updatePullRequestsSub();
+    updatePullRequestFilterChips();
     return;
   }
 
   list.innerHTML = pullRequests.map(pr => {
+    // Branch text is optional because older or partial API responses may omit refs.
     const branchText = pullRequestBranchText(pr);
     const updated = formatPullRequestDate(pr.updatedAt);
     const draftBadge = pr.draft ? `<span class="pr-draft">Draft</span>` : "";
@@ -90,15 +129,24 @@ function renderPullRequests() {
     el.addEventListener("click", () => openPullRequestDetailModal(el.dataset.prId)));
 
   updatePullRequestsSub();
+  updatePullRequestFilterChips();
 }
 
 function updatePullRequestsSub() {
   const pullRequests = effectivePullRequests();
+  // Counts show total synced PR state, not just the currently selected filter.
   const open = pullRequests.filter(pr => pr.status === "open").length;
   const merged = pullRequests.filter(pr => pr.status === "merged").length;
   const closed = pullRequests.filter(pr => pr.status === "closed").length;
   const sub = document.getElementById("pull-requests-sub");
   if (sub) sub.textContent = `${open} open · ${merged} merged · ${closed} closed · ${pullRequests.length} total`;
+}
+
+function updatePullRequestFilterChips() {
+  // Keep the segmented control visually aligned with the persisted filter state.
+  document.querySelectorAll("#pr-status-filters .chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.prStatus === state.prStatusFilter);
+  });
 }
 
 function showPullRequestError(errorEl, err) {
@@ -175,8 +223,8 @@ function openNewPullRequestModal() {
 
     try {
       setPullRequestButtonPending(submit, true, "Creating...");
-      await createGitHubPullRequest(repo, { title, body, head, base, draft }, currentPullRequestToken());
-      await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+      const createdPullRequest = await createGitHubPullRequest(repo, { title, body, head, base, draft }, currentPullRequestToken());
+      await resyncPullRequestsForRepo(repo, currentPullRequestToken(), createdPullRequest);
       closeModal();
       renderAll();
     } catch (err) {
@@ -196,7 +244,7 @@ function openPullRequestDetailModal(id, notice = "") {
   const pr = findPullRequestById(id);
   if (!pr) return;
 
-  const repo = currentPullRequestRepo();
+  const repo = repoForPullRequest(pr);
   const updated = formatPullRequestDate(pr.updatedAt);
   const created = formatPullRequestDate(pr.createdAt);
   const body = pr.body
@@ -306,7 +354,7 @@ function pullRequestDangerActionsHTML(repo, pr) {
 
 function bindPullRequestDetailHandlers(pr) {
   const errorEl = document.getElementById("pr-detail-error");
-  const repo = currentPullRequestRepo();
+  const repo = repoForPullRequest(pr);
 
   const editForm = document.getElementById("pr-edit-form");
   if (editForm) {
@@ -326,8 +374,8 @@ function bindPullRequestDetailHandlers(pr) {
 
       try {
         setPullRequestButtonPending(submit, true, "Saving...");
-        await updateGitHubPullRequest(repo, pr.ghNumber, { title, body, base }, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        const updatedPullRequest = await updateGitHubPullRequest(repo, pr.ghNumber, { title, body, base }, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken(), updatedPullRequest);
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request updated.");
       } catch (err) {
@@ -354,8 +402,8 @@ function bindPullRequestDetailHandlers(pr) {
       try {
         errorEl.hidden = true;
         setPullRequestButtonPending(closeConfirmBtn, true, "Closing...");
-        await closeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        const closedPullRequest = await closeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken(), closedPullRequest);
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request closed.");
       } catch (err) {
@@ -392,7 +440,7 @@ function bindPullRequestDetailHandlers(pr) {
         mergeStart.disabled = true;
         setPullRequestButtonPending(mergeConfirmBtn, true, "Merging...");
         await mergeGitHubPullRequest(repo, pr.ghNumber, currentPullRequestToken());
-        await refreshPullRequestsFromGitHub(repo, currentPullRequestToken());
+        await resyncPullRequestsForRepo(repo, currentPullRequestToken());
         renderAll();
         openPullRequestDetailModal(pr.id, "Pull request merged.");
       } catch (err) {
@@ -406,6 +454,14 @@ function bindPullRequestDetailHandlers(pr) {
 
 function bindPullRequestControls() {
   renderPullRequests();
+  // Changing tabs only changes the view; synced PR data stays untouched in state.
+  document.querySelectorAll("#pr-status-filters .chip").forEach(c => {
+    c.addEventListener("click", () => {
+      state.prStatusFilter = c.dataset.prStatus;
+      saveState();
+      renderPullRequests();
+    });
+  });
 
   const newPrButton = document.getElementById("new-pr-btn");
   if (newPrButton) {

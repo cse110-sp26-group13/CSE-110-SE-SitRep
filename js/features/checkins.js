@@ -262,7 +262,7 @@ function bindComposeForm() {
   document
     .getElementById("inline-post-btn")
     .addEventListener("click", openCheckinForm);
-    
+
   document.getElementById("cancel-checkin").addEventListener("click", () => {
     form.hidden = true;
     form.reset();

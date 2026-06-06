@@ -308,6 +308,31 @@ a { color: inherit; text-decoration: none; }
 .modal-close:hover { background: var(--ink); color: var(--paper); }
 .modal-body { padding: 20px; overflow-y: auto; flex: 1 1 0; min-height: 0; }
 
+/* Compact variant for short utility dialogs like GitHub sync. */
+.modal.modal--compact {
+  max-width: 520px;
+  height: auto;
+  max-height: min(92vh, 520px);
+}
+.modal.modal--compact .modal-head {
+  padding: 12px 16px;
+}
+.modal.modal--compact .modal-body {
+  padding: 14px 16px 16px;
+  flex: 0 1 auto;
+}
+.modal.modal--compact .issue-form {
+  gap: 10px;
+}
+.modal.modal--compact .field-row {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.modal.modal--compact .form-actions {
+  padding-top: 4px;
+  margin-top: 0;
+}
+
 /* Form primitives */
 .issue-form,
 .checkin-form {
