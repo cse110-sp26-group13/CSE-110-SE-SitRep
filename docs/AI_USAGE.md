@@ -45,7 +45,7 @@ Newest first. Date format: `YYYY-MM-DD`.
 
 **Where human review is still expected:**
 
-- Ophir should review the commented PR blocks to confirm the scope matches the team intent, especially the assumption that PR sync/count/activity text should not run from the Issues page.
+- Should still review the commented PR blocks to confirm the scope matches the team intent, especially the assumption that PR sync/count/activity text should not run from the Issues page.
 - A teammate should confirm whether PR functionality is being deferred entirely or should move to a separate page later.
 - The final PR should still receive normal human review before merge, with particular attention to the GitHub sync behavior and the updated E2E expectations.
 
