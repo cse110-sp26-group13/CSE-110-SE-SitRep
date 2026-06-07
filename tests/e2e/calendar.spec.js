@@ -37,7 +37,7 @@ test.describe('Calendar page', () => {
   });
 
   test('project / calendar toggle column is present', async ({ page }) => {
-    await expect(page.locator('#cal-toggle')).toBeAttached();
+    await expect(page.locator('#cal-toggle')).toBeVisible();
     await expect(page.locator('#cal-projects')).toBeAttached();
   });
 
