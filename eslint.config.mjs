@@ -52,8 +52,14 @@ const projectGlobals = {
   renderKPIs: "readonly",
   renderMoodTrend: "readonly",
   renderActivity: "readonly",
+  renderNotifications: "readonly",
+  bindNotifications: "readonly",
   renderCheckIns: "readonly",
+  moodBucket: "readonly",
+  moodSVG: "readonly",
+  MOOD_LABELS: "readonly",
   renderBlockers: "readonly",
+  openDetailModal: "readonly",
   renderSlots: "readonly",
   renderAllAI: "readonly",
   moodFace: "readonly",
@@ -97,6 +103,7 @@ const browserGlobals = {
   alert: "readonly",
   prompt: "readonly",
   confirm: "readonly",
+  encodeURIComponent: "readonly",
   setTimeout: "readonly",
   clearTimeout: "readonly",
   setInterval: "readonly",
@@ -111,6 +118,7 @@ const browserGlobals = {
   HTMLInputElement: "readonly",
   SubmitEvent: "readonly",
   Node: "readonly",
+  CSS: "readonly",
 };
 
 export default [

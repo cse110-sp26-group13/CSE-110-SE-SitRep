@@ -68,7 +68,7 @@
 .w2m-day-label,
 .w2m-hour-label,
 .w2m-calendar-cell {
-  min-height: 18px;
+  min-height: 26px;
   border-right: 1px solid var(--hairline-2);
   border-bottom: 1px solid var(--hairline-2);
   display: grid;
@@ -104,6 +104,20 @@
 
 .meeting-card {
   overflow: hidden;
+}
+
+/* Center the availability modal relative to the .main content column,
+   not the full viewport. .main sits in a 64px-rail + 1fr grid, capped
+   at max-width 1480px (so the column ends at 1544px). */
+#availability-modal {
+  left: 64px;
+  right: max(0px, calc(100vw - 1544px));
+}
+
+@media (max-width: 900px) {
+  #availability-modal {
+    left: 56px; /* rail narrows to 56px at this breakpoint */
+  }
 }
 
 .overlap-panel,

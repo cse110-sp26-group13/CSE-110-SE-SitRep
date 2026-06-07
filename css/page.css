@@ -156,6 +156,7 @@
 
 .sev-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   font-family: var(--mono);
   font-size: 12px;
@@ -165,7 +166,12 @@
   border-bottom: 1px dashed var(--hairline);
   padding: 8px 0;
 }
-.sev-row span { display: inline-flex; align-items: center; gap: 6px; }
+.sev-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .dot {
   width: 10px;
   height: 10px;
@@ -237,39 +243,30 @@
   gap: 20px;
 }
 
-/* Standup deep view: 2 columns (main + side) */
+/* Standup deep view: mood-trend full-width on top, two equal columns below */
 .standup-layout {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1.6fr)
-    minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
+.standup-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   align-items: stretch;
 }
 
-.standup-layout > * {
-  min-height: 0;
-}
-
-.standup-column {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  align-self: stretch;
-}
-.standup-side {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: sticky;
-  top: 24px;
+/* Left column: position:relative anchor so the mood card can fill it absolutely.
+   The column contributes zero intrinsic height to the grid row — only the
+   meeting card's natural content height drives the track size. */
+.standup-col-left {
+  position: relative;
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  .standup-layout { grid-template-columns: 1fr; }
-  .standup-side { position: static; }
+  .standup-bottom { grid-template-columns: 1fr; }
 }
 @media (max-width: 900px) {
   .dash-row-snaps, .dash-row-bottom { grid-template-columns: 1fr; }

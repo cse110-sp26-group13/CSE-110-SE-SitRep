@@ -6,10 +6,11 @@
  */
 
 /**
- * Aggregate every teammate's moodHistory into a 7-point series, then
- * draw the sparkline (grid, area, line, points, labels) plus the
- * three summary stats below it (today, week avg, vs 6d ago).
- * Reads from window.teammates; no I/O.
+ * Render the team's 7-day mood trend visualization.
+ *
+ * Calculates the average team mood for each day, generates
+ * the sparkline chart, and updates the summary statistics
+ * displayed below the chart.
  */
 function renderMoodTrend() {
   const days = 7;
@@ -39,7 +40,7 @@ function renderMoodTrend() {
     <text class="label" x="${padX + i * xStep}" y="${h - 2}" text-anchor="middle">${lbl}</text>
   `).join("");
 
-  const gridLines = [3, 5, 7].map(v => `
+  const gridLines = [2, 4, 6, 8, 10].map(v => `
     <line class="grid" x1="${padX}" y1="${yMap(v)}" x2="${w - padX}" y2="${yMap(v)}" />
     <text class="label" x="${padX - 4}" y="${yMap(v) + 3}" text-anchor="end">${v}</text>
   `).join("");
@@ -82,8 +83,14 @@ function renderMoodTrend() {
     </div>`;
 }
 
-// ── Team Mood Modal ───────────────────────────────────────────
-
+/**
+ * Build the HTML content displayed inside the Team Mood modal.
+ *
+ * Generates the mood history table, wellness watch section,
+ * and overall team mood summary using teammate mood data.
+ *
+ * @returns {string} HTML markup for the Team Mood modal.
+ */
 function buildMoodModalHTML() {
   const tm = effectiveTeammates();
   const dayLabels = ["−6d", "−5d", "−4d", "−3d", "−2d", "−1d", "Today"];
@@ -192,15 +199,26 @@ function buildMoodModalHTML() {
   return section1 + section2 + section3;
 }
 
+/**
+ * Open the Team Mood modal and populate it with
+ * the latest mood data.
+ */
 function openMoodModal() {
   document.getElementById("mood-modal-body").innerHTML = buildMoodModalHTML();
   document.getElementById("mood-modal").hidden = false;
 }
 
+/**
+ * Close the Team Mood modal.
+ */
 function closeMoodModal() {
   document.getElementById("mood-modal").hidden = true;
 }
 
+/**
+ * Create the Team Mood modal element if it does not
+ * already exist in the document.
+ */
 function ensureMoodModal() {
   if (document.getElementById("mood-modal")) return;
   const backdrop = document.createElement("div");
@@ -219,6 +237,15 @@ function ensureMoodModal() {
 }
 
 let _moodModalBound = false;
+
+/**
+ * Bind event listeners for opening and closing
+ * the Team Mood modal.
+ *
+ * Prevents duplicate event bindings and supports
+ * closing through the close button, backdrop click,
+ * and Escape key.
+ */
 function bindMoodModal() {
   if (_moodModalBound) return;
   const btn = document.getElementById("view-team-mood-btn");

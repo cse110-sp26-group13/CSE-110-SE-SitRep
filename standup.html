@@ -68,7 +68,21 @@
 
       <div class="deep-content">
         <div class="standup-layout">
-          <div class="standup-column">
+          <section class="card" aria-labelledby="mood-title">
+            <div class="card-head">
+              <div>
+                <h2 id="mood-title">Mood — last 7 days</h2>
+                <span class="card-sub" id="mood-card-sub"></span>
+              </div>
+              <div class="mood-card-actions">
+                <button class="view-mood-btn" id="view-team-mood-btn">View Team Mood</button>
+              </div>
+            </div>
+            <div class="sparkline-wrap" id="sparkline-wrap"></div>
+          </section>
+
+          <div class="standup-bottom">
+            <div class="standup-col-left">
             <section class="card mood-unified-card" aria-labelledby="mood-unified-title">
 
               <div class="card-head">
@@ -133,9 +147,8 @@
               </div>
 
             </section>
-          </div>
+            </div>
 
-          <aside class="standup-side">
             <section class="card meeting-card" aria-labelledby="meet-title">
               <div class="card-head">
                 <div>
@@ -161,23 +174,9 @@
                     id="team-overlap"
                   ></ul>
                 </div>
-
               </div>
             </section>
-
-            <section class="card" aria-labelledby="mood-title">
-              <div class="card-head">
-                <div>
-                  <h2 id="mood-title">Mood — last 7 days</h2>
-                  <span class="card-sub" id="mood-card-sub"></span>
-                </div>
-                <div class="mood-card-actions">
-                  <button class="view-mood-btn" id="view-team-mood-btn">View Team Mood</button>
-                </div>
-              </div>
-              <div class="sparkline-wrap" id="sparkline-wrap"></div>
-            </section>
-          </aside>
+          </div>
         </div>
       </div>
     </main>
@@ -208,7 +207,7 @@
   <script src="js/pages/standup.js"></script>
   <div id="availability-tooltip" class="availability-tooltip hidden"></div>
   <div id="availability-modal" class="delete-modal hidden">
-    <div class="delete-modal-card" style="width:520px;max-width:95vw;">
+    <div class="delete-modal-card" style="width:67vw;max-width:95vw;">
       <div class="delete-modal-title" style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;">
         <span>Your Availability</span>
         <button id="close-availability-modal" class="modal-secondary-btn" style="padding:4px 10px;font-size:0.85rem;">×</button>

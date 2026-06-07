@@ -9,7 +9,7 @@
 .sparkline {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 220px;
 }
 
 .sparkline .grid {
@@ -20,7 +20,7 @@
 .sparkline .label {
   fill: var(--muted);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 7px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -38,6 +38,7 @@
   fill: var(--paper);
   stroke: var(--ink);
   stroke-width: 1.5;
+  r: 2;
 }
 .sparkline .point:last-of-type {
   fill: var(--ink);
@@ -84,6 +85,12 @@
   gap: 10px;
 }
 
+@media (max-width: 520px) {
+  .mood-card-actions {
+    flex-wrap: wrap;
+  }
+}
+
 .view-mood-btn {
   appearance: none;
   background: transparent;
@@ -96,11 +103,15 @@
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
+  transition: transform .08s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
 }
 .view-mood-btn:hover {
   background: var(--ink);
   color: var(--paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
 }
+.view-mood-btn:active { transform: none; box-shadow: none; }
 
 /* ── Wide modal variant ─────────────────────────────────────── */
 .modal.modal--wide {

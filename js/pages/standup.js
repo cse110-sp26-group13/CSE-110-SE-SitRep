@@ -9,7 +9,12 @@
  * trigger this page's full re-render after a write.
  */
 
-/** Re-render every card on the standup page from the loaded globals. */
+/**
+ * Render all sections of the Daily Standup page.
+ *
+ * Refreshes the header, standup list, availability section,
+ * and mood trend visualization.
+ */
 function renderStandup() {
   renderHeader();
   renderCheckIns();
