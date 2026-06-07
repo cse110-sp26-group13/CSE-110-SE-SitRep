@@ -69,6 +69,10 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  /* Sync buttons and repo selector can wrap instead of forcing horizontal overflow. */
+  flex-wrap: wrap;
+  /* Lets long controls shrink within the responsive page header. */
+  min-width: 0;
 }
 
 /* ── Dashboard layout ─────────────────────────────────────── */

@@ -55,6 +55,7 @@ function isIssueOverdue(issue) {
  * @returns {boolean}
  */
 function statusMatchesFilter(status, filter) {
+  // The Open tab includes both untouched and in-progress assignments.
   if (filter === "all") return true;
   if (filter === "open") return status === "open" || status === "in-progress";
   if (filter === "resolved") return status === "resolved";
@@ -62,16 +63,13 @@ function statusMatchesFilter(status, filter) {
 }
 
 /**
- * Render the filtered blocker list into `#blocker-list`, refresh the
- * active state on the severity/status filter chips, and rebind row
- * click handlers to open the detail modal.
+ * Shared filtered view for rendering and for the "shown" count in the header.
  *
  * Sort order: resolved sink to the bottom, then by severity
  * (critical → high → medium).
  */
-function renderBlockers() {
-  const all = effectiveActiveGithubBlockers();
-  const filtered = all
+function filteredActiveBlockers() {
+  return effectiveActiveGithubBlockers()
     .filter(b => state.severityFilter === "all" || b.severity === state.severityFilter)
     .filter(b => statusMatchesFilter(b.status, state.statusFilter))
     .sort((a, b) => {
@@ -80,7 +78,18 @@ function renderBlockers() {
       if (aResolved !== bResolved) return aResolved - bResolved;
       return SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
     });
+}
 
+/**
+ * Render the filtered blocker list into `#blocker-list`, refresh the
+ * active state on the severity/status filter chips, and rebind row
+ * click handlers to open the detail modal.
+ */
+function renderBlockers() {
+  const all = effectiveActiveGithubBlockers();
+  const filtered = filteredActiveBlockers();
+
+  // Re-render the full list each time filters, sync data, or local assignments change.
   const list = document.getElementById("blocker-list");
   if (!filtered.length) {
     const totalOpen = all.filter(b => b.status !== "resolved").length;
@@ -88,6 +97,7 @@ function renderBlockers() {
       totalOpen === 0 ? "Team's unblocked." : ""
     }</li>`;
   } else {
+    // Rows are clickable; the data-open id is used below to open the detail modal.
     list.innerHTML = filtered.map(b => {
       const commentCount = b.comments?.length ?? 0;
       const commentBadge = commentCount
@@ -135,6 +145,7 @@ function updateGitHubSyncActions() {
   const activeRepo = activeGithubRepo();
 
   if (repoSelect) {
+    // Hide the selector until there is at least one synced repo to choose from.
     repoSelect.hidden = repos.length === 0;
     repoSelect.innerHTML = repos.map(repo => `
       <option value="${escapeHTML(repo.repoPath)}"${repo.repoPath === activeRepo?.repoPath ? " selected" : ""}>
@@ -144,11 +155,13 @@ function updateGitHubSyncActions() {
   }
 
   if (unsyncButton) unsyncButton.hidden = !activeRepo;
+  // Session storage feeds follow-up GitHub actions like comment/create/close.
   if (activeRepo) sessionStorage.setItem("sitrep_gh_repo", activeRepo.repoPath);
   else sessionStorage.removeItem("sitrep_gh_repo");
 }
 
 function normalizeRepoPaths(value) {
+  // Users can paste comma-separated, space-separated, shorthand, or full GitHub URLs.
   return [...new Set(value
     .split(/[\s,]+/)
     .map(repo => repo.trim())
@@ -159,9 +172,11 @@ function normalizeRepoPaths(value) {
 
 function parseGitHubRepoPath(value) {
   const normalized = value.replace(/\/+$/, "");
+  // Accept full GitHub URLs copied from the browser.
   const githubUrl = normalized.match(/^https?:\/\/(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)(?:[/?#].*)?$/i);
   if (githubUrl) return `${githubUrl[1]}/${githubUrl[2].replace(/\.git$/i, "")}`;
 
+  // Also accept the compact owner/repo form used in GitHub API paths.
   const shorthand = normalized.match(/^([^/\s]+)\/([^/\s#?]+)$/);
   if (shorthand) return `${shorthand[1]}/${shorthand[2].replace(/\.git$/i, "")}`;
 
@@ -232,9 +247,11 @@ function categoryOptions(selected) {
  * @param {string} bodyHTML
  */
 function openModal(titleText, bodyHTML) {
+  const modal = document.getElementById("issue-modal");
+  modal.querySelector(".modal")?.classList.remove("modal--compact");
   document.getElementById("issue-modal-title").textContent = titleText;
   document.getElementById("issue-modal-body").innerHTML = bodyHTML;
-  document.getElementById("issue-modal").hidden = false;
+  modal.hidden = false;
 }
 
 /** Hide the issue modal and clear its body so old handlers don't linger. */
@@ -548,6 +565,7 @@ function bindBlockerControls() {
       state.severityFilter = c.dataset.sev;
       saveState();
       renderBlockers();
+      updateIssuesSub();
     });
   });
   document.querySelectorAll("#status-filters .chip").forEach(c => {
@@ -555,6 +573,7 @@ function bindBlockerControls() {
       state.statusFilter = c.dataset.status;
       saveState();
       renderBlockers();
+      updateIssuesSub();
     });
   });
   document.getElementById("add-blocker-btn").addEventListener("click", openCreateModal);
@@ -598,7 +617,7 @@ async function unsyncGitHub() {
  * activity event, and re-render. The chosen repo is remembered in
  * sessionStorage so the next sync defaults to it.
  *
- * @see fetchGitHubIssues in [./github-api.js](github-api.js)
+ * @see fetchGitHubIssues in [./github/github-issues.js](github/github-issues.js)
  */
 function openGitHubSyncModal() {
   const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";
@@ -608,7 +627,7 @@ function openGitHubSyncModal() {
       <div class="field-row">
         <label class="field">
           <span>Repository Paths (owner/repo)</span>
-          <textarea id="gh-repos" rows="6" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
+          <textarea id="gh-repos" rows="3" required placeholder="owner/repo&#10;https://github.com/owner/another-repo">${escapeHTML(savedRepo)}</textarea>
         </label>
       </div>
       <div class="field-row">
@@ -624,6 +643,7 @@ function openGitHubSyncModal() {
       </div>
     </form>
   `);
+  document.getElementById("issue-modal").querySelector(".modal")?.classList.add("modal--compact");
 
   document.getElementById("gh-sync-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -653,6 +673,7 @@ function openGitHubSyncModal() {
 
       const warnings = [];
       const existingRepos = currentGithubRepos();
+      // Fetch issues and PRs together so one repo sync updates both sections at once.
       const syncedRepos = (await Promise.all(repos.map(async repoPath => {
         const previousRepo = existingRepos.find(repo => repo.repoPath === repoPath);
         const [issuesResult, pullRequestsResult] = await Promise.allSettled([
@@ -683,13 +704,21 @@ function openGitHubSyncModal() {
         throw new Error(`GitHub sync failed. ${warnings.join(" ")}`);
       }
 
+      // upsert replaces prior cached data for a repo instead of appending stale duplicates.
       syncedRepos.forEach(upsertGithubRepo);
       sessionStorage.setItem("sitrep_gh_repo", syncedRepos.at(-1).repoPath);
       sessionStorage.setItem("sitrep_gh_token", token);
 
       const issueCount = syncedRepos.reduce((sum, repo) => sum + repo.issues.length, 0);
       const prCount = syncedRepos.reduce((sum, repo) => sum + repo.pullRequests.length, 0);
-      await db.addActivity("checkin", `Synced ${issueCount} issues and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
+      // Activity text records raw synced totals, independent of the current visible filters.
+      const openIssues = syncedRepos.reduce((sum, repo) => sum + repo.issues.filter(issue => issue.status !== "resolved").length, 0);
+      const resolvedIssues = issueCount - openIssues;
+      // Reset filters so a fresh sync does not look empty because of a stale saved filter.
+      state.statusFilter = "open";
+      state.severityFilter = "all";
+      saveState();
+      await db.addActivity("checkin", `Synced ${issueCount} issues (${openIssues} open, ${resolvedIssues} resolved) and ${prCount} PRs from ${syncedRepos.length} GitHub repo${syncedRepos.length === 1 ? "" : "s"}`);
       await db.loadAll();
       renderAll();
 

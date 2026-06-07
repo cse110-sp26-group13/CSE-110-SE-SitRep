@@ -47,8 +47,11 @@ function defaultState() {
     githubReposByCircle: {},
     // { [circleId]: "owner/repo" }
     activeRepoByCircle: {},
+    // Persist filters so page reloads keep the user's last view.
     severityFilter: "all",
     statusFilter: "open",
+    // PRs use their own status filter because GitHub PR states differ from issue states.
+    prStatusFilter: "open",
     slotAvailability: {},
     aiSessions: [],
   };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SitRep — Issues</title>
+  <title>SitRep — Assignments</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,7 +28,9 @@
       <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
       </a>
-      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+      <!-- Keep the route/file as issues.html, but label the feature as Assignments in the UI. -->
+      <!-- data-route stays "issues" because nav.js still keys the active rail state off that route name. -->
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Assignments">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
       </a>
       <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
@@ -54,12 +56,14 @@
             <span class="live-dot"></span>
             <span id="header-sub">loading…</span>
           </div>
-          <h1>Issues.</h1>
+          <h1>Assignments.</h1>
           <p class="lede">Blockers, bugs, and quick wins. The team posts here when something needs another set of eyes. <em>Sync from GitHub when you need it.</em></p>
         </div>
         <div class="page-actions">
           <a class="btn-secondary" href="index.html">← Dashboard</a>
+          <!-- This selector appears after syncing more than one GitHub repo. -->
           <select class="gh-repo-select" id="gh-repo-select" aria-label="GitHub repository" hidden></select>
+          <!-- Sync stores GitHub issues/PRs in localStorage through state.js. -->
           <button class="btn-secondary" id="sync-gh-btn">Sync GitHub</button>
           <button class="btn-secondary btn-danger" id="unsync-gh-btn" hidden>Unsync GitHub</button>
           <button class="btn-primary new-issue-btn" id="add-blocker-btn">+ New issue</button>
@@ -70,9 +74,10 @@
         <section class="card" aria-labelledby="blockers-title">
           <div class="card-head blockers-head">
             <div>
-              <h2 id="blockers-title">All issues</h2>
+              <h2 id="blockers-title">All assignments</h2>
               <span class="card-sub" id="issues-sub">—</span>
             </div>
+            <!-- Assignment filters are reset after GitHub sync so newly synced items are visible. -->
             <div class="filters-wrap">
               <div class="filters" id="status-filters" role="tablist" aria-label="Filter by status">
                 <button data-status="open" class="chip active">Open</button>
@@ -87,6 +92,7 @@
               </div>
             </div>
           </div>
+          <!-- JS fills this list with filtered assignments; CSS caps height and enables scrolling. -->
           <ul class="blocker-list" id="blocker-list"></ul>
         </section>
 
@@ -96,8 +102,17 @@
               <h2 id="pull-requests-title">Pull requests</h2>
               <span class="card-sub" id="pull-requests-sub">—</span>
             </div>
+            <!-- PR filters mirror Assignments: open work, resolved work, or the full list. -->
+            <div class="filters-wrap">
+              <div class="filters" id="pr-status-filters" role="tablist" aria-label="Filter pull requests by status">
+                <button data-pr-status="open" class="chip active">Open</button>
+                <button data-pr-status="resolved" class="chip">Resolved</button>
+                <button data-pr-status="all" class="chip">All</button>
+              </div>
+            </div>
             <button class="btn-secondary" id="new-pr-btn" type="button">+ New PR</button>
           </div>
+          <!-- JS fills this list with filtered PRs; CSS caps height and enables scrolling. -->
           <ul class="pull-request-list" id="pull-request-list"></ul>
         </section>
       </div>
