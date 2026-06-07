@@ -45,7 +45,7 @@ Sprint 2 was the primary implementation sprint. The team moved from research and
 
 ---
 
-## Action Items 🔧
+## Action Items
 
 | # | Action Item | Owner | Due |
 |---|-------------|-------|-----|
