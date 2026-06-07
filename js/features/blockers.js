@@ -142,6 +142,11 @@ function renderBlockers() {
  * Refresh the GitHub repo selector, unsync button, and session storage
  * for the active issue-sync repo. Pull request UI is no longer mounted
  * on the Issues page, so this only prepares issue follow-up actions.
+ *
+ * Side effects: mutates `#gh-repo-select`, toggles `#unsync-gh-btn`, and
+ * writes or clears `sessionStorage["sitrep_gh_repo"]`.
+ *
+ * @returns {void}
  */
 function updateGitHubSyncActions() {
   const unsyncButton = document.getElementById("unsync-gh-btn");
@@ -557,6 +562,12 @@ function bindModalDismissers() {
  * sync button, the "new issue" button, and modal dismissers
  * (close button, backdrop click, Escape key). Called once per page
  * load — handlers persist for the lifetime of the page.
+ *
+ * Side effects: registers DOM event handlers and re-renders through
+ * `renderAll()` after filter changes so page-local issue counts stay
+ * in sync without directly depending on `updateIssuesSub()`.
+ *
+ * @returns {void}
  */
 function bindBlockerControls() {
   document.getElementById("sync-gh-btn")?.addEventListener("click", openGitHubSyncModal);
@@ -569,16 +580,18 @@ function bindBlockerControls() {
     c.addEventListener("click", () => {
       state.severityFilter = c.dataset.sev;
       saveState();
-      renderBlockers();
-      updateIssuesSub();
+      renderAll();
+      // Previous direct subtitle refresh; renderAll() now owns this page-level update.
+      // updateIssuesSub();
     });
   });
   document.querySelectorAll("#status-filters .chip").forEach(c => {
     c.addEventListener("click", () => {
       state.statusFilter = c.dataset.status;
       saveState();
-      renderBlockers();
-      updateIssuesSub();
+      renderAll();
+      // Previous direct subtitle refresh; renderAll() now owns this page-level update.
+      // updateIssuesSub();
     });
   });
   document.getElementById("add-blocker-btn").addEventListener("click", openCreateModal);
@@ -598,6 +611,12 @@ function bindBlockerControls() {
  * session-scoped GitHub credentials, and log the unsync action.
  * Previously this also reported cached PR counts; that PR-specific
  * message is preserved in comments below but no longer runs here.
+ *
+ * Side effects: mutates local GitHub repo state, clears session storage,
+ * writes an activity row through `db.addActivity()`, reloads data, and
+ * re-renders the page.
+ *
+ * @returns {Promise<void>}
  */
 async function unsyncGitHub() {
   const activeRepo = activeGithubRepo();
@@ -636,6 +655,7 @@ async function unsyncGitHub() {
  * Issues page, but the restoration points remain visible.
  *
  * @see fetchGitHubIssues in [./github/github-issues.js](github/github-issues.js)
+ * @returns {void}
  */
 function openGitHubSyncModal() {
   const savedRepo = activeGithubRepo()?.repoPath || sessionStorage.getItem("sitrep_gh_repo") || "cse110-sp26-group13/CSE-110-SE-SitRep";

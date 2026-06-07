@@ -9,7 +9,15 @@
  * after writes.
  */
 
-/** Re-render the issues page from the loaded globals. */
+/**
+ * Re-render the issue-only Issues page from loaded globals.
+ *
+ * Updates the header, GitHub repo controls, assignment list, and issue
+ * count subtitle. Pull request rendering is intentionally preserved as
+ * a commented restoration point and is not called on this page.
+ *
+ * @returns {void}
+ */
 function renderIssues() {
   // One page-level render keeps header, repo controls, assignments, and counts in sync.
   renderHeader();
@@ -23,6 +31,11 @@ function renderIssues() {
 /**
  * Update the page subtitle with the breakdown of issue counts
  * (open / resolved / total). Called whenever the list changes.
+ *
+ * Reads the currently effective issue rows, including GitHub-synced
+ * issues, and writes the summary text into `#issues-sub`.
+ *
+ * @returns {void}
  */
 function updateIssuesSub() {
   const all = effectiveActiveGithubBlockers();
@@ -35,13 +48,27 @@ function updateIssuesSub() {
 }
 
 window.renderAll = renderIssues;
-/** No-op activity renderer because issues.html has no activity feed container. */
+/**
+ * No-op activity renderer for issues.html.
+ *
+ * `blockers.js` calls `renderActivity()` after writes on pages that have
+ * an activity feed. The Issues page has no feed container, so this stub
+ * satisfies the shared callback without mutating the DOM.
+ *
+ * @returns {void}
+ */
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
 /**
  * Load initial page data, render the Issues page, and bind issue-only controls.
  * PR controls are preserved below as a commented restore point but are not
  * registered on this page.
+ *
+ * Side effects: loads Supabase-backed data through `db.loadAll()`, renders
+ * the issue list, and registers DOM event handlers for issue filters,
+ * GitHub issue sync, modal dismissal, and issue creation.
+ *
+ * @returns {Promise<void>}
  */
 document.addEventListener("DOMContentLoaded", async () => {
   // Load Supabase-backed local data first, then merge in any GitHub state from localStorage.

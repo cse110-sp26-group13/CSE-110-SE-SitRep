@@ -49,6 +49,11 @@ Newest first. Date format: `YYYY-MM-DD`.
 - A teammate should confirm whether PR functionality is being deferred entirely or should move to a separate page later.
 - The final PR should still receive normal human review before merge, with particular attention to the GitHub sync behavior and the updated E2E expectations.
 
+**Follow-up cleanup (2026-06-07):**
+
+- Converted the touched Issues-page comments to fuller JSDoc-style blocks where they document function behavior, side effects, or async work.
+- Fixed a CI/runtime risk from direct `updateIssuesSub()` calls in the shared blocker controls by routing filter changes through the page-level `renderAll()` function and preserving the old calls in comments.
+
 ---
 
 ### 2026-05-29 — Shazi
