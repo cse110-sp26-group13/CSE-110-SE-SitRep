@@ -21,9 +21,9 @@ Sprint 1 focused on domain research, feature selection, and initial architecture
 
 ---
 
-## What Went Well ✅
+## What Went Well 
 
-- **Strong research phase** — The team explored a wide range of reference products and identified genuinely useful features (burnout tracker, activity auto-sync, AI digest) that informed the MVP.
+- **Strong research phase** - The team explored a wide range of reference products and identified genuinely useful features (burnout tracker, activity auto-sync, AI digest) that informed the MVP.
 - **Clear MVP scoping** — The team converged on 4 concrete MVP features with assigned owners, which gave everyone a clear direction heading into implementation.
 - **Project structure agreement** — All members reviewed and aligned on the bare-bones skeleton before coding started, preventing early divergence.
 - **Sub-team formation** — Splitting into feature-based sub-groups (3-person for Issue Tracker, 2-person for Calendar, etc.) allowed parallel progress.
@@ -31,7 +31,7 @@ Sprint 1 focused on domain research, feature selection, and initial architecture
 
 ---
 
-## What Didn't Go Well ❌
+## What Didn't Go Well 
 
 - **Delayed feature decisions** — Feature selection was pushed from 5/12 to 5/14, compressing the time available to start implementation.
 - **Incomplete research notes** — Some research items from 5/7 (GeekBot, When2Meet, From Notion/When2Meet sections) were left blank or underdeveloped.
@@ -41,7 +41,7 @@ Sprint 1 focused on domain research, feature selection, and initial architecture
 
 ---
 
-## Action Items 🔧
+## Action Items 
 
 | # | Action Item | Owner | Due |
 |---|-------------|-------|-----|
@@ -51,6 +51,4 @@ Sprint 1 focused on domain research, feature selection, and initial architecture
 | 4 | Do not merge to `main` without Tuesday review — work on own branch | All | Ongoing |
 | 5 | Fill in incomplete research notes (GeekBot, When2Meet) | Assigned researchers | ASAP |
 
----
 
-> *"A repeatable and observable quality focused process that ends up producing less feature rich software will get a higher grade than a large feature rich piece of software done opaquely."* — Course guidelines
