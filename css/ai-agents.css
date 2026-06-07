@@ -205,6 +205,7 @@
 .ai-agent-badge.cursor   { background: var(--warn); border-color: var(--warn); color: var(--paper); }
 .ai-agent-badge.chatgpt  { background: var(--muted); border-color: var(--muted); }
 .ai-agent-badge.gemini   { background: var(--bad); border-color: var(--bad); }
+.ai-agent-badge.other    { background: var(--subtle); border-color: var(--subtle); }
 
 .ai-session-body {}
 

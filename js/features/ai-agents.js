@@ -2,10 +2,9 @@
  * @fileoverview AI Agents feature module.
  * Handles logging, rendering, cost-estimation, and session editing for AI agent sessions.
  * Follows the same pattern as checkins.js and activity.js.
- * Data is stored in state.aiSessions (localStorage) mirroring the
- * extraCheckIns / extraActivity pattern used across the app.
- * When the Supabase `ai_activity` table is wired up, the load/save
- * functions below are the integration points.
+ * Data is loaded from Supabase via db.loadAll() → window.aiSessions,
+ * following the same pattern as teammates, blockers, and calendarEvents.
+ * Mutations go through db.logAISession() and db.updateAISession() in db.js.
  */
 
 // ── Agent → Model map ──────────────────────────────────────────────────────
@@ -17,34 +16,46 @@
  */
 const AGENT_MODELS = {
   "claude-code": [
-    { value: "claude-haiku-4-5",  label: "Claude Haiku 4.5"  },
-    { value: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
+    { value: "claude-opus-4-8",  label: "Claude Opus 4.8"   },
     { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
-    { value: "claude-opus-4",     label: "Claude Opus 4"     },
+    { value: "claude-haiku-4-5",  label: "Claude Haiku 4.5"  },
   ],
   "copilot": [
-    { value: "copilot-gpt-4o",   label: "GPT-4o (via Copilot)"      },
-    { value: "copilot-gpt-4-1",  label: "GPT-4.1 (via Copilot)"     },
-    { value: "copilot-claude",   label: "Claude (via Copilot)"       },
-    { value: "copilot-gemini",   label: "Gemini (via Copilot)"       },
+    { value: "copilot-gpt-5-5",           label: "GPT-5.5"           },
+    { value: "copilot-gpt-5-4",           label: "GPT-5.4"           },
+    { value: "copilot-gpt-5-4-mini",      label: "GPT-5.4 mini"      },
+    { value: "copilot-claude-opus-4-8",   label: "Claude Opus 4.8"   },
+    { value: "copilot-claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+    { value: "copilot-claude-haiku-4-5",  label: "Claude Haiku 4.5"  },
+    { value: "copilot-gemini-3-5-flash",  label: "Gemini 3.5 Flash"  },
+    { value: "copilot-gemini-2-5-pro",    label: "Gemini 2.5 Pro"    },
   ],
   "cursor": [
-    { value: "cursor-gpt-4o",     label: "GPT-4o"              },
-    { value: "cursor-claude-3-7", label: "Claude 3.7 Sonnet"   },
-    { value: "cursor-gemini-2-5", label: "Gemini 2.5 Pro"      },
-    { value: "cursor-fast",       label: "Cursor Fast (built-in)" },
+    { value: "cursor-auto",               label: "Cursor Auto"              },
+    { value: "cursor-composer-2-5",       label: "Composer 2.5"             },
+    { value: "cursor-composer-2-5-fast",  label: "Composer 2.5 (Fast)"      },
+    { value: "cursor-claude-opus-4-8",    label: "Claude Opus 4.8"          },
+    { value: "cursor-claude-opus-4-7-fast", label: "Claude Opus 4.7 (fast mode)" },
+    { value: "cursor-claude-sonnet-4-6",  label: "Claude Sonnet 4.6"        },
+    { value: "cursor-claude-haiku-4-5",   label: "Claude Haiku 4.5"         },
+    { value: "cursor-gpt-5-5",            label: "GPT-5.5"                  },
+    { value: "cursor-gpt-5-4",            label: "GPT-5.4"                  },
+    { value: "cursor-gpt-5-4-mini",       label: "GPT-5.4 mini"             },
+    { value: "cursor-gemini-3-5-flash",   label: "Gemini 3.5 Flash"         },
+    { value: "cursor-gemini-3-1-pro",     label: "Gemini 3.1 Pro"           },
+    { value: "cursor-gemini-3-flash",     label: "Gemini 3 Flash"           },
+    { value: "cursor-grok-4-20",          label: "Grok 4.20"                },
   ],
   "chatgpt": [
-    { value: "gpt-4o",      label: "GPT-4o"      },
-    { value: "gpt-4-1",     label: "GPT-4.1"     },
-    { value: "gpt-4o-mini", label: "GPT-4o mini" },
-    { value: "o3",          label: "o3"          },
-    { value: "o4-mini",     label: "o4-mini"     },
+    { value: "gpt-5-5",      label: "GPT-5.5"      },
+    { value: "gpt-5-4",      label: "GPT-5.4"      },
+    { value: "gpt-5-4-mini", label: "GPT-5.4 mini" },
   ],
   "gemini": [
-    { value: "gemini-2-5-pro",   label: "Gemini 2.5 Pro"   },
-    { value: "gemini-2-5-flash", label: "Gemini 2.5 Flash" },
-    { value: "gemini-2-0-flash", label: "Gemini 2.0 Flash" },
+    { value: "gemini-3-5-flash",     label: "Gemini 3.5 Flash"    },
+    { value: "gemini-3-1-pro",       label: "Gemini 3.1 Pro"      },
+    { value: "gemini-3-flash",       label: "Gemini 3 Flash"      },
+    { value: "gemini-3-1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
   ],
   "other": [
     { value: "other", label: "Other / Unknown" },
@@ -58,31 +69,49 @@ const AGENT_MODELS = {
  * @type {Object.<string, {input: number, output: number}>}
  */
 const MODEL_RATES = {
-  // Claude
-  "claude-haiku-4-5":  { input: 0.80,  output: 4.00  },
-  "claude-sonnet-4-5": { input: 3.00,  output: 15.00 },
-  "claude-sonnet-4-6": { input: 3.00,  output: 15.00 },
-  "claude-opus-4":     { input: 15.00, output: 75.00 },
+  // Claude Code
+  "claude-opus-4-8":            { input: 5.00,  output: 25.00 },
+  "claude-sonnet-4-6":          { input: 3.00,  output: 15.00 },
+  "claude-haiku-4-5":           { input: 1.00,  output: 5.00  },
   // ChatGPT
-  "gpt-4o":            { input: 2.50,  output: 10.00 },
-  "gpt-4-1":           { input: 2.00,  output: 8.00  },
-  "gpt-4o-mini":       { input: 0.15,  output: 0.60  },
-  "o3":                { input: 10.00, output: 40.00 },
-  "o4-mini":           { input: 1.10,  output: 4.40  },
-  // Gemini
-  "gemini-2-5-pro":    { input: 1.25,  output: 10.00 },
-  "gemini-2-5-flash":  { input: 0.15,  output: 0.60  },
-  "gemini-2-0-flash":  { input: 0.10,  output: 0.40  },
-  // Subscription tools — no per-token cost
-  "copilot-gpt-4o":    { input: 0, output: 0 },
-  "copilot-gpt-4-1":   { input: 0, output: 0 },
-  "copilot-claude":    { input: 0, output: 0 },
-  "copilot-gemini":    { input: 0, output: 0 },
-  "cursor-gpt-4o":     { input: 0, output: 0 },
-  "cursor-claude-3-7": { input: 0, output: 0 },
-  "cursor-gemini-2-5": { input: 0, output: 0 },
-  "cursor-fast":       { input: 0, output: 0 },
-  "other":             { input: 0, output: 0 },
+  "gpt-5-5":                    { input: 5.00,  output: 30.00 },
+  "gpt-5-4":                    { input: 2.50,  output: 15.00 },
+  "gpt-5-4-mini":               { input: 0.75,  output: 4.50  },
+  // Gemini (standalone)
+  "gemini-3-5-flash":           { input: 1.50,  output: 9.00  },
+  "gemini-3-1-pro":             { input: 2.00,  output: 12.00 },
+  "gemini-3-flash":             { input: 0.50,  output: 3.00  },
+  "gemini-3-1-flash-lite":      { input: 0.10,  output: 0.40  },
+  // Cursor — native models
+  "cursor-auto":                { input: 1.25,  output: 6.00  },
+  "cursor-composer-2-5":        { input: 0.50,  output: 2.50  },
+  "cursor-composer-2-5-fast":   { input: 3.00,  output: 15.00 },
+  // Cursor — Claude via API pool
+  "cursor-claude-opus-4-8":     { input: 5.00,  output: 25.00 },
+  "cursor-claude-opus-4-7-fast":{ input: 30.00, output: 150.00},
+  "cursor-claude-sonnet-4-6":   { input: 3.00,  output: 15.00 },
+  "cursor-claude-haiku-4-5":    { input: 1.00,  output: 5.00  },
+  // Cursor — OpenAI via API pool
+  "cursor-gpt-5-5":             { input: 5.00,  output: 30.00 },
+  "cursor-gpt-5-4":             { input: 2.50,  output: 15.00 },
+  "cursor-gpt-5-4-mini":        { input: 0.75,  output: 4.50  },
+  // Cursor — Gemini via API pool
+  "cursor-gemini-3-5-flash":    { input: 1.50,  output: 9.00  },
+  "cursor-gemini-3-1-pro":      { input: 2.00,  output: 12.00 },
+  "cursor-gemini-3-flash":      { input: 0.50,  output: 3.00  },
+  // Cursor — xAI via API pool
+  "cursor-grok-4-20":           { input: 2.00,  output: 6.00  },
+  // Copilot — subscription, no per-token cost
+  "copilot-gpt-5-5":            { input: 0, output: 0 },
+  "copilot-gpt-5-4":            { input: 0, output: 0 },
+  "copilot-gpt-5-4-mini":       { input: 0, output: 0 },
+  "copilot-claude-opus-4-8":    { input: 0, output: 0 },
+  "copilot-claude-sonnet-4-6":  { input: 0, output: 0 },
+  "copilot-claude-haiku-4-5":   { input: 0, output: 0 },
+  "copilot-gemini-3-5-flash":   { input: 0, output: 0 },
+  "copilot-gemini-2-5-pro":     { input: 0, output: 0 },
+  // Other
+  "other":                      { input: 0, output: 0 },
 };
 
 /** Human-readable labels for the agent name dropdown. */
@@ -101,8 +130,8 @@ const AGENT_BADGE_CLASS = {
   "copilot":     "copilot",
   "cursor":      "cursor",
   "chatgpt":     "chatgpt",
-  "gemini":      "gemini",
-  "other":       "",
+  "gemini":      "gemini",   // styled in css/ai-agents.css (.ai-agent-badge.gemini)
+  "other":       "other",
 };
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -120,6 +149,19 @@ function estimateCost(tokens, model) {
   const inputTokens  = tokens * 0.7;
   const outputTokens = tokens * 0.3;
   return (inputTokens * rate.input + outputTokens * rate.output) / 1_000_000;
+}
+
+/**
+ * Formats a token count as a human-readable string.
+ * < 1,000 → "847"   ·   1k–999k → "42.3k"   ·   1M+ → "1.5M"
+ * @param {number} n - Token count.
+ * @returns {string}
+ */
+function formatTokens(n) {
+  if (!n || n <= 0) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`;
+  return n.toLocaleString();
 }
 
 /**
@@ -199,11 +241,11 @@ function renderBurnChart(container, burnData, weekLabel) {
     const isEmpty = tokens === 0;
     const isToday = date === todayISO_;
     const pct = isEmpty ? 0 : Math.max(Math.round((tokens / maxTokens) * 100), 4);
-    const tokLabel = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : (tokens > 0 ? String(tokens) : "");
+    const tokLabel = tokens > 0 ? formatTokens(tokens) : "";
     const barMod = isEmpty ? "ai-burn-bar--empty" : (isToday ? "ai-burn-bar--today" : "");
     const wrapMod = isToday ? "ai-burn-bar-wrap--today" : "";
     return `
-      <div class="ai-burn-bar-wrap ${wrapMod}" title="${date}: ${tokens.toLocaleString()} tokens">
+      <div class="ai-burn-bar-wrap ${wrapMod}" title="${date}: ${formatTokens(tokens)} (${tokens.toLocaleString()}) tokens">
         <div class="ai-burn-count">${escapeHTML(tokLabel)}</div>
         <div class="ai-burn-bar ${barMod}" style="height:${pct}%" aria-label="${escapeHTML(tokLabel || "0")} tokens on ${escapeHTML(date)}"></div>
         <div class="ai-burn-day${isToday ? " ai-burn-day--today" : ""}">${escapeHTML(dayLabel)}</div>
@@ -221,22 +263,12 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+/**
+ * Returns the current team's AI sessions from the db.loadAll() global.
+ * @returns {Array<Object>}
+ */
 function loadAIActivity() {
-  return state.aiSessions || [];
-}
-
-function saveAISession(session) {
-  if (!state.aiSessions) state.aiSessions = [];
-  state.aiSessions.unshift(session);
-  saveState();
-}
-
-function updateAISession(id, patch) {
-  if (!state.aiSessions) return;
-  const idx = state.aiSessions.findIndex(s => s.id === id);
-  if (idx === -1) return;
-  state.aiSessions[idx] = { ...state.aiSessions[idx], ...patch };
-  saveState();
+  return window.aiSessions || [];
 }
 
 // ── KPI helpers (consumed by kpis.js on the main dashboard) ───────────────
@@ -314,7 +346,7 @@ function closeSessionDialog() {
   _activeSessionId = null;
 }
 
-function handleSessionEdit() {
+async function handleSessionEdit() {
   if (!_activeSessionId) return;
 
   const overlay   = document.getElementById("ai-session-overlay");
@@ -329,10 +361,14 @@ function handleSessionEdit() {
   if (!taskDesc) return;
 
   const costUSD = estimateCost(tokensUsed, model);
-  updateAISession(_activeSessionId, { agentName, model, taskDesc, tokensUsed, costUSD, wasReviewed, prLink });
-
-  closeSessionDialog();
-  renderAllAI();
+  try {
+    await db.updateAISession(_activeSessionId, { agentName, model, taskDesc, tokensUsed, costUSD, wasReviewed, prLink });
+    closeSessionDialog();
+    await db.loadAll();
+    renderAllAI();
+  } catch (err) {
+    console.error("[ai-agents] failed to update session:", err);
+  }
 }
 
 function bindDialogCostPreview(overlay) {
@@ -397,7 +433,7 @@ function renderAISessions() {
   list.innerHTML = sessions.map(s => {
     const agentLabel = AGENT_LABELS[s.agentName] || s.agentName;
     const badgeCls   = AGENT_BADGE_CLASS[s.agentName] || "";
-    const tokStr     = s.tokensUsed ? `${s.tokensUsed.toLocaleString()} tokens` : null;
+    const tokStr     = s.tokensUsed ? `${formatTokens(s.tokensUsed)} tokens` : null;
     const costStr    = s.costUSD > 0 ? formatCost(s.costUSD) : null;
     const reviewChip = s.wasReviewed
       ? `<span class="ai-meta-chip reviewed">✓ reviewed</span>`
@@ -491,7 +527,7 @@ function renderSprintReview() {
   const byDate = {};
   sessions.forEach(s => { byDate[s.date] = (byDate[s.date] || 0) + (s.tokensUsed || 0); });
   const peakEntry = Object.entries(byDate).sort((a, b) => b[1] - a[1])[0];
-  const peakDay   = peakEntry ? `${peakEntry[0]} (${peakEntry[1].toLocaleString()} tokens)` : "—";
+  const peakDay   = peakEntry ? `${peakEntry[0]} (${formatTokens(peakEntry[1])})` : "—";
 
   // Agent breakdown
   const agentCounts = {};
@@ -505,8 +541,8 @@ function renderSprintReview() {
   const sortedModels = Object.entries(modelCounts).sort((a, b) => b[1] - a[1]);
   const topModel  = sortedModels[0] ? sortedModels[0][0] : "—";
 
-  const tokenStr  = sprintTokens >= 1000 ? `${(sprintTokens / 1000).toFixed(1)}k` : String(sprintTokens);
-  const avgStr    = avgTokens >= 1000 ? `${(avgTokens / 1000).toFixed(1)}k` : (avgTokens > 0 ? String(avgTokens) : "—");
+  const tokenStr  = formatTokens(sprintTokens);
+  const avgStr    = avgTokens > 0 ? formatTokens(avgTokens) : "—";
 
   const agentBreakdownHTML = sortedAgents.map(([key, count]) => {
     const label = AGENT_LABELS[key] || key;
@@ -625,7 +661,7 @@ function bindAILogForm() {
     logOverlay.querySelector(".ai-dialog-close")?.addEventListener("click", closeLogDialog);
   }
 
-  form.addEventListener("submit", e => {
+  form.addEventListener("submit", async e => {
     e.preventDefault();
 
     const agentName   = document.getElementById("ai-agent-select").value;
@@ -639,22 +675,14 @@ function bindAILogForm() {
     if (!taskDesc) return;
 
     const costUSD = estimateCost(tokensUsed, model);
-    const session = {
-      id: `ai_${Date.now()}`,
-      date: todayISO(),
-      time: nowTime(),
-      agentName,
-      model,
-      taskDesc,
-      tokensUsed,
-      costUSD,
-      wasReviewed,
-      prLink,
-    };
-
-    saveAISession(session);
-    closeLogDialog();
-    renderAllAI();
+    try {
+      await db.logAISession({ date: todayISO(), agentName, model, taskDesc, tokensUsed, costUSD, wasReviewed, prLink });
+      closeLogDialog();
+      await db.loadAll();
+      renderAllAI();
+    } catch (err) {
+      console.error("[ai-agents] failed to log session:", err);
+    }
   });
 }
 

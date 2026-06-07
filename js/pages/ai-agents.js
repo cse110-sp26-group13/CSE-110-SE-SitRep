@@ -4,7 +4,8 @@
  * Mirrors the pattern used in dashboard.js and standup.js.
  */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await db.loadAll();        // populates window.aiSessions, window.team, etc.
   renderHeader();
   renderAllAI();
   bindAgentModelLink();   // agent select → model select repopulation (log form)
