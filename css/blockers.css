@@ -72,8 +72,10 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  /* Reserve room for the scrollbar so row content does not jump when it appears. */
-  padding-right: 8px;
+  /* Reserve symmetric inline room so the :hover scale(1.03) — which grows each row
+     ~1.5% past its edges — is never clipped by this scroll container's overflow,
+     and rows stay centered. Percentage tracks row width so it holds at any size. */
+  padding-inline: 1.8%;
   scrollbar-gutter: stable;
 }
 
@@ -396,7 +398,6 @@
   .pull-request-list {
     /* Slightly shorter list windows leave room for controls on phone-sized screens. */
     --visible-list-height: clamp(200px, 38vh, 270px);
-    padding-right: 4px;
   }
 
   .blockers-head {

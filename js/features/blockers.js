@@ -270,13 +270,14 @@ function closeModal() {
 }
 
 /**
- * Open the "New issue" form, validate dates on submit, and persist
- * the new blocker + an activity event. Re-loads from Supabase and
- * re-renders before closing the modal so the new row appears.
+ * Open the "New GitHub issue" form, validate dates on submit, create the
+ * issue on the active GitHub repo, and append it to the local synced set
+ * before re-rendering. This page is GitHub-only, so there is no Supabase
+ * blocker creation path here.
  */
 function openCreateModal() {
   const me = teammates.find(t => t.id === team.currentUserId);
-  openModal("New issue", `
+  openModal("New GitHub issue", `
     <form id="issue-create-form" class="issue-form">
       <label class="field">
         <span>Title</span>
@@ -313,8 +314,7 @@ function openCreateModal() {
       </label>
       <div class="form-actions">
         <button type="button" class="btn-secondary" data-modal-cancel>Cancel</button>
-        <button type="button" class="btn-secondary" id="create-gh-issue-btn">Create GitHub issue</button>
-        <button type="submit" class="btn-primary">Create issue</button>
+        <button type="submit" class="btn-primary">Create GitHub issue</button>
       </div>
     </form>
   `);
@@ -323,14 +323,15 @@ function openCreateModal() {
   document.getElementById("issue-create-form").addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("issue-title").value.trim();
-    if (!title) return;
+    const dateError = document.getElementById("date-error");
+    if (!title) {
+      dateError.textContent = "Title is required.";
+      dateError.hidden = false;
+      return;
+    }
     const description = document.getElementById("issue-desc").value.trim();
-    const severity = document.getElementById("issue-sev").value;
-    const ownerId = document.getElementById("issue-owner").value;
     const startDate = document.getElementById("issue-start").value;
     const dueDate = document.getElementById("issue-due").value;
-    const category = document.getElementById("issue-category").value;
-    const dateError = document.getElementById("date-error");
 
     if (startDate && dueDate && startDate > dueDate) {
       dateError.textContent = "Start date must be before due date.";
@@ -339,24 +340,6 @@ function openCreateModal() {
     }
     dateError.hidden = true;
 
-    await db.createBlocker({
-      title, description, severity, ownerId, startDate, dueDate, category,
-    });
-    await db.addActivity("blocker", `opened a ${severity} issue — ${title}`);
-    await db.loadAll();
-    closeModal();
-    renderAll();
-  });
-
-  document.getElementById("create-gh-issue-btn").addEventListener("click", async () => {
-    const title = document.getElementById("issue-title").value.trim();
-    const dateError = document.getElementById("date-error");
-    if (!title) {
-      dateError.textContent = "Title is required.";
-      dateError.hidden = false;
-      return;
-    }
-    const description = document.getElementById("issue-desc").value.trim();
     try {
       const ghIssue = await createGitHubIssue(title, description);
       const ownerSelect = document.getElementById("issue-owner");
@@ -370,8 +353,8 @@ function openCreateModal() {
         status: "open",
         owner: ownerSelect.options[ownerSelect.selectedIndex].text,
         postedAt: "GitHub Sync",
-        startDate: document.getElementById("issue-start").value,
-        dueDate: document.getElementById("issue-due").value,
+        startDate,
+        dueDate,
         category: document.getElementById("issue-category").value,
         comments: [],
         isExternal: true,

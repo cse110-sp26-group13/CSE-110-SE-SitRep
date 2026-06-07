@@ -293,16 +293,8 @@ function bindComposeForm() {
       await db.addActivity("checkin", `posted standup${parts.length ? ` — ${parts.join(" · ")}` : ""}`);
     }
 
-    if (blockerNote) {
-      await db.createBlocker({
-        title: blockerNote,
-        description: "",
-        severity: "high",
-        ownerId: me.id,
-        category: null,
-      });
-      await db.addActivity("blocker", `opened a high issue — ${blockerNote}`);
-    }
+    // A standup blocker note stays on the standup page; it intentionally does
+    // NOT create an issue on the assignments page, which is GitHub-only.
 
     await db.loadAll();
     form.hidden = true;
