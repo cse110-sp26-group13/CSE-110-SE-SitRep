@@ -8,9 +8,10 @@ const ACTIVITY_ICONS = { checkin: "✓", blocker: "!", cover: "↺", ai: "🤖" 
 const ACTIVITY_LIMIT = 10;
 
 /**
- * Re-render the activity feed.
- * Displays the most recent ACTIVITY_LIMIT events and updates
- * #activity-sub with the displayed event count.
+ * Render the team's recent activity feed.
+ *
+ * Displays the most recent activity events and updates
+ * the activity summary count.
  */
 function renderActivity() {
   const items = effectiveActivity().slice(0, ACTIVITY_LIMIT);
