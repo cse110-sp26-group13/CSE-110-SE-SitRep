@@ -40,7 +40,7 @@ function renderMoodTrend() {
     <text class="label" x="${padX + i * xStep}" y="${h - 2}" text-anchor="middle">${lbl}</text>
   `).join("");
 
-  const gridLines = [3, 5, 7].map(v => `
+  const gridLines = [2, 4, 6, 8, 10].map(v => `
     <line class="grid" x1="${padX}" y1="${yMap(v)}" x2="${w - padX}" y2="${yMap(v)}" />
     <text class="label" x="${padX - 4}" y="${yMap(v) + 3}" text-anchor="end">${v}</text>
   `).join("");

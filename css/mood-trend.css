@@ -9,7 +9,7 @@
 .sparkline {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 220px;
 }
 
 .sparkline .grid {
@@ -20,7 +20,7 @@
 .sparkline .label {
   fill: var(--muted);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 7px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -38,6 +38,7 @@
   fill: var(--paper);
   stroke: var(--ink);
   stroke-width: 1.5;
+  r: 2;
 }
 .sparkline .point:last-of-type {
   fill: var(--ink);
