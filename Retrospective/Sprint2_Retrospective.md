@@ -16,14 +16,15 @@ Sprint 2 was the primary implementation sprint. The team moved from research and
 
 | Feature | Status | Owner(s) |
 |---------|--------|----------|
-| GitHub Issue Tracker | ✅ Completed & Merged | Andrew, Ophir, Jeong |
-| Onboarding (Auth + Circle) | ✅ Completed & Merged | Shazi |
-| Daily Standup | ✅ Completed & Merged | Yang |
-| Calendar | ❌ Incomplete — Google Calendar API integration in progress | Stephanie, Aaron |
+| GitHub Issue Tracker | Completed & Merged | Andrew, Ophir, Jeong |
+| Onboarding (Auth + Circle) | Completed & Merged | Shazi |
+| Daily Standup | Completed & Merged | Yang |
+| Calendar | in-progress | Stephanie, Aaron |
+|CI/CD & AI feature | in-progress | Aidan |
 
 ---
 
-## What Went Well ✅
+## What Went Well 
 
 - **Three MVP features shipped** — GitHub Issue Tracker, Onboarding, and Daily Standup were all completed and merged by the end of sprint, representing strong execution across sub-teams.
 - **GitHub Issue Tracker reached V2** — The tracker progressed from a local V1 (internal issue creation) to V2 with GitHub API sync within a single sprint, exceeding the initial scope.
@@ -34,9 +35,8 @@ Sprint 2 was the primary implementation sprint. The team moved from research and
 
 ---
 
-## What Didn't Go Well ❌
+## What Didn't Go Well 
 
-- **Calendar feature incomplete** — Google Calendar API integration is still in progress and was the only undelivered MVP item. It remains a blocker going into the next sprint.
 - **V2 GitHub sync is local only** — The GitHub API sync currently works locally but is not yet functional for remote/production use, requiring additional work.
 - **When2Meet and Calendar UI not functional** — As of 5/21, these features still needed to be made fully functional, not just scaffolded.
 - **Branch restructuring not completed** — The goal of "one branch per feature" was identified on 5/21 but not yet executed, leading to potential confusion.
@@ -69,6 +69,3 @@ Sprint 2 was the primary implementation sprint. The team moved from research and
 - Implement AI feature (Week 9/10 target)
 - Update and finalize technical documentation
 
----
-
-> *"A repeatable and observable quality focused process that ends up producing less feature rich software will get a higher grade than a large feature rich piece of software done opaquely."* — Course guidelines
