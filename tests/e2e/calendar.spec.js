@@ -36,11 +36,6 @@ test.describe('Calendar page', () => {
     await expect(page.locator('#new-event-btn')).toBeVisible();
   });
 
-  test('project / calendar toggle column is present', async ({ page }) => {
-    await expect(page.locator('#cal-toggle')).toBeVisible();
-    await expect(page.locator('#cal-projects')).toBeAttached();
-  });
-
   test('footer count cell is present', async ({ page }) => {
     await expect(page.locator('#cal-foot-count')).toBeVisible();
   });

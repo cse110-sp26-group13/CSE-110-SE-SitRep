@@ -75,7 +75,8 @@ test.describe('Dashboard summary page', () => {
 
     await expect(page).toHaveURL(/standup(\.html)?$/);
     const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
-    expect(readStore['test-team']).toContain('standup:2026-06-04:test-user');
+    const today = new Date().toISOString().slice(0, 10);
+    expect(readStore['test-team']).toContain(`standup:${today}:test-user`);
   });
 
   test('read notification state persists after reload', async ({ page }) => {
