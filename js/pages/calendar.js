@@ -635,110 +635,6 @@ function renderCalLegend() {
   }
 
   container.innerHTML = html;
-
-  // --- Event Listeners ---
-
-  // Visibility Checkboxes
-  container.querySelectorAll("input[data-kind], input[data-group-id]").forEach(cb => {
-    cb.addEventListener("change", () => {
-      const kind = cb.dataset.kind;
-      const groupId = cb.dataset.groupId;
-      
-      if (kind) {
-        if (cb.checked) calState.kinds.add(kind);
-        else calState.kinds.delete(kind);
-      } else if (groupId) {
-        if (cb.checked) calState.customGroups.add(groupId);
-        else calState.customGroups.delete(groupId);
-      }
-      refreshActiveView();
-    });
-  });
-
-  // Helper: Toggle Team Section
-  const toggleTeam = () => {
-    const teamSection = document.getElementById("cal-team-section");
-    if (teamSection) {
-      teamSection.hidden = !teamSection.hidden;
-      const infoBtn = container.querySelector("#toggle-team-list");
-      if (infoBtn) infoBtn.classList.toggle("active", !teamSection.hidden);
-    }
-  };
-
-  // Interactions (Swatches and Labels)
-  container.addEventListener("click", (e) => {
-    const target = e.target;
-    
-    // Kind Name/Swatch
-    const kindName = target.closest("[data-kind-name]")?.dataset.kindName;
-    const kindSwatch = target.closest("[data-kind-swatch]")?.dataset.kindSwatch;
-    const kindId = kindName || kindSwatch;
-
-    if (kindId) {
-      if (kindId === 'global' && kindName) {
-        toggleTeam();
-      } else if (kindId === 'personal' && kindName) {
-        const cb = container.querySelector(`input[data-kind="personal"]`);
-        if (cb) {
-          cb.checked = !cb.checked;
-          cb.dispatchEvent(new Event("change"));
-        }
-      } else {
-        container.querySelector(`input[data-kind-color="${kindId}"]`)?.click();
-      }
-      return;
-    }
-
-    // Group Swatch
-    const groupSwatch = target.closest("[data-group-swatch]")?.dataset.groupSwatch;
-    if (groupSwatch) {
-      container.querySelector(`input[data-group-color-input="${groupSwatch}"]`)?.click();
-      return;
-    }
-
-    // Edit Group (Name click)
-    const editGroupId = target.closest("[data-edit-group]")?.dataset.editGroup;
-    if (editGroupId) {
-      openGroupModal(editGroupId);
-      return;
-    }
-
-    // Info Button
-    if (target.closest("#toggle-team-list")) {
-      toggleTeam();
-    }
-  });
-
-  // Live Color Feedback (Kinds)
-  container.querySelectorAll("input[data-kind-color]").forEach(picker => {
-    const kind = picker.dataset.kindColor;
-    picker.addEventListener("input", () => {
-      if (!state.calendarGroupColors) state.calendarGroupColors = {};
-      state.calendarGroupColors[kind] = picker.value;
-      container.querySelector(`button[data-kind-swatch="${kind}"]`).style.background = picker.value;
-    });
-    picker.addEventListener("change", () => {
-      saveState();
-      refreshActiveView();
-    });
-  });
-
-  // Live Color Feedback & Persistence (Groups)
-  container.querySelectorAll("input[data-group-color-input]").forEach(picker => {
-    const id = picker.dataset.groupColorInput;
-    picker.addEventListener("input", () => {
-      container.querySelector(`button[data-group-swatch="${id}"]`).style.background = picker.value;
-    });
-    picker.addEventListener("change", async () => {
-      try {
-        await db.updateCalendarGroup(id, { color: picker.value });
-        await db.loadAll();
-        refreshActiveView();
-      } catch (err) {
-        console.error("Failed to update group color:", err);
-      }
-    });
-  });
 }
 
 /**
@@ -909,10 +805,135 @@ function bindCalendar() {
     });
   });
 
+  bindCalLegend();
   bindEventModal();
   bindGroupModal();
   bindDayModal();
   bindSyncHover();
+}
+
+/**
+ * One-time setup for the calendar legend using event delegation.
+ * This prevents listener accumulation during re-renders.
+ */
+function bindCalLegend() {
+  const container = document.getElementById("cal-legend");
+  if (!container) return;
+
+  // Helper: Toggle Team Section
+  const toggleTeam = () => {
+    const teamSection = document.getElementById("cal-team-section");
+    if (teamSection) {
+      teamSection.hidden = !teamSection.hidden;
+      const infoBtn = container.querySelector("#toggle-team-list");
+      if (infoBtn) infoBtn.classList.toggle("active", !teamSection.hidden);
+    }
+  };
+
+  // 1. Interactions (Swatches and Labels) via Click Delegation
+  container.addEventListener("click", (e) => {
+    const target = e.target;
+    
+    // Kind Name/Swatch
+    const kindName = target.closest("[data-kind-name]")?.dataset.kindName;
+    const kindSwatch = target.closest("[data-kind-swatch]")?.dataset.kindSwatch;
+    const kindId = kindName || kindSwatch;
+
+    if (kindId) {
+      if (kindName) {
+        if (kindId === "global") {
+          // Team label: ONLY toggle the team list view
+          toggleTeam();
+        } else {
+          // Personal (and others): Toggle visibility checkbox for events
+          const cb = container.querySelector(`input[data-kind="${kindId}"]`);
+          if (cb) {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      } else {
+        // Swatch click: open color picker
+        container.querySelector(`input[data-kind-color="${kindId}"]`)?.click();
+      }
+      return;
+    }
+
+    // Group Swatch
+    const groupSwatch = target.closest("[data-group-swatch]")?.dataset.groupSwatch;
+    if (groupSwatch) {
+      container.querySelector(`input[data-group-color-input="${groupSwatch}"]`)?.click();
+      return;
+    }
+
+    // Edit Group (Name click)
+    const editGroupId = target.closest("[data-edit-group]")?.dataset.editGroup;
+    if (editGroupId) {
+      openGroupModal(editGroupId);
+      return;
+    }
+
+    // Info Button
+    if (target.closest("#toggle-team-list")) {
+      toggleTeam();
+    }
+  });
+
+  // 2. Visibility Toggles via Change Delegation
+  container.addEventListener("change", (e) => {
+    const target = e.target;
+    const kind = target.dataset.kind;
+    const groupId = target.dataset.groupId;
+    
+    if (kind || groupId) {
+      if (kind) {
+        if (target.checked) calState.kinds.add(kind);
+        else calState.kinds.delete(kind);
+      } else if (groupId) {
+        if (target.checked) calState.customGroups.add(groupId);
+        else calState.customGroups.delete(groupId);
+      }
+      refreshActiveView();
+      return;
+    }
+
+    // Live Color Change Persistence (Kinds)
+    const kindColor = target.dataset.kindColor;
+    if (kindColor) {
+      saveState();
+      refreshActiveView();
+      return;
+    }
+
+    // Live Color Change Persistence (Groups)
+    const groupColorInputId = target.dataset.groupColorInput;
+    if (groupColorInputId) {
+      (async () => {
+        try {
+          await db.updateCalendarGroup(groupColorInputId, { color: target.value });
+          await db.loadAll();
+          refreshActiveView();
+        } catch (err) {
+          console.error("Failed to update group color:", err);
+        }
+      })();
+    }
+  });
+
+  // 3. Live Color Feedback via Input Delegation
+  container.addEventListener("input", (e) => {
+    const target = e.target;
+    const kindColor = target.dataset.kindColor;
+    const groupColorInputId = target.dataset.groupColorInput;
+
+    if (kindColor) {
+      if (!state.calendarGroupColors) state.calendarGroupColors = {};
+      state.calendarGroupColors[kindColor] = target.value;
+      container.querySelector(`button[data-kind-swatch="${kindColor}"]`).style.background = target.value;
+    } else if (groupColorInputId) {
+      container.querySelector(`button[data-group-swatch="${groupColorInputId}"]`).style.background = target.value;
+    }
+  });
 }
 
 /**

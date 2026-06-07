@@ -2,7 +2,8 @@
 
 /* ── Mood quick (five faces) ─────────────────────────────── */
 .mood-unified-card {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   gap: 14px;
   display: flex;
   flex-direction: column;
@@ -176,6 +177,17 @@
 
 .mood-unified-card .mood-sub:last-child .checkin-form {
   flex-shrink: 0;
+}
+
+/* In single-column mode, restore the card to normal flow and cap the list. */
+@media (max-width: 1200px) {
+  .mood-unified-card {
+    position: relative;
+    inset: auto;
+  }
+  .checkin-list {
+    max-height: 50vh;
+  }
 }
 
 .checkin-list::-webkit-scrollbar        { width: 4px; }

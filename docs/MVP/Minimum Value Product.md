@@ -20,7 +20,7 @@ top 4 features - week 7
     
     ![image.png](Minimum%20Value%20Product/image.png)
     
-3. daily standup - 2 (Yang, stephanie)
+3. daily standup - (Yang)
     1. 2 things
         1. team standup
         2. adding personal standup on progress

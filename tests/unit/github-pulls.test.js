@@ -6,9 +6,8 @@ const GITHUB_PULLS_CODE = readFileSync('./js/features/github/github-pulls.js', '
 
 function makeCtx(pulls = []) {
   const ctx = vm.createContext({
-    ghFetch: async () => ({
-      json: async () => pulls,
-    }),
+    // Tests provide already-paginated data so PR mapping stays focused.
+    ghFetchAllPages: async () => pulls,
   })
   vm.runInContext(GITHUB_PULLS_CODE, ctx)
   return ctx
@@ -17,6 +16,7 @@ function makeCtx(pulls = []) {
 describe('mapGitHubPullRequest()', () => {
   it('maps GitHub PR data into the local view model', () => {
     const ctx = makeCtx()
+    // Full-ish API sample verifies the fields used by PR list rendering.
     const result = ctx.mapGitHubPullRequest({
       id: 123,
       number: 7,
@@ -59,6 +59,7 @@ describe('mapGitHubPullRequest()', () => {
 
   it('marks closed PRs with merged_at as merged', () => {
     const ctx = makeCtx()
+    // GitHub reports merged PRs as closed, so merged_at is the important signal.
     const result = ctx.mapGitHubPullRequest({
       id: 456,
       number: 8,
@@ -221,22 +222,22 @@ describe('fetchGitHubPullRequests()', () => {
   it('fetches all PR states for the configured repo path', async () => {
     const calls = []
     const ctx = vm.createContext({
-      ghFetch: async (path, options) => {
+      // Verifies PR sync uses the shared paginated GitHub fetch path.
+      ghFetchAllPages: async (path, options) => {
         calls.push({ path, options })
-        return {
-          json: async () => [{
-            id: 123,
-            number: 7,
-            title: 'Add pull request list',
-            state: 'open',
-          }],
-        }
+        return [{
+          id: 123,
+          number: 7,
+          title: 'Add pull request list',
+          state: 'open',
+        }]
       },
     })
     vm.runInContext(GITHUB_PULLS_CODE, ctx)
 
     const result = await ctx.fetchGitHubPullRequests('demo/repo', 'token-123')
 
+    // The fetch function should delegate pagination and only handle PR mapping.
     expect(calls).toEqual([{
       path: '/repos/demo/repo/pulls?state=all',
       options: { token: 'token-123' },

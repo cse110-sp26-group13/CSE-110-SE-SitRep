@@ -22,10 +22,10 @@ This document tracks the development and features of the SitRep Calendar.
 - **Swatch Picker Styling:** Implemented responsive styling for `.swatch-picker` using relative dimensions to maintain visual harmony in the issues legend.
 
 ### Navigation & Tab System
-- **Implemented Folder Structure:** Custom "folder" style trapezoid tabs created using CSS `clip-path`, providing a unique and tactile physical folder aesthetic.
+- **Implemented Rectangular Tab Structure:** Clean, professional rectangular tabs for the calendar view switcher, aligning with the project's brutalist aesthetic.
 - **Implemented View Sub-Tabs:** Specific sub-tab structure that allows for seamless switching between the **Week View** and the **Projects Timeline View**, expanding the calendar's utility beyond the standard month grid.
 - **Standardized Tab Sizing:** All calendar view tabs (Month, Week, and Timeline) now share a uniform width of `11.25rem`.
-- **Label Centering:** Centered tab labels using flexbox for perfect alignment within the trapezoidal folder structure.
+- **Label Centering:** Centered tab labels using flexbox for perfect alignment within the rectangular structure.
 - **Week View Event Creation:** Clicking any date cell in the Week View now correctly opens the day modal for event creation, perfectly mirroring the Month View's interactive behavior.
 
 ### Projects Timeline Refinement

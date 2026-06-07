@@ -10,10 +10,26 @@ const meetingHours = [
   "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM", "9 PM", "10 PM",
 ];
 
+/**
+ * Determine whether a teammate is available during a specific time slot.
+ *
+ * @param {string} slotId - Time slot identifier.
+ * @param {string} teammateId - Teammate identifier.
+ * @returns {boolean} True if the teammate is available.
+ */
 function effectiveAvailability(slotId, teammateId) {
   return !!(window.slotAvailability?.[slotId]?.[teammateId]);
 }
 
+/**
+ * Update the current user's availability for a time slot.
+ *
+ * Stores the change locally until it is persisted.
+ *
+ * @param {string} slotId - Time slot identifier.
+ * @param {string} teammateId - Teammate identifier.
+ * @param {boolean} value - Availability value to store.
+ */
 function setSlotAvailability(slotId, teammateId, value) {
   if (teammateId !== team.currentUserId) return;
   if (!window.slotAvailability) window.slotAvailability = {};
@@ -22,11 +38,22 @@ function setSlotAvailability(slotId, teammateId, value) {
   dragChangedSlots.set(slotId, value);
 }
 
+/**
+ * Update the visual appearance of an availability cell.
+ *
+ * @param {HTMLElement} cell - Availability cell element.
+ * @param {boolean} value - Whether the slot is available.
+ */
 function paintAvailabilityCell(cell, value) {
   cell.classList.toggle("available", value);
   cell.classList.toggle("unavailable", !value);
 }
 
+/**
+ * Save all availability changes created during a drag operation.
+ *
+ * Persists modified slots and refreshes availability data.
+ */
 async function saveDraggedAvailability() {
   if (!isDraggingAvailability) return;
 
@@ -39,6 +66,10 @@ async function saveDraggedAvailability() {
   renderSlots();
 }
 
+/**
+ * Bind controls for opening and closing the personal
+ * availability editor modal.
+ */
 function bindAvailabilityModal() {
   if (slotsModalBound) return;
   slotsModalBound = true;
@@ -55,6 +86,13 @@ function bindAvailabilityModal() {
   });
 }
 
+/**
+ * Generate a heatmap color representing team availability overlap.
+ *
+ * @param {number} count - Number of available teammates.
+ * @param {number} total - Total number of teammates.
+ * @returns {string} RGB color string.
+ */
 function slotBgColor(count, total) {
   if (total === 0) return "#F1EFE8";
   const ratio = count / total;
@@ -64,6 +102,13 @@ function slotBgColor(count, total) {
   return `rgb(${r},${g},${b})`;
 }
 
+/**
+ * Render the personal availability calendar and team
+ * availability overlap heatmap.
+ *
+ * Creates calendar grids, binds interaction handlers,
+ * and displays availability information.
+ */
 function renderSlots() {
   const DAYS = meetingDays;
   const HOURS = meetingHours;

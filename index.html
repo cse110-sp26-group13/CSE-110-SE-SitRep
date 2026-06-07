@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/checkins.css" />
   <link rel="stylesheet" href="css/mood-trend.css" />
   <link rel="stylesheet" href="css/activity.css" />
+  <link rel="stylesheet" href="css/notifications.css" />
 
   <script src="js/theme.js"></script>
 </head>
@@ -31,7 +32,9 @@
       <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
       </a>
-      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
+      <!-- Keep the route/file as issues.html, but label the feature as Assignments in the UI. -->
+      <!-- data-route stays "issues" because nav.js still keys the active rail state off that route name. -->
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Assignments">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
       </a>
       <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
@@ -61,6 +64,22 @@
           <p class="lede">A live overview pulled from this morning's standup. Dig into a feature to see the detail.</p>
         </div>
         <div class="page-actions">
+          <div class="notification-popover" data-notification-popover>
+            <button class="notification-toggle" id="notifications-toggle" type="button" aria-expanded="false" aria-controls="notifications-panel" title="Notifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                <path d="M10 19a2 2 0 0 0 4 0"/>
+              </svg>
+              <span class="notification-badge" id="notifications-badge" hidden>0</span>
+            </button>
+            <div class="notification-panel" id="notifications-panel" role="dialog" aria-labelledby="notifications-panel-title" hidden>
+              <div class="notification-panel-head">
+                <h2 id="notifications-panel-title">Notifications</h2>
+                <button class="notification-quiet" type="button" data-notification-mark-all>Mark read</button>
+              </div>
+              <ul class="notification-mini-list" id="notifications-panel-list"></ul>
+            </div>
+          </div>
           <a class="btn-primary" href="standup.html">+ Post standup</a>
         </div>
       </header>
@@ -68,6 +87,17 @@
       <section class="kpis" id="kpis" aria-label="At-a-glance KPIs"></section>
 
       <div class="dash-content">
+        <section class="card notifications-card" id="notifications" aria-labelledby="notifications-title">
+          <div class="card-head">
+            <div>
+              <h2 id="notifications-title">Notifications</h2>
+              <span class="card-sub" id="notifications-sub"></span>
+            </div>
+            <button class="btn-secondary notification-mark-all" id="notifications-mark-read" type="button" data-notification-mark-all>Mark all read</button>
+          </div>
+          <ul class="notification-list" id="notification-list"></ul>
+        </section>
+
         <div class="dash-row-snaps">
           <!-- Standup snapshot -->
           <section class="snapshot" aria-labelledby="snap-standup-title">
@@ -84,11 +114,12 @@
             </div>
           </section>
 
-          <!-- Issues snapshot -->
+          <!-- Assignments snapshot: GitHub issues are presented as team assignments. -->
+          <!-- The dashboard keeps this summary short; the full scrollable list lives on issues.html. -->
           <section class="snapshot" aria-labelledby="snap-issues-title">
             <div class="snapshot-head">
               <div>
-                <h3 id="snap-issues-title">Issues</h3>
+                <h3 id="snap-issues-title">Assignments</h3>
                 <div class="snapshot-sub" id="snap-issues-sub">—</div>
               </div>
               <div class="snapshot-num" id="snap-issues-num">—</div>
@@ -96,7 +127,7 @@
             <div class="sev-row" id="snap-issues-sev"></div>
             <div class="snapshot-body" id="snap-issues-body"></div>
             <div class="snapshot-foot">
-              <a class="snapshot-link" href="issues.html">Open the issue tracker →</a>
+              <a class="snapshot-link" href="issues.html">Open assignments →</a>
             </div>
           </section>
         </div>
@@ -151,6 +182,7 @@
   <script src="js/features/checkins.js"></script>
   <script src="js/features/mood-trend.js"></script>
   <script src="js/features/activity.js"></script>
+  <script src="js/features/notifications.js"></script>
 
   <!-- Page orchestrator -->
   <script src="js/pages/dashboard.js"></script>
