@@ -63,19 +63,6 @@
   }
 
   /**
-   * 1–2 letter initials for the circle name (used in the rail mark).
-   *
-   * @param {string} name
-   * @returns {string}
-   */
-  function initials(name) {
-    const trimmed = (name || '').trim();
-    if (!trimmed) return '?';
-    const parts = trimmed.split(/\s+/).slice(0, 2);
-    return parts.map((p) => p[0]).join('').toUpperCase();
-  }
-
-  /**
    * Pull every circle the signed-in user belongs to, with role info.
    * Scoped to `auth.uid()` explicitly because RLS allows reading
    * memberships for *any* team you belong to (including teammates'
@@ -133,8 +120,8 @@
               data-team-id="${c.id}">
         <span class="circle-pop-mark">${initials(c.name)}</span>
         <span class="circle-pop-text">
-          <span class="circle-pop-name">${escapeHtml(c.name)}</span>
-          <span class="circle-pop-role">${escapeHtml(c.role || 'member')}</span>
+          <span class="circle-pop-name">${escapeHTML(c.name)}</span>
+          <span class="circle-pop-role">${escapeHTML(c.role || 'member')}</span>
         </span>
         ${c.id === state.activeId ? '<span class="circle-pop-check" aria-hidden="true">✓</span>' : ''}
       </button>
@@ -149,21 +136,6 @@
     pop.querySelectorAll('.circle-pop-item').forEach((el) => {
       el.addEventListener('click', () => setActive(el.dataset.teamId));
     });
-  }
-
-  /**
-   * Local HTML escaper. Duplicated from utils.js because this module
-   * loads on splash.html where utils.js isn't included.
-   *
-   * @param {unknown} s
-   * @returns {string}
-   */
-  function escapeHtml(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   /**
@@ -227,7 +199,7 @@
     mount.innerHTML = `
       <button type="button" class="rail-icon circle-switcher-btn"
               aria-haspopup="menu" aria-expanded="false" title="Switch circle">
-        <span class="circle-switcher-mark">${escapeHtml(cachedMark || '…')}</span>
+        <span class="circle-switcher-mark">${escapeHTML(cachedMark || '…')}</span>
       </button>
       <div class="circle-pop" role="menu"></div>
     `;

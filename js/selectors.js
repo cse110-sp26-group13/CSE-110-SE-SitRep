@@ -26,7 +26,7 @@ function effectiveBlockers() {
 }
 
 /**
- * Issues shown on the (GitHub-only) assignments page: just the active
+ * Issues shown on the (GitHub-only) issues page: just the active
  * repo's GitHub-synced issues. Supabase blockers are intentionally
  * excluded so daily standups never surface here — this page is strictly
  * GitHub information.

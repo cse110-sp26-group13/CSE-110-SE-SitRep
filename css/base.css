@@ -445,7 +445,6 @@ a { color: inherit; text-decoration: none; }
   border: 1.5px solid var(--ink);
   padding: 14px 16px;
 }
-.issue-dates-row { padding-top: 4px; }
 
 /* Comments */
 .comments-section { display: flex; flex-direction: column; gap: 10px; }

@@ -74,10 +74,10 @@
         <section class="card" aria-labelledby="blockers-title">
           <div class="card-head blockers-head">
             <div>
-              <h2 id="blockers-title">All assignments</h2>
+              <h2 id="blockers-title">Issues</h2>
               <span class="card-sub" id="issues-sub">—</span>
             </div>
-            <!-- Assignment filters are reset after GitHub sync so newly synced items are visible. -->
+            <!-- Issue filters are reset after GitHub sync so newly synced items are visible. -->
             <div class="filters-wrap">
               <div class="filters" id="status-filters" role="tablist" aria-label="Filter by status">
                 <button data-status="open" class="chip active">Open</button>
@@ -92,7 +92,7 @@
               </div>
             </div>
           </div>
-          <!-- JS fills this list with filtered assignments; CSS caps height and enables scrolling. -->
+          <!-- JS fills this list with filtered issues; CSS caps height and enables scrolling. -->
           <ul class="blocker-list" id="blocker-list"></ul>
         </section>
 
@@ -145,6 +145,7 @@
   <script src="js/features/github/github-client.js"></script>
   <script src="js/features/github/github-issues.js"></script>
   <script src="js/features/github/github-pulls.js"></script>
+  <script src="js/features/github/github-sync.js"></script>
   <script src="js/features/circle-switcher.js"></script>
   <script src="js/features/header.js"></script>
   <script src="js/features/blockers.js"></script>

@@ -41,17 +41,6 @@ function moodSVG(bucket, extraClass) {
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 }
 
-/**
- * The emoji face for a mood score, or "—" when no mood is set.
- *
- * @param {number|null|undefined} score
- * @returns {string}
- */
-function moodFace(score) {
-  const b = moodBucket(score);
-  return b == null ? "" : moodSVG(b);
-}
-
 /** @returns {number|null} the current user's mood today, or null if unset. */
 function currentUserMood() {
   return teammates.find(t => t.id === team.currentUserId)?.mood ?? null;
@@ -294,7 +283,7 @@ function bindComposeForm() {
     }
 
     // A standup blocker note stays on the standup page; it intentionally does
-    // NOT create an issue on the assignments page, which is GitHub-only.
+    // NOT create an issue on the issues page, which is GitHub-only.
 
     await db.loadAll();
     form.hidden = true;

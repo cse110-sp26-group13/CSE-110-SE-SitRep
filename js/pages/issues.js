@@ -10,13 +10,13 @@
 /**
  * Re-render the issue-only Issues page from loaded globals.
  *
- * Updates the header, GitHub repo controls, assignment list, pull
+ * Updates the header, GitHub repo controls, issue list, pull
  * request list, and issue count subtitle.
  *
  * @returns {void}
  */
 function renderIssues() {
-  // One page-level render keeps header, repo controls, assignments, and counts in sync.
+  // One page-level render keeps header, repo controls, issues, and counts in sync.
   renderHeader();
   updateGitHubSyncActions();
   renderBlockers();
