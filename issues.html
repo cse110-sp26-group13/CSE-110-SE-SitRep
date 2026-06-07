@@ -96,28 +96,24 @@
           <ul class="blocker-list" id="blocker-list"></ul>
         </section>
 
-        <!--
-          PR section intentionally disabled on the Issues page.
-          Preserved for future restoration:
-
-          <section class="card" aria-labelledby="pull-requests-title">
-            <div class="card-head blockers-head">
-              <div>
-                <h2 id="pull-requests-title">Pull requests</h2>
-                <span class="card-sub" id="pull-requests-sub">—</span>
-              </div>
-              <div class="filters-wrap">
-                <div class="filters" id="pr-status-filters" role="tablist" aria-label="Filter pull requests by status">
-                  <button data-pr-status="open" class="chip active">Open</button>
-                  <button data-pr-status="resolved" class="chip">Resolved</button>
-                  <button data-pr-status="all" class="chip">All</button>
-                </div>
-              </div>
-              <button class="btn-secondary" id="new-pr-btn" type="button">+ New PR</button>
+        <section class="card" aria-labelledby="pull-requests-title">
+          <div class="card-head blockers-head">
+            <div>
+              <h2 id="pull-requests-title">Pull requests</h2>
+              <span class="card-sub" id="pull-requests-sub">—</span>
             </div>
-            <ul class="pull-request-list" id="pull-request-list"></ul>
-          </section>
-        -->
+            <div class="filters-wrap">
+              <div class="filters" id="pr-status-filters" role="tablist" aria-label="Filter pull requests by status">
+                <button data-pr-status="open" class="chip active">Open</button>
+                <button data-pr-status="resolved" class="chip">Resolved</button>
+                <button data-pr-status="all" class="chip">All</button>
+              </div>
+            </div>
+            <!-- New PR button intentionally disabled; restore if PR creation returns. -->
+            <!-- <button class="btn-secondary" id="new-pr-btn" type="button">+ New PR</button> -->
+          </div>
+          <ul class="pull-request-list" id="pull-request-list"></ul>
+        </section>
       </div>
     </main>
   </div>
@@ -148,13 +144,11 @@
   <!-- Features used on this page -->
   <script src="js/features/github/github-client.js"></script>
   <script src="js/features/github/github-issues.js"></script>
-  <!-- PR API client intentionally disabled on the Issues page; restore if PRs return here. -->
-  <!-- <script src="js/features/github/github-pulls.js"></script> -->
+  <script src="js/features/github/github-pulls.js"></script>
   <script src="js/features/circle-switcher.js"></script>
   <script src="js/features/header.js"></script>
   <script src="js/features/blockers.js"></script>
-  <!-- PR feature module intentionally disabled on the Issues page; restore if PRs return here. -->
-  <!-- <script src="js/features/pull-requests.js"></script> -->
+  <script src="js/features/pull-requests.js"></script>
 
   <!-- Page orchestrator -->
   <script src="js/pages/issues.js"></script>

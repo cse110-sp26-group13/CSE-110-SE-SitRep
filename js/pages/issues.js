@@ -2,19 +2,16 @@
  * Issues page orchestrator ([issues.html](../../issues.html)).
  *
  * Full blockers list + severity/status filters + new-issue modal +
- * GitHub issue sync modal. Pull request rendering is intentionally
- * disabled on this page and preserved in comments for future restore.
- * Stubs out `renderActivity` because this page doesn't have an
- * activity feed but [blockers.js](../features/blockers.js) calls it
- * after writes.
+ * GitHub sync modal + pull request list. Stubs out `renderActivity`
+ * because this page doesn't have an activity feed but
+ * [blockers.js](../features/blockers.js) calls it after writes.
  */
 
 /**
  * Re-render the issue-only Issues page from loaded globals.
  *
- * Updates the header, GitHub repo controls, assignment list, and issue
- * count subtitle. Pull request rendering is intentionally preserved as
- * a commented restoration point and is not called on this page.
+ * Updates the header, GitHub repo controls, assignment list, pull
+ * request list, and issue count subtitle.
  *
  * @returns {void}
  */
@@ -23,8 +20,7 @@ function renderIssues() {
   renderHeader();
   updateGitHubSyncActions();
   renderBlockers();
-  // PR rendering is disabled on the Issues page.
-  // renderPullRequests();
+  renderPullRequests();
   updateIssuesSub();
 }
 
@@ -60,13 +56,12 @@ window.renderAll = renderIssues;
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
 /**
- * Load initial page data, render the Issues page, and bind issue-only controls.
- * PR controls are preserved below as a commented restore point but are not
- * registered on this page.
+ * Load initial page data, render the Issues page, and bind controls.
  *
  * Side effects: loads Supabase-backed data through `db.loadAll()`, renders
- * the issue list, and registers DOM event handlers for issue filters,
- * GitHub issue sync, modal dismissal, and issue creation.
+ * the issue and pull request lists, and registers DOM event handlers for
+ * issue filters, GitHub sync, modal dismissal, issue creation, and pull
+ * request controls.
  *
  * @returns {Promise<void>}
  */
@@ -75,6 +70,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await db.loadAll();
   renderIssues();
   bindBlockerControls();
-  // PR controls are disabled on the Issues page.
-  // bindPullRequestControls();
+  bindPullRequestControls();
 });
