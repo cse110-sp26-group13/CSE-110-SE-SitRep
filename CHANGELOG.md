@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Consistent Color Customization:** Unified the color picking experience for all categories in the calendar legend.
+    - Added direct color picking for "Team" and "Personal" categories by clicking their swatches.
+    - Added direct color picking for **Custom Groups** by clicking their swatches, bypassing the edit modal for quick adjustments.
+    - Anchored color pickers to the legend swatches for better browser positioning and visibility.
+- **Refined Legend Interactions:**
+    - Clicking the "Personal" label now toggles its visibility in the calendar view.
+    - Clicking the "Team" label now toggles the team members list visibility.
+    - Clicking a group name label continues to open the group edit modal.
+
+### Changed
+- Reordered the calendar legend to show custom groups above system categories (Team/Personal) for better feature prominence. (Note: User later requested to restore original order, which was done).
+- Optimized `renderCalLegend` in `js/pages/calendar.js` using event delegation and consolidated trigger logic for better maintainability.
+- Persisted custom group color changes directly from the legend swatch interaction.
+
 ## [0.2.0] - 2026-05-18
 
 ### Added

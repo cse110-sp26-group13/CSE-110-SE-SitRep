@@ -9,9 +9,24 @@
 
 /** Re-render the issues page from the loaded globals. */
 function renderIssues() {
+  // One page-level render keeps header, repo controls, assignments, PRs, and counts in sync.
   renderHeader();
+  updateGitHubSyncActions();
   renderBlockers();
+  renderPullRequests();
   updateIssuesSub();
+  checkUrlParams();
+}
+
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id) {
+    // Small delay to ensure blockers are rendered and DOM is ready
+    setTimeout(() => {
+      openDetailModal(id);
+    }, 100);
+  }
 }
 
 /**
@@ -19,18 +34,22 @@ function renderIssues() {
  * (open / resolved / total). Called whenever the list changes.
  */
 function updateIssuesSub() {
-  const all = effectiveBlockers();
+  const all = effectiveActiveGithubBlockers();
+  // Show both filtered and total counts so hidden synced items are obvious.
+  const shown = filteredActiveBlockers();
   const open = all.filter(b => b.status !== "resolved").length;
   const resolved = all.length - open;
   const sub = document.getElementById("issues-sub");
-  if (sub) sub.textContent = `${open} open · ${resolved} resolved · ${all.length} total`;
+  if (sub) sub.textContent = `${shown.length} shown · ${open} open · ${resolved} resolved · ${all.length} total`;
 }
 
 window.renderAll = renderIssues;
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Load Supabase-backed local data first, then merge in any GitHub state from localStorage.
   await db.loadAll();
   renderIssues();
   bindBlockerControls();
+  bindPullRequestControls();
 });

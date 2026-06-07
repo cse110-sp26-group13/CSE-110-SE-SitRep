@@ -18,7 +18,12 @@ const projectGlobals = {
   // From js/state.js
   state: "writable",
   saveState: "readonly",
-  setGithubIssues: "readonly",
+  currentGithubRepos: "readonly",
+  currentActiveRepoPath: "readonly",
+  setGithubRepos: "readonly",
+  setActiveGithubRepo: "readonly",
+  removeGithubRepo: "readonly",
+  upsertGithubRepo: "readonly",
 
   // From js/utils.js
   escapeHTML: "readonly",
@@ -30,6 +35,10 @@ const projectGlobals = {
   effectiveBlockers: "readonly",
   effectiveActivity: "readonly",
   findBlockerById: "readonly",
+  effectiveActiveGithubBlockers: "readonly",
+  activeGithubRepo: "readonly",
+  activeGithubIssues: "readonly",
+  effectivePullRequests: "readonly",
 
   // From js/auth.js / supabaseClient.js (also live on window for cross-page use)
   auth: "readonly",
@@ -43,12 +52,21 @@ const projectGlobals = {
   renderKPIs: "readonly",
   renderMoodTrend: "readonly",
   renderActivity: "readonly",
+  renderNotifications: "readonly",
+  bindNotifications: "readonly",
   renderCheckIns: "readonly",
+  moodBucket: "readonly",
+  moodSVG: "readonly",
+  MOOD_LABELS: "readonly",
   renderBlockers: "readonly",
+  openDetailModal: "readonly",
   renderSlots: "readonly",
   renderAllAI: "readonly",
   moodFace: "readonly",
   bindBlockerControls: "readonly",
+  updateGitHubSyncActions: "readonly",
+  renderPullRequests: "readonly",
+  bindPullRequestControls: "readonly",
   bindMoodQuick: "readonly",
   bindComposeForm: "readonly",
   bindAgentModelLink: "readonly",
@@ -56,6 +74,16 @@ const projectGlobals = {
   bindAILogForm: "readonly",
   bindSessionDialog: "readonly",
   fetchGitHubIssues: "readonly",
+  fetchGitHubPullRequests: "readonly",
+  fetchGitHubComments: "readonly",
+  createGitHubIssue: "readonly",
+  closeGitHubIssue: "readonly",
+  addGitHubComment: "readonly",
+  getGHRepo: "readonly",
+  ghFetch: "readonly",
+  moodBucket: "readonly",
+  moodSVG: "readonly",
+  MOOD_LABELS: "readonly",
   aiKPIData: "readonly",
 
   // From js/pages/* — page orchestrators assign their renderer to window.renderAll
@@ -75,6 +103,7 @@ const browserGlobals = {
   alert: "readonly",
   prompt: "readonly",
   confirm: "readonly",
+  encodeURIComponent: "readonly",
   setTimeout: "readonly",
   clearTimeout: "readonly",
   setInterval: "readonly",
@@ -89,6 +118,7 @@ const browserGlobals = {
   HTMLInputElement: "readonly",
   SubmitEvent: "readonly",
   Node: "readonly",
+  CSS: "readonly",
 };
 
 export default [

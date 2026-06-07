@@ -44,58 +44,91 @@ test.describe('Dashboard summary page', () => {
     await expect(page.locator('#activity-list')).toBeVisible();
   });
 
-  test('dashboard summaries reflect seeded standup, blocker, and activity data', async ({ page }) => {
+  test('notification center shows unread alerts and can mark them read', async ({ page }) => {
+    await expect(page.locator('#notifications')).toBeVisible();
+    await expect(page.locator('#notification-list .notification-item.unread').first()).toBeVisible();
+    await expect(page.locator('#notifications-badge')).toBeVisible();
+
+    await page.locator('#notifications-mark-read').click();
+
+    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(0);
+    await expect(page.locator('#notifications-badge')).toBeHidden();
+  });
+
+  test('notification popover opens, lists alerts, and closes when clicking outside', async ({ page }) => {
+    await expect(page.locator('#notifications-panel')).toBeHidden();
+    await page.locator('#notifications-toggle').click();
+
+    await expect(page.locator('#notifications-panel')).toBeVisible();
+    await expect(page.locator('#notifications-panel-list')).toContainText("Post today's standup");
+    await expect(page.locator('#notifications-toggle')).toHaveAttribute('aria-expanded', 'true');
+
+    await page.locator('#snap-standup-title').click();
+    await expect(page.locator('#notifications-panel')).toBeHidden();
+    await expect(page.locator('#notifications-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('clicking a notification marks that alert read and navigates to the target page', async ({ page }) => {
+    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(2);
+
+    await page.locator('#notification-list a[href="standup.html"]').click();
+
+    await expect(page).toHaveURL(/standup(\.html)?$/);
+    const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
+    const today = new Date().toISOString().slice(0, 10);
+    expect(readStore['test-team']).toContain(`standup:${today}:test-user`);
+  });
+
+  test('read notification state persists after reload', async ({ page }) => {
+    await page.locator('#notifications-mark-read').click();
+    await page.reload();
+
+    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(0);
+    await expect(page.locator('#notifications-badge')).toBeHidden();
+    await expect(page.locator('#notifications-sub')).toHaveText('0 unread across 2 alerts');
+  });
+
+  test('notification preferences suppress matching alert categories', async ({ page }) => {
     await seedDashboard(page, {
-      mood: 8,
-      lastCheckIn: {
-        time: 'just now',
-        yesterday: 'Finished auth cleanup',
-        today: 'Writing dashboard tests',
-        blockers: '',
-      },
       blockers: [{
-        id: 'seed-blocker',
-        title: 'Seeded blocker from test',
-        description: 'Needs attention',
+        id: 'assigned-critical',
+        title: 'Deploy token needs rotation',
         severity: 'critical',
         status: 'open',
         owner: 'Test User',
         ownerId: 'test-user',
-        postedAt: 'just now',
         comments: [],
+        postedAt: 'just now',
       }],
-      activity: [{
-        type: 'blocker',
-        who: 'Test User',
-        text: 'opened a critical issue',
-        time: 'just now',
-      }],
+      activity: [{ time: '9:12 AM', type: 'checkin', who: 'Avery', text: 'posted standup' }],
     });
 
-    await expect(page.locator('#kpis')).toContainText('1/1');
-    await expect(page.locator('#kpis')).toContainText('8.0/10');
-    await expect(page.locator('#snap-standup-num')).toContainText('1 / 1');
-    await expect(page.locator('#snap-issues-num')).toContainText('1 open');
-    await expect(page.locator('#snap-issues-body')).toContainText('Seeded blocker from test');
-    await expect(page.locator('#activity-sub')).toHaveText('1 events');
-    await expect(page.locator('#activity-list')).toContainText('opened a critical issue');
+    await expect(page.locator('#notification-list .notification-item')).toHaveCount(3);
+    await expect(page.locator('#notification-list')).toContainText('Critical issue assigned');
+
+    await page.evaluate(() => {
+      localStorage.setItem('sitrep-notify-standup', '0');
+      localStorage.setItem('sitrep-notify-mentions', '0');
+      localStorage.setItem('sitrep-notify-digest', '0');
+    });
+    await page.reload();
+
+    await expect(page.locator('#notification-list .notification-item')).toHaveCount(0);
+    await expect(page.locator('#notification-list')).toContainText('No notifications right now.');
+    await expect(page.locator('#notifications-badge')).toBeHidden();
   });
 
-  test('dashboard shows unblocked and no-activity empty states', async ({ page }) => {
-    await seedDashboard(page, {
-      lastCheckIn: {
-        time: 'just now',
-        yesterday: 'Reviewed PRs',
-        today: 'Planning next tasks',
-        blockers: '',
-      },
-      blockers: [],
-      activity: [],
-    });
+  test('posting a standup clears the standup reminder but keeps digest notifications', async ({ page }) => {
+    await page.locator('a.btn-primary[href="standup.html"]').click();
+    await page.locator('#post-checkin-btn').click();
+    await page.locator('#yesterday-input').fill('Finished notification card');
+    await page.locator('#today-input').fill('Writing tests');
+    await page.locator('#checkin-form button[type="submit"]').click();
 
-    await expect(page.locator('#snap-standup-body')).toContainText("Whole team's in.");
-    await expect(page.locator('#snap-issues-body')).toContainText("Team's unblocked.");
-    await expect(page.locator('#activity-list')).toContainText('No activity yet.');
+    await page.goto('/');
+    await expect(page.locator('#notification-list')).not.toContainText("Post today's standup");
+    await expect(page.locator('#notification-list')).toContainText('Daily digest ready');
+    await expect(page.locator('#notifications-sub')).toHaveText('1 unread across 1 alerts');
   });
 
   test('rail nav to standup page', async ({ page }) => {

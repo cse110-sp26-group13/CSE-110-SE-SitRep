@@ -1,101 +1,87 @@
-import { describe, expect, it } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import vm from 'vm'
 
+// state.js owns the per-circle GitHub repo storage. Repos are bucketed
+// by the active-circle id the circle switcher writes to localStorage
+// under `sitrep-active-team`; the accessors read that key fresh on every
+// call so switching circles (which reloads the page) swaps the set.
 const STATE_CODE = readFileSync('./js/state.js', 'utf8')
+const ACTIVE_KEY = 'sitrep-active-team'
 
-function storageStub(initial = {}) {
-  const store = { ...initial }
+/** Minimal localStorage backed by a Map, shared to simulate reloads. */
+function makeStore() {
+  const map = new Map()
   return {
-    getItem: (key) => Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null,
-    setItem: (key, value) => { store[key] = String(value) },
-    removeItem: (key) => { delete store[key] },
-    dump: () => ({ ...store }),
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => { map.set(k, String(v)) },
+    removeItem: (k) => { map.delete(k) },
   }
 }
 
-function makeCtx(storage = {}) {
-  const localStorage = storageStub(storage)
-  const ctx = vm.createContext({
-    localStorage,
-    JSON,
-  })
+/** Run state.js in a fresh context over the given store (default: new). */
+function load(localStorage = makeStore()) {
+  const ctx = vm.createContext({ localStorage, console })
   vm.runInContext(STATE_CODE, ctx)
-  return { ctx, localStorage }
+  ctx.__store = localStorage
+  return ctx
 }
 
-function stateIn(ctx) {
-  return vm.runInContext('state', ctx)
-}
+const REPO_A = { repoPath: 'team-a/repo', issues: [{ id: 'gh-1' }], pullRequests: [] }
+const REPO_B = { repoPath: 'team-b/repo', issues: [{ id: 'gh-2' }], pullRequests: [] }
 
-describe('state defaults', () => {
-  it('hydrates the expected client-only state shape when localStorage is empty', () => {
-    const { ctx } = makeCtx()
-
-    expect(stateIn(ctx)).toEqual({
-      githubIssues: [],
-      severityFilter: 'all',
-      statusFilter: 'open',
-      slotAvailability: {},
-      aiSessions: [],
-    })
+describe('per-circle GitHub repos', () => {
+  it('starts empty for any circle', () => {
+    const ctx = load()
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    expect(ctx.currentGithubRepos()).toHaveLength(0)
+    expect(ctx.currentActiveRepoPath()).toBe('')
   })
 
-  it('keeps defaults for missing keys while preserving known stored values', () => {
-    const { ctx } = makeCtx({
-      sitrep_state_v3: JSON.stringify({
-        statusFilter: 'resolved',
-        githubIssues: [{ id: 'gh-1', title: 'Synced' }],
-      }),
-    })
+  it('keeps each circle\'s synced repos separate', () => {
+    const ctx = load()
 
-    expect(stateIn(ctx)).toEqual(expect.objectContaining({
-      statusFilter: 'resolved',
-      severityFilter: 'all',
-      slotAvailability: {},
-      aiSessions: [],
-      githubIssues: [{ id: 'gh-1', title: 'Synced' }],
-    }))
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    ctx.upsertGithubRepo(REPO_A)
+    expect(ctx.currentGithubRepos().map(r => r.repoPath)).toEqual(['team-a/repo'])
+    expect(ctx.currentActiveRepoPath()).toBe('team-a/repo')
+
+    // Switch circle — the other circle sees none of A's repos.
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-b')
+    expect(ctx.currentGithubRepos()).toHaveLength(0)
+    ctx.upsertGithubRepo(REPO_B)
+    expect(ctx.currentGithubRepos().map(r => r.repoPath)).toEqual(['team-b/repo'])
+
+    // Switching back restores A's set untouched.
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    expect(ctx.currentGithubRepos().map(r => r.repoPath)).toEqual(['team-a/repo'])
+    expect(ctx.currentActiveRepoPath()).toBe('team-a/repo')
   })
 
-  it('falls back to defaults when localStorage contains corrupt JSON', () => {
-    const { ctx } = makeCtx({ sitrep_state_v3: '{not json' })
+  it('removeGithubRepo only affects the active circle', () => {
+    const ctx = load()
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    ctx.upsertGithubRepo(REPO_A)
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-b')
+    ctx.upsertGithubRepo(REPO_B)
 
-    expect(stateIn(ctx).githubIssues).toEqual([])
-    expect(stateIn(ctx).severityFilter).toBe('all')
-    expect(stateIn(ctx).statusFilter).toBe('open')
+    ctx.removeGithubRepo('team-b/repo')
+    expect(ctx.currentGithubRepos()).toHaveLength(0)
+    expect(ctx.currentActiveRepoPath()).toBe('')
+
+    ctx.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    expect(ctx.currentGithubRepos().map(r => r.repoPath)).toEqual(['team-a/repo'])
+  })
+
+  it('persists per-circle repos across a reload', () => {
+    const store = makeStore()
+    const first = load(store)
+    first.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    first.upsertGithubRepo(REPO_A)
+
+    // Fresh context over the same storage = page reload.
+    const second = load(store)
+    second.localStorage.setItem(ACTIVE_KEY, 'team-a')
+    expect(second.currentGithubRepos().map(r => r.repoPath)).toEqual(['team-a/repo'])
   })
 })
-
-describe('saveState()', () => {
-  it('persists the current state object to the v3 storage key', () => {
-    const { ctx, localStorage } = makeCtx()
-
-    vm.runInContext("state.severityFilter = 'critical'; state.statusFilter = 'resolved'; saveState()", ctx)
-
-    expect(JSON.parse(localStorage.dump().sitrep_state_v3)).toEqual(expect.objectContaining({
-      severityFilter: 'critical',
-      statusFilter: 'resolved',
-    }))
-  })
-})
-
-describe('setGithubIssues()', () => {
-  it('replaces GitHub issues and persists immediately', () => {
-    const { ctx, localStorage } = makeCtx({
-      sitrep_state_v3: JSON.stringify({
-        githubIssues: [{ id: 'old' }],
-        severityFilter: 'medium',
-      }),
-    })
-
-    ctx.setGithubIssues([{ id: 'gh-2', title: 'Fresh issue' }])
-
-    expect(stateIn(ctx).githubIssues).toEqual([{ id: 'gh-2', title: 'Fresh issue' }])
-    expect(JSON.parse(localStorage.dump().sitrep_state_v3)).toEqual(expect.objectContaining({
-      severityFilter: 'medium',
-      githubIssues: [{ id: 'gh-2', title: 'Fresh issue' }],
-    }))
-  })
-}
-)

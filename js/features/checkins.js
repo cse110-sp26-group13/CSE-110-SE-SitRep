@@ -34,6 +34,13 @@ const MOOD_SVG_CONTENT = {
   10: `<path d="M50 13 C73 13 87 28 87 50 C87 72 73 87 50 87 C27 87 13 72 13 50 C13 28 27 13 50 13Z"/><ellipse cx="23" cy="62" rx="8" ry="4.5" fill="#FFB6C1" stroke="none"/><ellipse cx="77" cy="62" rx="8" ry="4.5" fill="#FFB6C1" stroke="none"/><path d="M23 33 Q33 28 44 40" stroke-width="3"/><path d="M56 40 Q67 28 77 33" stroke-width="3"/><circle cx="35" cy="47" r="9.5" stroke-width="2.5"/><circle cx="35" cy="47" r="7" fill="currentColor" stroke="none"/><circle cx="38" cy="44" r="2" fill="white" stroke="none"/><circle cx="65" cy="47" r="9.5" stroke-width="2.5"/><circle cx="65" cy="47" r="7" fill="currentColor" stroke="none"/><circle cx="68" cy="44" r="2" fill="white" stroke="none"/><line x1="76" y1="18" x2="83" y2="11" stroke-width="2.2"/><line x1="81" y1="25" x2="89" y2="20" stroke-width="2.2"/><line x1="80" y1="32" x2="88" y2="29" stroke-width="2.2"/><line x1="38" y1="70" x2="62" y2="70" stroke-width="2.8"/>`,
 };
 
+/**
+ * Generate an SVG mood icon for a specific mood bucket.
+ *
+ * @param {number} bucket - Mood bucket value (2, 4, 6, 8, or 10).
+ * @param {string} [extraClass] - Optional CSS class to apply to the SVG.
+ * @returns {string} SVG markup representing the mood icon.
+ */
 function moodSVG(bucket, extraClass) {
   const inner = MOOD_SVG_CONTENT[bucket];
   if (!inner) return "";
@@ -42,25 +49,28 @@ function moodSVG(bucket, extraClass) {
 }
 
 /**
- * The emoji face for a mood score, or "—" when no mood is set.
+ * Get the SVG icon associated with a mood score.
  *
- * @param {number|null|undefined} score
- * @returns {string}
+ * @param {number|null|undefined} score - Mood score from 1–10.
+ * @returns {string} SVG icon string or an empty string if no mood exists.
  */
 function moodFace(score) {
   const b = moodBucket(score);
   return b == null ? "" : moodSVG(b);
 }
 
-/** @returns {number|null} the current user's mood today, or null if unset. */
+/**
+ * Get the current user's mood value.
+ *
+ * @returns {number|null} Current user's mood score or null if not set.
+ */
 function currentUserMood() {
   return teammates.find(t => t.id === team.currentUserId)?.mood ?? null;
 }
 
 /**
- * Light-touch render: highlight the selected mood-quick face for the
- * current user and update the panel subtitle. Called from
- * renderCheckIns() and from the mood-quick click handler.
+ * Update the mood quick-picker UI to reflect the current user's mood.
+ * Highlights the selected mood button and updates the selected mood icon.
  */
 function renderMoodQuick() {
   const bucket = moodBucket(currentUserMood());
@@ -85,10 +95,10 @@ function renderMoodQuick() {
 }
 
 /**
- * Render the full check-in list — one row per teammate with their
- * yesterday/today/blocker notes, mood pill, last-posted timestamp,
- * and "cover needed" affordances when applicable. Binds the "I'll
- * cover" and "Message" buttons inline.
+ * Render all standup posts for the current team.
+ *
+ * Displays teammate standups, mood indicators, blockers,
+ * ownership actions, and cover-related controls.
  */
 function renderCheckIns() {
   renderMoodQuick();
@@ -179,11 +189,11 @@ function renderCheckIns() {
 }
 
 /**
- * Send a quick message to a teammate who needs cover. Prompt-based
- * for v1 — there's no inbox yet, so the message just lands in the
- * activity feed as a "cover" event.
+ * Send a quick cover-related message to a teammate.
  *
- * @param {string} id - teammate id.
+ * Creates a cover activity entry containing the message.
+ *
+ * @param {string} id - The teammate id receiving the message.
  */
 async function handleMessage(id) {
   const t = teammates.find(x => x.id === id);
@@ -198,11 +208,11 @@ async function handleMessage(id) {
 }
 
 /**
- * Claim cover for a teammate's shift — logs an "is covering for X"
- * activity event and re-renders. No persistent cover assignment yet;
- * the activity event is the record.
+ * Record that the current user will cover for a teammate.
  *
- * @param {string} id - teammate id.
+ * Creates a cover activity entry and refreshes the page state.
+ *
+ * @param {string} id - The teammate id being covered.
  */
 async function handleTakeCover(id) {
   const t = teammates.find(x => x.id === id);
@@ -212,11 +222,8 @@ async function handleTakeCover(id) {
   renderAll();
 }
 /**
- * One-time setup: clicking a mood-quick face saves the score and
- * re-renders. Called once per page load — handlers persist for the
- * lifetime of the page.
+ * Render SVG icons inside all mood selection buttons.
  */
-
 function renderMoodSelector() {
   document.querySelectorAll("#mood-faces .mood-face").forEach(btn => {
     const bucket = Number(btn.dataset.mood);
@@ -226,7 +233,10 @@ function renderMoodSelector() {
   });
 }
 
-
+/**
+ * Bind mood selection controls and save mood updates
+ * when a user selects or deselects a mood.
+ */
 function bindMoodQuick() {
   renderMoodSelector();
   document.querySelectorAll("#mood-faces .mood-face").forEach(b =>
@@ -242,10 +252,11 @@ function bindMoodQuick() {
 }
 
 /**
- * One-time setup for the standup compose form. Wires up the open /
- * cancel buttons plus the submit handler that saves the standup,
- * appends an activity event, and (if a blocker note was provided)
- * spawns a high-severity blocker for the current user.
+ * Bind standup form controls and handle standup creation
+ * or editing submissions.
+ *
+ * Also creates blocker issues automatically when blocker
+ * text is provided in a standup post.
  */
 function bindComposeForm() {
   const form = document.getElementById("checkin-form");
@@ -262,7 +273,7 @@ function bindComposeForm() {
   document
     .getElementById("inline-post-btn")
     .addEventListener("click", openCheckinForm);
-    
+
   document.getElementById("cancel-checkin").addEventListener("click", () => {
     form.hidden = true;
     form.reset();
@@ -312,6 +323,12 @@ function bindComposeForm() {
   });
 }
 
+/**
+ * Open the standup form in edit mode and preload
+ * the user's existing standup information.
+ *
+ * @param {string} id - The id of the teammate being edited.
+ */
 function handleEditCheckin(id) {
   if (id !== team.currentUserId) return;
 
@@ -334,6 +351,12 @@ function handleEditCheckin(id) {
   form.dataset.editing = "true";
 }
 
+/**
+ * Delete a standup entry after confirmation and refresh
+ * the standup list.
+ *
+ * @param {string} id - The id of the standup owner.
+ */
 function handleDeleteCheckin(id) {
   if (id !== team.currentUserId) return;
 
