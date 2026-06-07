@@ -32,7 +32,7 @@ describe('renderActivity()', () => {
 
     ctx.renderActivity()
 
-    expect(nodes['activity-sub'].textContent).toBe('0 events')
+    expect(nodes['activity-sub'].textContent).toBe('Last 0 events')
     expect(nodes['activity-list'].innerHTML).toContain('No activity yet.')
   })
 
@@ -47,7 +47,7 @@ describe('renderActivity()', () => {
 
     ctx.renderActivity()
 
-    expect(nodes['activity-sub'].textContent).toBe('12 events')
+    expect(nodes['activity-sub'].textContent).toBe('Last 10 events')
     expect((nodes['activity-list'].innerHTML.match(/activity-row/g) || [])).toHaveLength(10)
     expect(nodes['activity-list'].innerHTML).toContain('event 9')
     expect(nodes['activity-list'].innerHTML).not.toContain('event 10')
