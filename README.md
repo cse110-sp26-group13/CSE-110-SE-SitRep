@@ -90,21 +90,22 @@ Vanilla HTML, CSS, and JavaScript — no framework, no build step. This is a cou
 ├── supabase/               # Schema, RLS policies, migrations
 ├── docs/
 │   ├── adr/                # Architectural Decision Records (MADR format)
-│   ├── wireframes/         # Pre-implementation design notes
-│   ├── MVP/                # MVP scope and early screenshots
-│   └── UserStories.md
+│   ├── wireframes/         # Pre-implementation design notes (incl. MVP/ scope + screenshots)
+│   ├── Research/           # Per-teammate research notes on prior art
+│   ├── StandupMeetings/    # Captured standup notes
+│   ├── SprintPlanning/     # Sprint plans
+│   ├── Retrospective/      # Sprint retrospectives
+│   ├── UserStories.md      # User stories / personas
+│   └── AI_USAGE.md         # GenAI usage disclosure
 ├── tests/                  # Vitest unit tests + Playwright e2e specs
-├── .github/workflows/      # CI: lint, unit tests, e2e
-├── Research/               # Per-teammate research notes on prior art
-├── StandupMeetings/        # Captured standup notes
-├── SprintPlanning/         # Weekly sprint plans
+├── .github/workflows/      # CI: lint, unit tests, e2e, deploy
 ├── admin/feedback/         # Peer reviews (incoming and outgoing)
 └── CHANGELOG.md
 ```
 
 ## Process
 
-This project is the SE SitRep deliverable for **CSE 110 (Spring 2026)**, Group 13. The course emphasizes process over product: sprint planning, standups, retros, ADRs, and tests are all tracked in this repository. See [docs/](docs/) and [StandupMeetings/](StandupMeetings/).
+This project is the SE SitRep deliverable for **CSE 110 (Spring 2026)**, Group 13. The course emphasizes process over product: sprint planning, standups, retros, ADRs, and tests are all tracked in this repository. See [docs/](docs/) and [docs/StandupMeetings/](docs/StandupMeetings/).
 
 - **Versioning:** [SemVer](https://semver.org/)
 - **Commit style:** [Conventional Commits](https://www.conventionalcommits.org/)
