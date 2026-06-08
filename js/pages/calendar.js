@@ -33,6 +33,7 @@ const MONTH_NAMES = [
 ];
 
 // ─── State ────────────────────────────────────────────────────────────
+// Basic visibility categories available to all users.
 const CAL_KINDS = ["global", "personal"];
 let calState = {};
 
@@ -45,14 +46,14 @@ function initCalState() {
     // Default to today (page loads on current month).
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
-    kinds: new Set(CAL_KINDS),
-    customGroups: new Set(),
+    kinds: new Set(CAL_KINDS), // Stores which built-in categories are visible.
+    customGroups: new Set(),   // Stores which custom group IDs are visible.
     editingEventId: null,
     editingGroupId: null,
-    weekStart: getStartOfWeek(new Date()),
+    weekStart: getStartOfWeek(new Date()), // Basis for the Week View.
   };
   
-  // Initialize customGroups to show all by default
+  // Initialize customGroups to show all by default for a full view on first load.
   getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
 }
 
@@ -65,27 +66,29 @@ const EVENT_KIND_LABELS = {
 
 /**
  * Calculates and returns the dates needed to fill a month-view grid.
- * Includes leading/trailing days from adjacent months to complete weeks.
+ * Includes leading/trailing days from adjacent months to complete weeks (7 columns).
  * @param {number} year - The year to build for.
  * @param {number} month - The month index (0-11).
  * @returns {Object[]} Array of cell objects { date: Date, muted: boolean }.
  */
 function buildMonthCells(year, month) {
-  // First-of-month + previous-month tail to fill the leading week.
   const first = new Date(year, month, 1);
-  const startDow = first.getDay(); // 0 = Sun
+  const startDow = first.getDay(); // Find which day of the week the month starts on.
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const cells = [];
-  // Previous-month tail
+
+  // Previous-month tail: Fill the gap before the 1st of the month.
   for (let i = startDow - 1; i >= 0; i--) {
     cells.push({ date: new Date(year, month - 1, daysInPrev - i), muted: true });
   }
-  // This month
+
+  // This month: The core days of the currently viewed month.
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ date: new Date(year, month, d), muted: false });
   }
-  // Next-month head to round to a multiple of 7 (5 or 6 rows)
+
+  // Next-month head: Round out the grid to ensure full 7-day rows.
   while (cells.length % 7 !== 0) {
     const last = cells[cells.length - 1].date;
     cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), muted: true });
@@ -95,6 +98,7 @@ function buildMonthCells(year, month) {
 
 /**
  * Formats a Date object into an ISO date string (YYYY-MM-DD).
+ * Used as a key for state mapping and database queries.
  * @param {Date} d - The date to format.
  * @returns {string} The ISO date string.
  */
@@ -115,12 +119,13 @@ function isSameDay(a, b) {
 }
 
 /**
- * Filters the list of calendar events based on current visibility state.
+ * Filters the list of calendar events based on current visibility state (legend toggles).
  * @returns {Object[]} Filtered list of events.
  */
 function filterEvents() {
   return getCalendarEvents().filter(e => {
     const group = e.group || "global";
+    // Check built-in categories (Team/Personal) or custom groups.
     return CAL_KINDS.includes(group)
       ? calState.kinds.has(group)
       : calState.customGroups.has(group);
@@ -148,6 +153,12 @@ const contrastCache = new Map();
 /**
  * Calculates the best contrast color (white or black) for a given background color.
  * Caches results to improve performance during large grid renders.
+ * 
+ * Logic:
+ * 1. Resolves CSS variables to absolute RGB values.
+ * 2. Calculates perceived brightness using the standard YIQ formula.
+ * 3. Switches based on theme (Dark/Light) to ensure readability against the background.
+ * 
  * @param {string} color - CSS color value (hex, rgb, or var).
  * @returns {string} Contrast color CSS variable.
  */
@@ -1231,6 +1242,7 @@ function getDefaultEventDate() {
 
 /**
  * Opens the event creation/editing modal.
+ * Handles role-based permissions, pre-filling data, and UI state toggling.
  * @param {string|null} eventId - The ID of the event to edit, or null for new.
  * @param {string|null} defaultDate - Optional pre-selected date.
  */
@@ -1242,6 +1254,7 @@ function openEventModal(eventId = null, defaultDate = null) {
   const name = document.getElementById("calendar-event-name");
   const date = document.getElementById("calendar-event-date");
   const endDate = document.getElementById("calendar-event-end-date");
+  const description = document.getElementById("calendar-event-description");
   const groupSelect = document.getElementById("calendar-event-group");
   const error = document.getElementById("calendar-event-error");
   const deleteButton = document.getElementById("calendar-event-delete");
@@ -1250,11 +1263,12 @@ function openEventModal(eventId = null, defaultDate = null) {
   form.reset();
 
   // Enforce Visibility Transition Rules
+  // Personal events can be moved anywhere, but Global events are locked to the team view.
   const currentGroup = event?.group || "personal";
   let groupOptions = "";
 
   if (!event || currentGroup === "personal") {
-    // New event or current Personal: Can go anywhere
+    // New event or current Personal: Can go anywhere.
     groupOptions += `<option value="personal">Personal</option>`;
     groupOptions += `<option value="global">Team</option>`;
     getCalendarGroups().forEach(g => {
@@ -1262,11 +1276,11 @@ function openEventModal(eventId = null, defaultDate = null) {
     });
     groupSelect.disabled = false;
   } else if (currentGroup === "global") {
-    // Current Global: Locked
+    // Current Global: Locked to Team visibility.
     groupOptions += `<option value="global">Team</option>`;
     groupSelect.disabled = true;
   } else {
-    // Current Custom Group: Can go to Global, but not back to Personal
+    // Current Custom Group: Can go to Global, but not back to Personal.
     const customGroup = findCalendarGroup(currentGroup);
     groupOptions += `<option value="${currentGroup}">${escapeHTML(customGroup?.name || "Current Group")}</option>`;
     groupOptions += `<option value="global">Team</option>`;
@@ -1280,9 +1294,10 @@ function openEventModal(eventId = null, defaultDate = null) {
   name.value = event?.title || "";
   date.value = event?.date || defaultDate || getDefaultEventDate();
   endDate.value = event?.endDate || "";
+  description.value = event?.description || "";
   groupSelect.value = currentGroup;
 
-  // Handle Group Members Field
+  // Handle Group Members Field Visibility
   const teamField = document.getElementById("calendar-event-team-field");
   const teamList = document.getElementById("calendar-event-team-list");
   const teamLabel = teamField.querySelector('span');
@@ -1305,7 +1320,7 @@ function openEventModal(eventId = null, defaultDate = null) {
       teamLabel.textContent = "Group Members";
       const group = findCalendarGroup(val);
       if (group) {
-        // Map member IDs to teammate objects
+        // Map member IDs to teammate objects for visual listing.
         members = (group.members || [])
           .map(uid => window.teammates.find(t => t.id === uid))
           .filter(Boolean);
@@ -1328,7 +1343,7 @@ function openEventModal(eventId = null, defaultDate = null) {
   groupSelect.onchange = updateTeamVisibility;
   updateTeamVisibility();
   
-  // Permissions: Owner OR Group Leader can edit
+  // Permissions Check: Only the Owner or the Group Leader can modify existing data.
   const currentUserId = window.team.currentUserId;
   const isOwner = !event || event.ownerId === currentUserId;
   
@@ -1342,9 +1357,11 @@ function openEventModal(eventId = null, defaultDate = null) {
 
   const canEdit = isOwner || isGroupLeader;
 
+  // Set field accessibility based on permissions.
   name.disabled = !canEdit;
   date.disabled = !canEdit;
   endDate.disabled = !canEdit;
+  description.disabled = !canEdit;
   if (!canEdit) groupSelect.disabled = true;
 
   deleteButton.hidden = !event || !canEdit;
@@ -1387,11 +1404,11 @@ function openGroupModal(groupId = null) {
   leaveButton.hidden = !group || isCreator;
   submitButton.textContent = group ? "Save changes" : "Create group";
   
-  // Disable fields if not creator
+  // Disable core fields if the current user is not the group's creator.
   name.disabled = !isCreator;
   color.disabled = !isCreator;
 
-  // Populate people list (excluding the current user)
+  // Populate interactive people list (multi-select checkboxes).
   const teammates = effectiveTeammates();
   
   peopleList.innerHTML = teammates
@@ -1415,7 +1432,7 @@ function openGroupModal(groupId = null) {
       `;
     }).join("");
 
-  // Add listener for visual toggle
+  // Add listener for visual toggle: highlights the row when checked.
   peopleList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => {
       cb.closest('.people-row').classList.toggle('active', cb.checked);
@@ -1469,6 +1486,7 @@ async function saveGroup(e) {
   const group = calState.editingGroupId ? findCalendarGroup(calState.editingGroupId) : null;
   const isCreator = !group || group.creatorId === currentUserId;
 
+  // Double-check permissions before attempting DB write.
   if (!isCreator) {
     error.textContent = "Only the creator can edit group details.";
     error.hidden = false;
@@ -1481,7 +1499,7 @@ async function saveGroup(e) {
     return;
   }
 
-  // Creator is always in the group
+  // Mandatory: Creator is always in the group they create.
   if (!members.includes(currentUserId)) {
     members.push(currentUserId);
   }
@@ -1499,9 +1517,9 @@ async function saveGroup(e) {
       await db.createCalendarGroup(groupData);
     }
 
-    await db.loadAll(); // Refresh groups and events from DB
+    await db.loadAll(); // Global state refresh.
     
-    // Ensure all groups are in the local visibility set if they were newly created
+    // Auto-show new groups.
     getCalendarGroups().forEach(g => {
       if (!calState.customGroups.has(g.id)) calState.customGroups.add(g.id);
     });
@@ -1602,12 +1620,15 @@ function bindEventModal() {
 async function createCalendarEvent(e) {
   e.preventDefault();
 
+  // Extract form values.
   const title = document.getElementById("calendar-event-name").value.trim();
   const date = document.getElementById("calendar-event-date").value;
   const endDate = document.getElementById("calendar-event-end-date").value;
+  const description = document.getElementById("calendar-event-description").value.trim();
   const group = document.getElementById("calendar-event-group").value;
   const error = document.getElementById("calendar-event-error");
 
+  // Client-side validation.
   if (!title || !date || !group) {
     error.textContent = "Please complete every field before creating the event.";
     error.hidden = false;
@@ -1624,6 +1645,7 @@ async function createCalendarEvent(e) {
     date, 
     endDate: endDate || null, 
     title, 
+    description,
     group,
     teamId: (group === 'global' || group !== 'personal') ? window.team.id : null
   };
@@ -1635,8 +1657,9 @@ async function createCalendarEvent(e) {
       await db.createCalendarEvent(eventData);
     }
 
-    await db.loadAll(); // Refresh global state from DB
+    await db.loadAll(); // Global state refresh.
 
+    // Navigate to the month of the newly created/edited event.
     const selectedDate = new Date(`${date}T00:00:00`);
     calState.year = selectedDate.getFullYear();
     calState.month = selectedDate.getMonth();
@@ -1671,11 +1694,16 @@ async function deleteCalendarEvent() {
   }
 }
 
-// Initial entry point
+// ─── Initialization ───────────────────────────────────────────────────
+
+/**
+ * Initial entry point.
+ * Loads all shared data from Supabase before initializing UI state and bindings.
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await db.loadAll();
-    initCalState(); // Ensure state is ready before rendering
+    initCalState(); 
     renderCalendar();
     bindCalendar();
   } catch (err) {

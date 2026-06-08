@@ -32,6 +32,11 @@ This document tracks the development, features, and technical architecture of th
 - **Deep Linking:** Clicking issue bars redirects to the Issue Tracker and opens specific details.
 - **Customization:** Users can override blocker bar colors in the legend for better visual organization.
 
+### Event & Group Details
+- **Description Field:** Added a rich description box for calendar events, allowing users to add detailed notes and context.
+- **Permissions System:** Only the event owner or group leader can edit descriptions; others see a read-only view.
+- **3D UI Polish:** All secondary buttons (including Cancel buttons) now feature a consistent 3D pop effect on hover and depress on click.
+
 ### Technical Architecture
 - **Supabase Persistence:** All shared data (events, groups) resides in Postgres with Row-Level Security (RLS).
 - **Vertical Slot Management:** A two-pass allocation algorithm (`calculateEventSlots`) ensures visual stability and continuity for multi-day bars across day/week boundaries.
@@ -41,6 +46,11 @@ This document tracks the development, features, and technical architecture of th
 ---
 
 ## Implementation History
+
+### Phase 8: Contextual Metadata & UI Parity (June 7, 2026)
+- **Event Descriptions:** Implemented a persistence layer and UI for event-specific notes.
+- **Role-Based Interaction:** Added logic to disable form fields for non-authorized users.
+- **Global Stylistic Cleanup:** Unified the 3D interaction language across all primary and secondary buttons.
 
 ### Phase 7: Interactive Management & Filter Sync (June 3, 2026)
 - **Interactive Legend Actions:** Transformed legend text into functional buttons for editing groups and toggling team info.
