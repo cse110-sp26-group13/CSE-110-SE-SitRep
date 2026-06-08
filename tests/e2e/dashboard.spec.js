@@ -51,14 +51,14 @@ test.describe('Dashboard summary page', () => {
     await expect(page.locator('#activity-list')).toBeVisible();
   });
 
-  test('notification center shows unread alerts and can mark them read', async ({ page }) => {
-    await expect(page.locator('#notifications')).toBeVisible();
-    await expect(page.locator('#notification-list .notification-item.unread').first()).toBeVisible();
+  test('notification popover shows unread alerts and can mark them read', async ({ page }) => {
     await expect(page.locator('#notifications-badge')).toBeVisible();
 
-    await page.locator('#notifications-mark-read').click();
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list .notification-item.unread').first()).toBeVisible();
+    await page.locator('#notifications-panel [data-notification-mark-all]').click();
 
-    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(0);
+    await expect(page.locator('#notifications-panel-list .notification-item.unread')).toHaveCount(0);
     await expect(page.locator('#notifications-badge')).toBeHidden();
   });
 
@@ -76,9 +76,10 @@ test.describe('Dashboard summary page', () => {
   });
 
   test('clicking a notification marks that alert read and navigates to the target page', async ({ page }) => {
-    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(2);
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list .notification-item.unread')).toHaveCount(2);
 
-    await page.locator('#notification-list a[href="standup.html"]').click();
+    await page.locator('#notifications-panel-list a[href="standup.html"]').click();
 
     await expect(page).toHaveURL(/standup(\.html)?$/);
     const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
@@ -90,12 +91,13 @@ test.describe('Dashboard summary page', () => {
   });
 
   test('read notification state persists after reload', async ({ page }) => {
-    await page.locator('#notifications-mark-read').click();
+    await page.locator('#notifications-toggle').click();
+    await page.locator('#notifications-panel [data-notification-mark-all]').click();
     await page.reload();
 
-    await expect(page.locator('#notification-list .notification-item.unread')).toHaveCount(0);
     await expect(page.locator('#notifications-badge')).toBeHidden();
-    await expect(page.locator('#notifications-sub')).toHaveText('0 unread across 2 alerts');
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list .notification-item.unread')).toHaveCount(0);
   });
 
   test('notification preferences suppress matching alert categories', async ({ page }) => {
@@ -113,8 +115,9 @@ test.describe('Dashboard summary page', () => {
       activity: [{ time: '9:12 AM', type: 'checkin', who: 'Avery', text: 'posted standup' }],
     });
 
-    await expect(page.locator('#notification-list .notification-item')).toHaveCount(3);
-    await expect(page.locator('#notification-list')).toContainText('Critical issue assigned');
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list .notification-item')).toHaveCount(3);
+    await expect(page.locator('#notifications-panel-list')).toContainText('Critical issue assigned');
 
     await page.evaluate(() => {
       localStorage.setItem('sitrep-notify-standup', '0');
@@ -123,9 +126,10 @@ test.describe('Dashboard summary page', () => {
     });
     await page.reload();
 
-    await expect(page.locator('#notification-list .notification-item')).toHaveCount(0);
-    await expect(page.locator('#notification-list')).toContainText('No notifications right now.');
     await expect(page.locator('#notifications-badge')).toBeHidden();
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list .notification-item')).toHaveCount(0);
+    await expect(page.locator('#notifications-panel-list')).toContainText('Nothing new.');
   });
 
   test('posting a standup clears the standup reminder but keeps digest notifications', async ({ page }) => {
@@ -136,9 +140,10 @@ test.describe('Dashboard summary page', () => {
     await page.locator('#checkin-form button[type="submit"]').click();
 
     await page.goto('/');
-    await expect(page.locator('#notification-list')).not.toContainText("Post today's standup");
-    await expect(page.locator('#notification-list')).toContainText('Daily digest ready');
-    await expect(page.locator('#notifications-sub')).toHaveText('1 unread across 1 alerts');
+    await page.locator('#notifications-toggle').click();
+    await expect(page.locator('#notifications-panel-list')).not.toContainText("Post today's standup");
+    await expect(page.locator('#notifications-panel-list')).toContainText('Daily digest ready');
+    await expect(page.locator('#notifications-badge')).toHaveText('1');
   });
 
   test('rail nav to standup page', async ({ page }) => {
