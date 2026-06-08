@@ -647,7 +647,7 @@ function bindAgentModelLink() {
 // ── Form submission ────────────────────────────────────────────────────────
 function bindAILogForm() {
   const openBtn   = document.getElementById("ai-log-btn");
-  const cancelBtn = document.getElementById("ai-log-cancel-btn");
+  const cancelBtn = document.getElementById("ai-cancel-btn");
   const form      = document.getElementById("ai-log-form");
   if (!form) return;
 
@@ -706,8 +706,37 @@ document.addEventListener("keydown", e => {
   closeLogDialog();
 });
 
+// ── KPI strip (AI agents page) ─────────────────────────────────────────────
+function renderAIKPIs() {
+  const host = document.getElementById("ai-kpis");
+  if (!host) return;
+  const { todayCount, sprintTokens, sprintCost, reviewRate } = aiKPIData();
+  const tiles = [
+    { label: "Sessions today",  value: todayCount,
+      cls: todayCount > 0 ? "good" : "",
+      sub: todayCount === 0 ? "None logged yet" : "Logged today" },
+    { label: "Sprint tokens",   value: sprintTokens.toLocaleString(),
+      cls: "",
+      sub: "Total this sprint" },
+    { label: "Sprint cost",     value: `$${sprintCost.toFixed(2)}`,
+      cls: "",
+      sub: "Estimated spend" },
+    { label: "Review rate",     value: reviewRate,
+      cls: reviewRate === "—" ? "" : "good",
+      sub: "Human-reviewed" },
+  ];
+  host.innerHTML = tiles.map(t => `
+    <div class="kpi">
+      <div class="kpi-label">${t.label}</div>
+      <div class="kpi-value ${t.cls || ""}">${t.value}</div>
+      <div class="kpi-trend">${t.sub}</div>
+    </div>
+  `).join("");
+}
+
 // ── Top-level render ───────────────────────────────────────────────────────
 function renderAllAI() {
+  renderAIKPIs();
   renderAISessions();
   renderAIBurnChart();
   renderSprintReview();

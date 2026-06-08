@@ -69,6 +69,9 @@
         </div>
       </header>
 
+      <!-- AI KPI strip -->
+      <section class="kpis" id="ai-kpis" aria-label="AI session KPIs"></section>
+
       <!-- Today's session cards -->
       <section aria-labelledby="ai-sessions-heading" style="margin-bottom: 24px;">
         <div class="ai-sessions-header">
@@ -80,6 +83,7 @@
 
       <!-- Sprint token burn chart -->
       <section aria-labelledby="ai-burn-heading" style="margin-bottom: 24px;">
+        <h2 id="ai-burn-heading" class="ai-section-heading">Token burn (this week)</h2>
         <div class="ai-burn-wrap">
           <div class="ai-burn-nav">
             <button class="btn-secondary ai-burn-prev" id="ai-burn-prev" aria-label="Previous week">← Prev</button>
@@ -170,7 +174,7 @@
       </div>
 
       <div class="ai-dialog-footer">
-        <button type="button" class="btn-secondary" id="ai-log-cancel-btn">Cancel</button>
+        <button type="button" class="btn-secondary" id="ai-cancel-btn">Cancel</button>
         <button type="submit" form="ai-log-form" class="btn-primary">Log session</button>
       </div>
 
