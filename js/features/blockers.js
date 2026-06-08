@@ -267,14 +267,14 @@ function createIssueFormTemplate(selectedAssigneeId) {
 }
 
 /**
- * Open the "New GitHub issue" form, validate dates on submit, create the
+ * Open the "New issue" form, validate dates on submit, create the
  * issue on the active GitHub repo, and append it to the local synced set
  * before re-rendering. This page is GitHub-only, so there is no Supabase
  * issue-creation path here.
  */
 function openCreateModal() {
   const me = teammates.find(t => t.id === team.currentUserId);
-  openModal("New GitHub issue", createIssueFormTemplate(me?.id));
+  openModal("New issue", createIssueFormTemplate(me?.id));
   document.getElementById("issue-title").focus();
 
   document.getElementById("issue-create-form").addEventListener("submit", async e => {
