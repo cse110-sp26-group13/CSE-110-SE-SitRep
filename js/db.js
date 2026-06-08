@@ -30,6 +30,7 @@
   window.activity = [];
   window.calendarEvents = [];
   window.calendarGroups = [];
+  window.aiSessions = [];
 
   const sb = () => window.sbClient;
 
@@ -160,6 +161,17 @@
     return data || [];
   }
 
+  async function loadAIActivity(teamId) {
+    const { data, error } = await sb()
+      .from('ai_activity')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data || [];
+  }
+
   async function loadCalendarGroups(teamId) {
     const { data, error } = await sb()
       .from('calendar_groups')
@@ -207,7 +219,7 @@
       }
     }
 
-    const [members, standups, blockerDataRows, slotAvail, activityRows, calendarRows, groupRows] = await Promise.all([
+    const [members, standups, blockerDataRows, slotAvail, activityRows, calendarRows, groupRows, aiRows] = await Promise.all([
       safeLoad(() => loadTeamMembers(t.id)),
       safeLoad(() => loadRecentStandups(t.id)),
       safeLoad(() => loadBlockers(t.id), { rows: [], comments: [] }),
@@ -215,6 +227,7 @@
       safeLoad(() => loadActivity(t.id)),
       safeLoad(() => loadCalendarEvents(t.id)),
       safeLoad(() => loadCalendarGroups(t.id)),
+      safeLoad(() => loadAIActivity(t.id)),
     ]);
 
     const blockerData = blockerDataRows;
@@ -310,6 +323,21 @@
       name: g.name,
       color: g.color,
       members: g.members || [],
+    }));
+
+    window.aiSessions = (aiRows || []).map(r => ({
+      id:          r.id,
+      date:        r.date,   // 'YYYY-MM-DD' — postgres date column, already local-safe
+      time:        r.created_at
+                     ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                     : '',
+      agentName:   r.agent_name,
+      model:       r.model || '',
+      taskDesc:    r.task_desc,
+      tokensUsed:  r.tokens_used || 0,
+      costUSD:     parseFloat(r.cost_usd) || 0,
+      wasReviewed: !!r.was_reviewed,
+      prLink:      r.pr_link || '',
     }));
   }
 
@@ -551,6 +579,52 @@
     if (error) throw error;
   }
 
+  /**
+   * Insert a new AI session row for the current user and team.
+   * @param {{date: string, agentName: string, model: string, taskDesc: string,
+   *           tokensUsed: number, costUSD: number, wasReviewed: boolean, prLink: string}} input
+   */
+  async function logAISession(input) {
+    const { data, error } = await sb()
+      .from('ai_activity')
+      .insert({
+        team_id:     team.id,
+        user_id:     team.currentUserId,
+        date:        input.date,
+        agent_name:  input.agentName,
+        model:       input.model || null,
+        task_desc:   input.taskDesc,
+        tokens_used: input.tokensUsed || null,
+        cost_usd:    input.costUSD || null,
+        was_reviewed: !!input.wasReviewed,
+        pr_link:     input.prLink || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Partially update an existing AI session by id.
+   * Only keys present in patch are sent; camelCase → snake_case mapping here.
+   * @param {string} id
+   * @param {Partial<{agentName, model, taskDesc, tokensUsed, costUSD, wasReviewed, prLink}>} patch
+   */
+  async function updateAISession(id, patch) {
+    const dbPatch = {};
+    if ('agentName'   in patch) dbPatch.agent_name   = patch.agentName;
+    if ('model'       in patch) dbPatch.model         = patch.model || null;
+    if ('taskDesc'    in patch) dbPatch.task_desc     = patch.taskDesc;
+    if ('tokensUsed'  in patch) dbPatch.tokens_used   = patch.tokensUsed || null;
+    if ('costUSD'     in patch) dbPatch.cost_usd      = patch.costUSD || null;
+    if ('wasReviewed' in patch) dbPatch.was_reviewed  = !!patch.wasReviewed;
+    if ('prLink'      in patch) dbPatch.pr_link       = patch.prLink || null;
+    if (Object.keys(dbPatch).length === 0) return;
+    const { error } = await sb().from('ai_activity').update(dbPatch).eq('id', id);
+    if (error) throw error;
+  }
+
   window.db = {
     loadAll,
     saveMood,
@@ -567,5 +641,7 @@
     updateCalendarGroup,
     deleteCalendarGroup,
     leaveCalendarGroup,
+    logAISession,
+    updateAISession,
   };
 })();
