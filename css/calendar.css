@@ -164,12 +164,6 @@
   width: 0.75rem;
   height: 0.75rem;
 }
-.cal-project-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-}
 .cal-project {
   display: flex;
   align-items: center;
