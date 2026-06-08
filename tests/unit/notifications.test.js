@@ -124,7 +124,7 @@ describe('assignedBlockerNotifications()', () => {
     expect(result[0]).toEqual(expect.objectContaining({
       id: 'issue:b-critical:open:critical',
       level: 'alert',
-      href: 'issues.html#b-critical',
+      href: 'standup.html',
     }))
   })
 

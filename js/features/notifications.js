@@ -79,7 +79,7 @@ function assignedBlockerNotifications() {
       title: b.severity === "critical" ? "Critical issue assigned" : "Issue needs your attention",
       body: b.title,
       meta: `${b.severity} issue`,
-      href: `issues.html#${encodeURIComponent(b.id)}`,
+      href: "standup.html",
     }));
 }
 

@@ -120,14 +120,6 @@
   box-shadow: 3px 3px 0 var(--ink);
 }
 
-.standup-card { gap: 14px; }
-.standup-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
 .inline-post-btn {
   appearance: none;
 
@@ -164,7 +156,6 @@
   padding: 14px 16px;
   margin-bottom: 4px;
 }
-.checkin-form[hidden] { display: none; }
 
 .checkin-list {
   list-style: none;

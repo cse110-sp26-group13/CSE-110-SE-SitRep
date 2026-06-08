@@ -35,10 +35,9 @@
 .live-dot {
   width: 8px;
   height: 8px;
-  background: green;
+  background: var(--good);
   display: inline-block;
   animation: blink 1.6s infinite;
-  
 }
 @keyframes blink { 0%, 60% { opacity: 1; } 70%, 100% { opacity: 0.35; } }
 

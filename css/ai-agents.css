@@ -15,6 +15,11 @@
 }
 .ai-dashboard-btn:active { transform: none; box-shadow: none; }
 
+/* ── Page sections ─────────────────────────────────────────── */
+.ai-section {
+  margin-bottom: 24px;
+}
+
 /* ── Section headings ──────────────────────────────────────── */
 .ai-section-heading {
   font-size: 14px;
@@ -206,8 +211,6 @@
 .ai-agent-badge.chatgpt  { background: var(--muted); border-color: var(--muted); }
 .ai-agent-badge.gemini   { background: var(--bad); border-color: var(--bad); }
 .ai-agent-badge.other    { background: var(--subtle); border-color: var(--subtle); }
-
-.ai-session-body {}
 
 .ai-session-task {
   font-size: 13.5px;
@@ -552,8 +555,6 @@
   padding: 16px;
 }
 
-.ai-session-overlay[hidden] { display: none; }
-
 .ai-dialog-box {
   background: var(--card);
   border: 1.5px solid var(--ink);
@@ -586,8 +587,6 @@
 .ai-dialog-header--new {
   border-bottom-color: var(--good);
 }
-
-.ai-dialog-header-left {}
 
 .ai-dialog-agent-label {
   font-family: var(--display);

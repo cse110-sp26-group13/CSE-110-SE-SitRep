@@ -1,8 +1,8 @@
 /**
- * KPI strip — four summary tiles at the top of the dashboard:
- * check-ins today, team mood average, open issues, cover-needed
- * count. Each tile picks a `good`/`warn`/`alert` class to drive its
- * accent color in [css/kpis.css](../../css/kpis.css).
+ * KPI strip — summary tiles at the top of the dashboard:
+ * check-ins today, team mood average, and open issues. Each tile
+ * picks a `good`/`warn`/`alert` class to drive its accent color in
+ * [css/kpis.css](../../css/kpis.css).
  */
 
 /**
@@ -18,7 +18,6 @@ function renderKPIs() {
   const openIssues = effectiveBlockers().filter(b => b.status !== "resolved");
   const open = openIssues.length;
   const critical = openIssues.filter(b => b.severity === "critical").length;
-  const cover = tm.filter(t => t.coverNeeded).length;
 
   // AI metrics — sourced from ai-agents.js (loaded on all pages)
   const ai = typeof aiKPIData === "function" ? aiKPIData() : null;
@@ -36,10 +35,6 @@ function renderKPIs() {
       cls: open === 0 ? "good" : critical > 0 ? "alert" : "warn",
       sub: open === 0 ? "All clear" : `${critical} critical`,
       href: "issues.html" },
-    { label: "Cover needed", value: cover,
-      cls: cover === 0 ? "good" : "warn",
-      sub: cover === 0 ? "No requests" : "Help wanted",
-      href: "standup.html#meet-title" },
     ...(ai ? [
       { label: "AI sessions today", value: ai.todayCount,
         cls: ai.todayCount > 0 ? "good" : "",

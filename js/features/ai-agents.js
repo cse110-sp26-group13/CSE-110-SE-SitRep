@@ -692,6 +692,7 @@ function bindSessionDialog() {
   if (!overlay) return;
 
   overlay.querySelector(".ai-dialog-close")?.addEventListener("click", closeSessionDialog);
+  overlay.querySelector(".ai-dialog-close-btn")?.addEventListener("click", closeSessionDialog);
   overlay.addEventListener("click", e => { if (e.target === overlay) closeSessionDialog(); });
   overlay.querySelector(".ai-dialog-save")?.addEventListener("click", handleSessionEdit);
 
