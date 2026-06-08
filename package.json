@@ -1,6 +1,6 @@
 {
   "name": "se-sitrep",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Lightweight daily standup and status dashboard for small Agile teams",
   "type": "module",
   "scripts": {

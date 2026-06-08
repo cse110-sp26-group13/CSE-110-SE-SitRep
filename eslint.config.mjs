@@ -29,6 +29,9 @@ const projectGlobals = {
   escapeHTML: "readonly",
   moodClass: "readonly",
   avatar: "readonly",
+  html: "readonly",
+  raw: "readonly",
+  initials: "readonly",
 
   // From js/selectors.js
   effectiveTeammates: "readonly",
@@ -39,6 +42,8 @@ const projectGlobals = {
   activeGithubRepo: "readonly",
   activeGithubIssues: "readonly",
   effectivePullRequests: "readonly",
+  allGithubIssues: "readonly",
+  findPullRequestById: "readonly",
 
   // From js/auth.js / supabaseClient.js (also live on window for cross-page use)
   auth: "readonly",
@@ -85,6 +90,28 @@ const projectGlobals = {
   moodSVG: "readonly",
   MOOD_LABELS: "readonly",
   aiKPIData: "readonly",
+
+  // From js/features/blockers.js — shared modal + blocker-list helpers
+  openModal: "readonly",
+  closeModal: "readonly",
+  bindModalDismissers: "readonly",
+  filteredActiveBlockers: "readonly",
+
+  // From js/features/github/github-pulls.js — PR write actions
+  createGitHubPullRequest: "readonly",
+  updateGitHubPullRequest: "readonly",
+  closeGitHubPullRequest: "readonly",
+  mergeGitHubPullRequest: "readonly",
+
+  // From js/features/github/github-sync.js
+  startGithubAutoSync: "readonly",
+  openGitHubSyncModal: "readonly",
+  unsyncGitHub: "readonly",
+  updateActiveGithubIssues: "readonly",
+  appendIssueToActiveGithubRepo: "readonly",
+
+  // From js/features/github/github-issues.js
+  setGitHubIssueState: "readonly",
 
   // From js/pages/* — page orchestrators assign their renderer to window.renderAll
   renderAll: "writable",
