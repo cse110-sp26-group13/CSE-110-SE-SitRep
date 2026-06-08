@@ -32,6 +32,10 @@ function checkUrlParams() {
     // Small delay to ensure blockers are rendered and DOM is ready
     setTimeout(() => {
       openDetailModal(id);
+      
+      // Clear the ID from the URL so it doesn't pop up again on re-renders
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
     }, 100);
   }
 }
