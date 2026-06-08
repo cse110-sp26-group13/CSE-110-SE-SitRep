@@ -112,7 +112,7 @@ function digestNotifications() {
     title: "Daily digest ready",
     body: `${checkedIn}/${members.length} checked in, ${blockers.length} open issues, ${updates} recent updates.`,
     meta: critical ? `${critical} critical` : "Team summary",
-    href: "index.html#notifications",
+    href: "index.html",
   }];
 }
 

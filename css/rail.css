@@ -1,8 +1,10 @@
 /* Left navigation rail */
 
 .rail {
+  --rail-border-width: 1.5px;
+  --circle-pop-edge-offset: 1px;
   background: var(--card);
-  border-right: 1.5px solid var(--ink);
+  border-right: var(--rail-border-width) solid var(--ink);
   padding: 20px 0;
   display: flex;
   flex-direction: column;
@@ -55,6 +57,9 @@
 /* Circle switcher — top-of-rail button and floating popover. */
 .circle-switcher {
   position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
 }
 .circle-switcher-btn {
   appearance: none;
@@ -83,15 +88,17 @@
 .circle-pop {
   position: absolute;
   top: 0;
-  left: calc(100% + 10px);
-  min-width: 240px;
+  left: calc(100% + var(--circle-pop-edge-offset));
+  width: 260px;
+  max-width: calc(100vw - 72px);
   background: var(--card);
   border: 1.5px solid var(--ink);
-  box-shadow: var(--hard-shadow);
-  padding: 10px;
+  border-left: 0;
+  padding: 0;
   display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
+  overflow: hidden;
   /* Top of the stack on every page — above modals (100) and any
      page-scoped overlay. The rail itself is z-index 900, but because
      the rail has no z-index on its own positioned context until now,
@@ -107,14 +114,15 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 2px 4px 6px;
-  border-bottom: 1px dashed var(--hairline);
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--ink);
+  background: var(--paper);
 }
 
 .circle-pop-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   max-height: 320px;
   overflow-y: auto;
 }
@@ -122,8 +130,9 @@
 .circle-pop-item {
   appearance: none;
   background: transparent;
-  border: 1.5px solid transparent;
-  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline-2);
+  padding: 10px 12px;
   display: grid;
   grid-template-columns: 28px 1fr auto;
   align-items: center;
@@ -134,8 +143,8 @@
   color: var(--ink);
   transition: background .12s, border-color .12s;
 }
-.circle-pop-item:hover { background: var(--card-2); border-color: var(--ink); }
-.circle-pop-item.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.circle-pop-item:hover { background: var(--card-2); }
+.circle-pop-item.active { background: var(--ink); color: var(--paper); }
 
 .circle-pop-mark {
   display: grid;
@@ -180,7 +189,7 @@
   font-family: var(--mono);
   font-size: 11.5px;
   color: var(--muted);
-  padding: 6px 4px;
+  padding: 12px;
 }
 .circle-pop-manage {
   display: block;
@@ -190,8 +199,9 @@
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink);
-  padding: 8px 10px 4px;
-  border-top: 1px dashed var(--hairline);
+  padding: 10px 12px;
+  border-top: 1.5px solid var(--ink);
+  background: var(--paper);
 }
 .circle-pop-manage:hover { text-decoration: underline; }
 

@@ -15,7 +15,16 @@
   flex-direction: column;
   gap: 8px;
   position: relative;
+  color: inherit;
+  text-decoration: none;
+  transition: background .12s ease, transform .08s ease, box-shadow .12s ease;
 }
+.kpi:hover {
+  background: var(--card-2);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.kpi:active { transform: none; box-shadow: none; }
 
 .kpi-label {
   font-family: var(--mono);
