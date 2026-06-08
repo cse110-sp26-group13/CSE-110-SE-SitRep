@@ -82,11 +82,23 @@ This document tracks the development, features, and technical architecture of th
 
 ---
 
-## Technical Details
+### Verification
+- **E2E Automation:** A new comprehensive suite (`tests/e2e/calendar-collaboration.spec.js`) verifies:
+    - Custom group creation and teammate selection.
+    - Event persistence with rich descriptions.
+    - Role-based permissions (disabling fields for non-owners).
+    - "Creator" badge visibility.
+- **Manual Verification:** 
+    - Verified legend interactivity (buttons vs checkboxes).
+    - Confirmation of timeline filtering synchronization with sidebar state.
+    - Syntax check of `js/pages/calendar.js` using `node --check`.
+
+### Technical Details
 
 ### Files
 - `js/pages/calendar.js`: Main orchestrator and view rendering.
 - `js/db.js`: Supabase data layer and mutators.
 - `css/calendar.css`: Responsive grid layout and bar styling.
 - `js/selectors.js`: Data aggregation for issues and teammates.
+- `tests/e2e/calendar-collaboration.spec.js`: E2E collaboration workflow tests.
 - `atcalendar.md` / `sycalendar.md`: (Deprecated) Initial development logs.
