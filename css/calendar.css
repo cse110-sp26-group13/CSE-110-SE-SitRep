@@ -133,6 +133,18 @@
   height: 2rem;
   font-size: 0.65rem;
 }
+.creator-tag {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--card-3);
+  border: 0.0625rem solid var(--ink);
+  padding: 0.0625rem 0.25rem;
+  margin-top: 0.125rem;
+  width: fit-content;
+}
 .check-mark {
   width: 1.25rem;
   height: 1.25rem;

@@ -1327,17 +1327,21 @@ function openEventModal(eventId = null, defaultDate = null) {
       }
     }
 
-    teamList.innerHTML = members.map(t => `
-      <div class="people-row readonly">
-        <div class="people-info">
-          ${avatar(t.name, t.id)}
-          <div class="people-meta">
-            <span class="name">${escapeHTML(t.name)}</span>
-            <span class="role">${escapeHTML(t.role || "")}</span>
+    teamList.innerHTML = members.map(t => {
+      const isOwner = event && event.ownerId === t.id;
+      return `
+        <div class="people-row readonly">
+          <div class="people-info">
+            ${avatar(t.name, t.id)}
+            <div class="people-meta">
+              <span class="name">${escapeHTML(t.name)}</span>
+              <span class="role">${escapeHTML(t.role || "")}</span>
+              ${isOwner ? '<span class="creator-tag">Creator</span>' : ''}
+            </div>
           </div>
         </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   groupSelect.onchange = updateTeamVisibility;
