@@ -233,7 +233,7 @@ function computeWeekBurn(sessions, offset) {
  * Renders the weekly token burn bar chart.
  * Always shows 7 bars (Mon–Sun). Empty days show a ghost bar.
  */
-function renderBurnChart(container, burnData, weekLabel) {
+function renderBurnChart(container, burnData) {
   const maxTokens = Math.max(...burnData.map(d => d.tokens), 1);
   const todayISO_ = todayISO();
 

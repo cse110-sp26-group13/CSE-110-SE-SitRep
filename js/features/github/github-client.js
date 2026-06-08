@@ -1,19 +1,47 @@
+/**
+ * Low-level GitHub REST client shared by the issues and pull-request sync
+ * features. Centralizes auth (token from sessionStorage), error mapping into
+ * user-readable messages, and Link-header pagination so callers stay simple.
+ *
+ * Tokens live only in sessionStorage (see [ADR-0006](../../../docs/adr/0006-implement-github-api-vanilla.md))
+ * and are never persisted to disk or sent anywhere but api.github.com.
+ */
+
 const GH_API_BASE = "https://api.github.com";
 
+/**
+ * @returns {string} the configured `owner/repo` slug.
+ * @throws {Error} if no repo is set in sessionStorage.
+ */
 function getGHRepo() {
   const repo = sessionStorage.getItem("sitrep_gh_repo");
   if (!repo) throw new Error("GitHub repo not configured. Set sitrep_gh_repo in sessionStorage.");
   return repo;
 }
 
+/** @returns {string} the stored Personal Access Token, or "" if none. */
 function getGHToken() {
   return sessionStorage.getItem("sitrep_gh_token") || "";
 }
 
+/**
+ * @param {unknown} token
+ * @returns {string} the trimmed token, or "" if it is not a string.
+ */
 function cleanGHToken(token) {
   return typeof token === "string" ? token.trim() : "";
 }
 
+/**
+ * Central wrapper for GitHub API calls so auth and error handling stay
+ * consistent across every endpoint.
+ *
+ * @param {string} path - API path beginning with `/` (e.g. `/repos/o/r/issues`).
+ * @param {object} [options] - fetch options, plus an optional `token` override.
+ * @param {string} [options.token] - PAT to use instead of the stored one.
+ * @returns {Promise<Response>} the successful response.
+ * @throws {Error} with a user-readable message on any non-2xx status.
+ */
 async function ghFetch(path, options = {}) {
   // Central wrapper for GitHub API calls so auth and error handling stay consistent.
   const { token: explicitToken, ...fetchOptions } = options;
@@ -43,6 +71,13 @@ async function ghFetch(path, options = {}) {
   return response;
 }
 
+/**
+ * Builds the 404 message, tailoring the hint to whether a token was supplied.
+ * @param {string} path
+ * @param {string} token
+ * @param {string} detail - extra context parsed from the API response body.
+ * @returns {string}
+ */
 function githubNotFoundMessage(path, token, detail) {
   const base = `GitHub repository not found or inaccessible: ${path}${detail ? ` (${detail})` : ""}.`;
   if (token) {
@@ -51,6 +86,11 @@ function githubNotFoundMessage(path, token, detail) {
   return `${base} Private repos require a token with repository access and read permissions for Issues and Pull requests.`;
 }
 
+/**
+ * Pulls a readable error string out of a failed GitHub response body.
+ * @param {Response} response
+ * @returns {Promise<string>} the parsed message, or "" if none could be read.
+ */
 async function githubErrorDetail(response) {
   try {
     const data = await response.json();
@@ -64,6 +104,14 @@ async function githubErrorDetail(response) {
   }
 }
 
+/**
+ * Fetches every page of a paginated GitHub collection, following the
+ * `rel="next"` Link header until exhausted.
+ *
+ * @param {string} path - collection path (query string allowed).
+ * @param {object} [options] - same options as {@link ghFetch}.
+ * @returns {Promise<object[]>} the concatenated items across all pages.
+ */
 async function ghFetchAllPages(path, options = {}) {
   // Ask GitHub for the largest normal page size so large repos need fewer requests.
   const joiner = path.includes("?") ? "&" : "?";

@@ -1,7 +1,22 @@
+/**
+ * Pull-requests UI feature: renders the PR list, status filter chips, the
+ * "new PR" and PR-detail modals, and wires their controls to the GitHub
+ * data layer in [github/github-pulls.js](github/github-pulls.js).
+ *
+ * State (the active repo, token, and PR snapshot) lives in the shared
+ * globals; this module reads it, re-renders, and resyncs after writes.
+ * Destructive actions (close / merge) gate behind an explicit confirmation.
+ */
+
 const PR_STATUS_LABEL = { open: "Open", closed: "Closed", merged: "Merged" };
 const PR_DEFAULT_REPO = "cse110-sp26-group13/CSE-110-SE-SitRep";
 const PR_MERGE_CONFIRM_TEXT = "MERGE";
 
+/**
+ * @param {string} status - a PR status (`open` | `closed` | `merged`).
+ * @param {string} filter - the active filter (`all` | `open` | `resolved`).
+ * @returns {boolean} whether the PR should be shown under the filter.
+ */
 function prStatusMatchesFilter(status, filter) {
   if (filter === "all") return true;
   if (filter === "open") return status === "open";
@@ -52,6 +67,16 @@ function mergePullRequestSnapshot(repo, pullRequests, fallbackPullRequest) {
   return pullRequests.map((pr, i) => (i === index ? { ...pr, ...normalizedFallback } : pr));
 }
 
+/**
+ * Re-fetches a repo's pull requests from GitHub and stores the fresh
+ * snapshot, optionally merging in a just-mutated PR so the UI reflects the
+ * change even before GitHub's list endpoint catches up.
+ *
+ * @param {string} repo - `owner/repo`.
+ * @param {string} token - PAT (may be "").
+ * @param {object|null} [fallbackPullRequest] - a PR to merge into the snapshot.
+ * @returns {Promise<object[]>} the stored pull requests.
+ */
 async function resyncPullRequestsForRepo(repo, token, fallbackPullRequest = null) {
   const pullRequests = mergePullRequestSnapshot(
     repo,
@@ -68,6 +93,7 @@ async function resyncPullRequestsForRepo(repo, token, fallbackPullRequest = null
   return pullRequests;
 }
 
+/** Renders the filtered, sorted pull-request list into the PR panel. */
 function renderPullRequests() {
   const allPullRequests = effectivePullRequests();
   // Filter first, then sort so each tab keeps a predictable order.
@@ -167,6 +193,7 @@ function setPullRequestButtonPending(button, isPending, label) {
   delete button.dataset.originalText;
 }
 
+/** Opens the modal for creating a new pull request and binds its submit flow. */
 function openNewPullRequestModal() {
   const repo = currentPullRequestRepo();
 
@@ -240,6 +267,11 @@ function pullRequestNoticeHTML(message) {
   return message ? `<p class="pr-notice">${escapeHTML(message)}</p>` : "";
 }
 
+/**
+ * Opens the detail modal for a single pull request.
+ * @param {string} id - the app PR id (e.g. `gh-pr-123`).
+ * @param {string} [notice] - optional banner message to show at the top.
+ */
 function openPullRequestDetailModal(id, notice = "") {
   const pr = findPullRequestById(id);
   if (!pr) return;
@@ -452,6 +484,7 @@ function bindPullRequestDetailHandlers(pr) {
   }
 }
 
+/** Binds the PR panel's filter chips and "new PR" button (called once on init). */
 function bindPullRequestControls() {
   renderPullRequests();
   // Changing tabs only changes the view; synced PR data stays untouched in state.
