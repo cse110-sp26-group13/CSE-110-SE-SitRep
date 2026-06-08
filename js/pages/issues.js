@@ -2,14 +2,21 @@
  * Issues page orchestrator ([issues.html](../../issues.html)).
  *
  * Full blockers list + severity/status filters + new-issue modal +
- * GitHub sync modal. Stubs out `renderActivity` because this page
- * doesn't have an activity feed but
+ * GitHub sync modal + pull request list. Stubs out `renderActivity`
+ * because this page doesn't have an activity feed but
  * [blockers.js](../features/blockers.js) calls it after writes.
  */
 
-/** Re-render the issues page from the loaded globals. */
+/**
+ * Re-render the issue-only Issues page from loaded globals.
+ *
+ * Updates the header, GitHub repo controls, issue list, pull
+ * request list, and issue count subtitle.
+ *
+ * @returns {void}
+ */
 function renderIssues() {
-  // One page-level render keeps header, repo controls, assignments, PRs, and counts in sync.
+  // One page-level render keeps header, repo controls, issues, and counts in sync.
   renderHeader();
   updateGitHubSyncActions();
   renderBlockers();
@@ -32,6 +39,11 @@ function checkUrlParams() {
 /**
  * Update the page subtitle with the breakdown of issue counts
  * (open / resolved / total). Called whenever the list changes.
+ *
+ * Reads the currently effective issue rows, including GitHub-synced
+ * issues, and writes the summary text into `#issues-sub`.
+ *
+ * @returns {void}
  */
 function updateIssuesSub() {
   const all = effectiveActiveGithubBlockers();
@@ -44,8 +56,27 @@ function updateIssuesSub() {
 }
 
 window.renderAll = renderIssues;
+/**
+ * No-op activity renderer for issues.html.
+ *
+ * `blockers.js` calls `renderActivity()` after writes on pages that have
+ * an activity feed. The Issues page has no feed container, so this stub
+ * satisfies the shared callback without mutating the DOM.
+ *
+ * @returns {void}
+ */
 window.renderActivity = function () { /* no-op: no activity feed on issues page */ };
 
+/**
+ * Load initial page data, render the Issues page, and bind controls.
+ *
+ * Side effects: loads Supabase-backed data through `db.loadAll()`, renders
+ * the issue and pull request lists, and registers DOM event handlers for
+ * issue filters, GitHub sync, modal dismissal, issue creation, and pull
+ * request controls.
+ *
+ * @returns {Promise<void>}
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   // Load Supabase-backed local data first, then merge in any GitHub state from localStorage.
   await db.loadAll();

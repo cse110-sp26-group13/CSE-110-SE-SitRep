@@ -32,9 +32,9 @@
       <a class="rail-icon" data-route="standup" href="standup.html" title="Standup">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><circle cx="9" cy="8" r="3"/><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M14 21v-1a5 5 0 0 1 7-4.6"/></svg>
       </a>
-      <!-- Keep the route/file as issues.html, but label the feature as Assignments in the UI. -->
+      <!-- Keep the route/file as issues.html; the tab is labeled Issues and the page is titled Git-Glance. -->
       <!-- data-route stays "issues" because nav.js still keys the active rail state off that route name. -->
-      <a class="rail-icon" data-route="issues" href="issues.html" title="Assignments">
+      <a class="rail-icon" data-route="issues" href="issues.html" title="Issues">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><rect x="11.5" y="16.4" width="1" height="1"/></svg>
       </a>
       <a class="rail-icon" data-route="calendar" href="calendar.html" title="Calendar">
@@ -61,7 +61,6 @@
             <span id="header-sub">loading…</span>
           </div>
           <h1>Today on the team.</h1>
-          <p class="lede">A live overview pulled from this morning's standup. Dig into a feature to see the detail.</p>
         </div>
         <div class="page-actions">
           <div class="notification-popover" data-notification-popover>
@@ -114,12 +113,12 @@
             </div>
           </section>
 
-          <!-- Assignments snapshot: GitHub issues are presented as team assignments. -->
+          <!-- Issues snapshot: a short summary of the team's GitHub issues. -->
           <!-- The dashboard keeps this summary short; the full scrollable list lives on issues.html. -->
           <section class="snapshot" aria-labelledby="snap-issues-title">
             <div class="snapshot-head">
               <div>
-                <h3 id="snap-issues-title">Assignments</h3>
+                <h3 id="snap-issues-title">Git-Glance</h3>
                 <div class="snapshot-sub" id="snap-issues-sub">—</div>
               </div>
               <div class="snapshot-num" id="snap-issues-num">—</div>
@@ -127,7 +126,7 @@
             <div class="sev-row" id="snap-issues-sev"></div>
             <div class="snapshot-body" id="snap-issues-body"></div>
             <div class="snapshot-foot">
-              <a class="snapshot-link" href="issues.html">Open assignments →</a>
+              <a class="snapshot-link" href="issues.html">Open Git-Glance →</a>
             </div>
           </section>
         </div>

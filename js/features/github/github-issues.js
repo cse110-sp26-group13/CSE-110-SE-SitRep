@@ -14,7 +14,7 @@ async function fetchGitHubIssues(repoPath, token) {
 }
 
 function mapGitHubIssue(issue, repoPath) {
-  // Normalize GitHub's issue shape into the app's assignment/blocker shape.
+  // Normalize GitHub's issue shape into the app's issue/blocker shape.
   return {
     id: `gh-${issue.id}`,
     repoPath,
@@ -22,7 +22,7 @@ function mapGitHubIssue(issue, repoPath) {
     title: issue.title,
     description: issue.body || "",
     severity: labelToSeverity(issue.labels || []),
-    // The app calls closed assignments "resolved".
+    // The app calls closed issues "resolved".
     status: issue.state === "closed" ? "resolved" : "open",
     owner: issue.user?.login || "",
     postedAt: "GitHub Sync",
@@ -52,11 +52,19 @@ async function addGitHubComment(ghNumber, text, repoPath = getGHRepo()) {
   });
 }
 
-async function closeGitHubIssue(ghNumber, repoPath = getGHRepo()) {
-  const repo = repoPath;
-  return ghFetch(`/repos/${repo}/issues/${ghNumber}`, {
+/**
+ * Set a GitHub issue's open/closed state. GitHub issues are binary, so the
+ * app maps "closed" to its own "resolved" status and "open" to "open". Used
+ * for both resolving and reopening from the issue detail modal.
+ *
+ * @param {number} ghNumber
+ * @param {"open"|"closed"} state
+ * @param {string} [repoPath]
+ */
+async function setGitHubIssueState(ghNumber, state, repoPath = getGHRepo()) {
+  return ghFetch(`/repos/${repoPath}/issues/${ghNumber}`, {
     method: "PATCH",
-    body: JSON.stringify({ state: "closed" }),
+    body: JSON.stringify({ state }),
   });
 }
 

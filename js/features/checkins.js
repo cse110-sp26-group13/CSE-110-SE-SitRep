@@ -48,22 +48,7 @@ function moodSVG(bucket, extraClass) {
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 }
 
-/**
- * Get the SVG icon associated with a mood score.
- *
- * @param {number|null|undefined} score - Mood score from 1–10.
- * @returns {string} SVG icon string or an empty string if no mood exists.
- */
-function moodFace(score) {
-  const b = moodBucket(score);
-  return b == null ? "" : moodSVG(b);
-}
-
-/**
- * Get the current user's mood value.
- *
- * @returns {number|null} Current user's mood score or null if not set.
- */
+/** @returns {number|null} the current user's mood today, or null if unset. */
 function currentUserMood() {
   return teammates.find(t => t.id === team.currentUserId)?.mood ?? null;
 }
@@ -304,16 +289,8 @@ function bindComposeForm() {
       await db.addActivity("checkin", `posted standup${parts.length ? ` — ${parts.join(" · ")}` : ""}`);
     }
 
-    if (blockerNote) {
-      await db.createBlocker({
-        title: blockerNote,
-        description: "",
-        severity: "high",
-        ownerId: me.id,
-        category: null,
-      });
-      await db.addActivity("blocker", `opened a high issue — ${blockerNote}`);
-    }
+    // A standup blocker note stays on the standup page; it intentionally does
+    // NOT create an issue on the issues page, which is GitHub-only.
 
     await db.loadAll();
     form.hidden = true;

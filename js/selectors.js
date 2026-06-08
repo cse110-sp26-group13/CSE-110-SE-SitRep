@@ -25,8 +25,16 @@ function effectiveBlockers() {
   return [...allGithubIssues(), ...blockers];
 }
 
+/**
+ * Issues shown on the (GitHub-only) issues page: just the active
+ * repo's GitHub-synced issues. Supabase blockers are intentionally
+ * excluded so daily standups never surface here — this page is strictly
+ * GitHub information.
+ *
+ * @returns {object[]}
+ */
 function effectiveActiveGithubBlockers() {
-  return [...activeGithubIssues(), ...blockers];
+  return activeGithubIssues();
 }
 
 /**

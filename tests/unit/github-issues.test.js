@@ -46,7 +46,7 @@ describe('fetchGitHubIssues()', () => {
   })
 
   it('maps every fetched issue page and treats closed issues as resolved', async () => {
-    // Closed GitHub issues feed the app's Resolved assignment filter/count.
+    // Closed GitHub issues feed the app's Resolved issue filter/count.
     const ctx = vm.createContext({
       ghFetchAllPages: async () => [
         {

@@ -1,4 +1,4 @@
-/* Shared page chrome: page-intro header, lede, dashboard snapshots */
+/* Shared page chrome: page-intro header, dashboard snapshots */
 
 .page-intro {
   display: flex;
@@ -41,29 +41,6 @@
   
 }
 @keyframes blink { 0%, 60% { opacity: 1; } 70%, 100% { opacity: 0.35; } }
-
-.lede {
-  font-family: var(--sans);
-  font-size: 15px;
-  color: var(--muted);
-  max-width: 60ch;
-  margin: 14px 0 0;
-  line-height: 1.5;
-  background-color: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 2px 7px;
-}
-.lede em {
-  font-style: normal;
-  background: var(--card-2);
-  padding: 1px 6px;
-  border: 1.5px solid var(--ink);
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
 
 .page-actions {
   display: flex;

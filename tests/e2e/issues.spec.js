@@ -90,6 +90,34 @@ test.describe('Issues Tracker', () => {
   });
 
   test('user creates a new issue and it appears in the issues list', async ({ page }) => {
+    // Issue creation on this page is GitHub-only, so a repo must be synced first
+    // (it gives the form an active repo to post the new issue against).
+    await page.route(/https:\/\/api\.github\.com\/repos\/demo\/repo\/issues\?state=all/, (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.route(/https:\/\/api\.github\.com\/repos\/demo\/repo\/pulls\?state=all/, (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.locator('#sync-gh-btn').click();
+    await page.locator('#gh-repos').fill('demo/repo');
+    await page.locator('#gh-sync-form button[type="submit"]').click();
+    await expect(page.locator('#issue-modal')).toBeHidden();
+
+    // Mock the create-issue POST that the form fires on submit.
+    await page.route(/https:\/\/api\.github\.com\/repos\/demo\/repo\/issues$/, (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 555,
+          number: 42,
+          title: 'E2E Test: Broken login flow',
+          body: '',
+          state: 'open',
+        }),
+      });
+    });
+
     await page.locator('#add-blocker-btn').click();
 
     await expect(page.locator('#issue-modal')).toBeVisible();
