@@ -9,7 +9,7 @@
 .sparkline {
   display: block;
   width: 100%;
-  height: 220px;
+  aspect-ratio: 600 / 110;
 }
 
 .sparkline .grid {
@@ -57,20 +57,23 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 .mood-stat:first-child { border-left: 0; }
 .mood-stat-label {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: clamp(7px, 1.5vw, 10px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
+  overflow-wrap: break-word;
 }
 .mood-stat-value {
   font-family: var(--display);
   font-weight: 800;
   font-variation-settings: "wdth" 75;
-  font-size: 24px;
+  font-size: clamp(14px, 3.5vw, 24px);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ink);
