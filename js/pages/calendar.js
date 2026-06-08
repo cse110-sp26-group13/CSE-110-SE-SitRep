@@ -1,4 +1,29 @@
-// Calendar page orchestrator — handles month, week, and timeline views.
+/**
+ * Calendar page orchestrator — handles month, week, and timeline views.
+ * 
+ * ## Architecture Overview
+ * This module manages the SitRep calendar interface, providing three distinct views:
+ * 1. **Month View**: A traditional 7-column grid showing events and issue bars.
+ * 2. **Week View**: A focused single-week view with higher vertical density for events.
+ * 3. **Projects Timeline**: A horizontal Gantt-style view for project issues/blockers.
+ *
+ * ## Data Sources
+ * - **Calendar Events**: Stored in Supabase `calendar_events`. Can be "global" (team-wide) or "personal".
+ * - **Calendar Groups**: Custom shared circles (Supabase `calendar_groups`) with their own events and colors.
+ * - **Blockers/Issues**: Fetched from Supabase and GitHub (via `selectors.js`). Only shown in the Timeline view.
+ *
+ * ## Visibility & Filtering
+ * Visibility is controlled via the sidebar legend. The `calState` object tracks:
+ * - `kinds`: Set of basic visibility types ("global", "personal").
+ * - `customGroups`: Set of active custom group IDs.
+ * Filtering is performed in real-time by `filterEvents()` for calendar grids and locally within `renderCalTimeline()` for issues.
+ *
+ * ## Rendering Logic
+ * - **Grids**: Use CSS Grid with dynamic row/column spanning for multi-day events.
+ * - **Slots**: `calculateEventSlots()` performs a two-pass layout to ensure visual continuity 
+ *   (bars stay on the same vertical row across days/weeks) while maximizing space usage.
+ * - **Contrast**: `getContrastColor()` dynamically calculates high-contrast text colors for event bars.
+ */
 
 // ─── Constants ────────────────────────────────────────────────────────
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -8,6 +33,7 @@ const MONTH_NAMES = [
 ];
 
 // ─── State ────────────────────────────────────────────────────────────
+// Basic visibility categories available to all users.
 const CAL_KINDS = ["global", "personal"];
 let calState = {};
 
@@ -20,14 +46,14 @@ function initCalState() {
     // Default to today (page loads on current month).
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
-    kinds: new Set(CAL_KINDS),
-    customGroups: new Set(),
+    kinds: new Set(CAL_KINDS), // Stores which built-in categories are visible.
+    customGroups: new Set(),   // Stores which custom group IDs are visible.
     editingEventId: null,
     editingGroupId: null,
-    weekStart: getStartOfWeek(new Date()),
+    weekStart: getStartOfWeek(new Date()), // Basis for the Week View.
   };
   
-  // Initialize customGroups to show all by default
+  // Initialize customGroups to show all by default for a full view on first load.
   getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
 }
 
@@ -40,27 +66,29 @@ const EVENT_KIND_LABELS = {
 
 /**
  * Calculates and returns the dates needed to fill a month-view grid.
- * Includes leading/trailing days from adjacent months to complete weeks.
+ * Includes leading/trailing days from adjacent months to complete weeks (7 columns).
  * @param {number} year - The year to build for.
  * @param {number} month - The month index (0-11).
  * @returns {Object[]} Array of cell objects { date: Date, muted: boolean }.
  */
 function buildMonthCells(year, month) {
-  // First-of-month + previous-month tail to fill the leading week.
   const first = new Date(year, month, 1);
-  const startDow = first.getDay(); // 0 = Sun
+  const startDow = first.getDay(); // Find which day of the week the month starts on.
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const cells = [];
-  // Previous-month tail
+
+  // Previous-month tail: Fill the gap before the 1st of the month.
   for (let i = startDow - 1; i >= 0; i--) {
     cells.push({ date: new Date(year, month - 1, daysInPrev - i), muted: true });
   }
-  // This month
+
+  // This month: The core days of the currently viewed month.
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ date: new Date(year, month, d), muted: false });
   }
-  // Next-month head to round to a multiple of 7 (5 or 6 rows)
+
+  // Next-month head: Round out the grid to ensure full 7-day rows.
   while (cells.length % 7 !== 0) {
     const last = cells[cells.length - 1].date;
     cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), muted: true });
@@ -70,6 +98,7 @@ function buildMonthCells(year, month) {
 
 /**
  * Formats a Date object into an ISO date string (YYYY-MM-DD).
+ * Used as a key for state mapping and database queries.
  * @param {Date} d - The date to format.
  * @returns {string} The ISO date string.
  */
@@ -90,21 +119,16 @@ function isSameDay(a, b) {
 }
 
 /**
- * Filters the list of calendar events based on current visibility state.
+ * Filters the list of calendar events based on current visibility state (legend toggles).
  * @returns {Object[]} Filtered list of events.
  */
 function filterEvents() {
   return getCalendarEvents().filter(e => {
-    // Map event group to our UI kinds: default to global if not specified
-    const uiKind = e.group === "personal" ? "personal" : (e.group === "global" ? "global" : e.group);
-    
-    if (CAL_KINDS.includes(uiKind)) {
-      if (!calState.kinds.has(uiKind)) return false;
-    } else {
-      // It's a custom group
-      if (!calState.customGroups.has(uiKind)) return false;
-    }
-    return true;
+    const group = e.group || "global";
+    // Check built-in categories (Team/Personal) or custom groups.
+    return CAL_KINDS.includes(group)
+      ? calState.kinds.has(group)
+      : calState.customGroups.has(group);
   });
 }
 
@@ -129,6 +153,12 @@ const contrastCache = new Map();
 /**
  * Calculates the best contrast color (white or black) for a given background color.
  * Caches results to improve performance during large grid renders.
+ * 
+ * Logic:
+ * 1. Resolves CSS variables to absolute RGB values.
+ * 2. Calculates perceived brightness using the standard YIQ formula.
+ * 3. Switches based on theme (Dark/Light) to ensure readability against the background.
+ * 
  * @param {string} color - CSS color value (hex, rgb, or var).
  * @returns {string} Contrast color CSS variable.
  */
@@ -261,6 +291,61 @@ function findCalendarEvent(id) {
  */
 function findCalendarGroup(id) {
   return getCalendarGroups().find(g => g.id === id);
+}
+
+/**
+ * Renders a contiguous event segment inside a week or month grid.
+ */
+function renderEventSegment(event, startCol, span, slot, rowBase, weekCells, usedSlotsByDay) {
+  const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
+  const nextDayKey = startCol + span < 7 ? isoDate(weekCells[startCol + span].date) : null;
+  const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === String(event.id);
+  const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === String(event.id);
+
+  const classes = [eventBarClasses(event)];
+  if (event.endDate && event.endDate !== event.date) {
+    if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
+      classes.push("connect-left");
+    }
+    if (continuesToNextDay || (startCol + span === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
+      classes.push("connect-right");
+    }
+  }
+
+  return `
+    <button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}"
+      style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${rowBase + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
+      ${escapeHTML(event.title)}
+    </button>`;
+}
+
+function renderEventSegments(weekEvents, usedSlotsByDay, weekCells, rowBase, maxSlots) {
+  const eventMap = new Map(weekEvents.map(event => [String(event.id), event]));
+  let html = "";
+
+  for (let slot = 0; slot < maxSlots; slot++) {
+    let currentEventId = null;
+    let startCol = -1;
+
+    for (let c = 0; c <= 7; c++) {
+      const key = c < 7 ? isoDate(weekCells[c].date) : null;
+      const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
+
+      if (eventIdAtSlot !== currentEventId) {
+        if (currentEventId) {
+          const event = eventMap.get(String(currentEventId));
+          if (event) {
+            const span = c - startCol;
+            html += renderEventSegment(event, startCol, span, slot, rowBase, weekCells, usedSlotsByDay);
+          }
+        }
+        currentEventId = eventIdAtSlot;
+        startCol = c;
+      }
+    }
+  }
+
+  return html;
 }
 
 /**
@@ -402,45 +487,7 @@ function renderCalWeek() {
   });
 
   // 2. Event Bars
-  for (let slot = 0; slot < 15; slot++) {
-    let currentEventId = null;
-    let startCol = -1;
-
-    for (let c = 0; c <= 7; c++) {
-      const key = c < 7 ? isoDate(weekCells[c].date) : null;
-      const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
-
-      if (eventIdAtSlot !== currentEventId) {
-        if (currentEventId) {
-          const event = weekEvents.find(e => String(e.id) === currentEventId);
-          if (event) {
-            const span = c - startCol;
-            const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
-            const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === currentEventId;
-            const nextDayKey = c < 7 ? isoDate(weekCells[c].date) : null;
-            const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === currentEventId;
-
-            const classes = [eventBarClasses(event)];
-            if (event.endDate && event.endDate !== event.date) {
-              if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
-                classes.push("connect-left");
-              }
-              if (continuesToNextDay || (c === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
-                classes.push("connect-right");
-              }
-            }
-
-            gridHTML += `<button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}" 
-                            style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${2 + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
-              ${escapeHTML(event.title)}
-            </button>`;
-          }
-        }
-        currentEventId = eventIdAtSlot;
-        startCol = c;
-      }
-    }
-  }
+  gridHTML += renderEventSegments(weekEvents, usedSlotsByDay, weekCells, 2, 15);
 
   container.innerHTML = gridHTML;
 
@@ -517,48 +564,7 @@ function renderCalGrid() {
     });
 
     // 2. Event Bars (Iterate by slot to find contiguous segments)
-    for (let slot = 0; slot < 3; slot++) {
-      let currentEventId = null;
-      let startCol = -1;
-
-      for (let c = 0; c <= 7; c++) {
-        const key = c < 7 ? isoDate(weekCells[c].date) : null;
-        const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
-
-        if (eventIdAtSlot !== currentEventId) {
-          if (currentEventId) {
-            // Render the segment from startCol to c-1
-            const event = weekEvents.find(e => String(e.id) === currentEventId);
-            if (event) {
-              const span = c - startCol;
-              
-              // Check continuity
-              const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
-              const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === currentEventId;
-              const nextDayKey = c < 7 ? isoDate(weekCells[c].date) : null;
-              const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === currentEventId;
-
-              const classes = [eventBarClasses(event)];
-              if (event.endDate && event.endDate !== event.date) {
-                if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
-                  classes.push("connect-left");
-                }
-                if (continuesToNextDay || (c === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
-                  classes.push("connect-right");
-                }
-              }
-
-              gridHTML += `<button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}" 
-                              style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${currentRow + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
-                ${escapeHTML(event.title)}
-              </button>`;
-            }
-          }
-          currentEventId = eventIdAtSlot;
-          startCol = c;
-        }
-      }
-    }
+    gridHTML += renderEventSegments(weekEvents, usedSlotsByDay, weekCells, currentRow, 3);
 
     currentRow += weekSpan;
   });
@@ -581,9 +587,6 @@ function renderCalHeader() {
 /**
  * Renders the sidebar legend with filter checkboxes and color pickers.
  */
-/**
- * Renders the sidebar legend with filter checkboxes and color pickers.
- */
 function renderCalLegend() {
   const container = document.getElementById("cal-legend");
   if (!container) return;
@@ -596,13 +599,10 @@ function renderCalLegend() {
   // 1. Kinds (Team, Personal) First
   html += CAL_KINDS.map(kind => {
     const currentColor = groupColors[kind] || (kind === "personal" ? "var(--muted)" : "var(--ink)");
-    let pickerValue = currentColor;
-
-    if (currentColor.startsWith("var(")) {
-      pickerValue = (kind === "personal" ? "#6e6655" : "#39352e");
-    }
-
-    const colorStyle = currentColor.startsWith("var(") ? `background: ${currentColor}` : `background: ${currentColor}`;
+    const pickerValue = currentColor.startsWith("var(")
+      ? (kind === "personal" ? "#6e6655" : "#39352e")
+      : currentColor;
+    const colorStyle = `background: ${currentColor}`;
 
     return `
       <div class="cal-project">
@@ -700,60 +700,82 @@ function bindCalendar() {
   }
 
   // Month Nav
-  document.getElementById("cal-prev").addEventListener("click", () => {
-    if (calState.month === 0) { calState.month = 11; calState.year--; }
-    else calState.month--;
-    calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
-    renderCalHeader();
-    refreshActiveView();
-  });
-  document.getElementById("cal-next").addEventListener("click", () => {
-    if (calState.month === 11) { calState.month = 0; calState.year++; }
-    else calState.month++;
-    calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
-    renderCalHeader();
-    refreshActiveView();
-  });
-  document.getElementById("cal-today").addEventListener("click", () => {
-    const t = new Date();
-    calState.year = t.getFullYear();
-    calState.month = t.getMonth();
-    calState.weekStart = getStartOfWeek(t);
-    renderCalHeader();
-    refreshActiveView();
-  });
+  const calPrev = document.getElementById("cal-prev");
+  const calNext = document.getElementById("cal-next");
+  const calToday = document.getElementById("cal-today");
+
+  if (calPrev) {
+    calPrev.addEventListener("click", () => {
+      if (calState.month === 0) { calState.month = 11; calState.year--; }
+      else calState.month--;
+      calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
+
+  if (calNext) {
+    calNext.addEventListener("click", () => {
+      if (calState.month === 11) { calState.month = 0; calState.year++; }
+      else calState.month++;
+      calState.weekStart = getStartOfWeek(new Date(calState.year, calState.month, 1));
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
+
+  if (calToday) {
+    calToday.addEventListener("click", () => {
+      const t = new Date();
+      calState.year = t.getFullYear();
+      calState.month = t.getMonth();
+      calState.weekStart = getStartOfWeek(t);
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
 
   // Week Nav
-  document.getElementById("week-prev").addEventListener("click", () => {
-    calState.weekStart.setDate(calState.weekStart.getDate() - 7);
-    calState.year = calState.weekStart.getFullYear();
-    calState.month = calState.weekStart.getMonth();
-    renderCalHeader();
-    refreshActiveView();
-  });
-  document.getElementById("week-next").addEventListener("click", () => {
-    calState.weekStart.setDate(calState.weekStart.getDate() + 7);
-    calState.year = calState.weekStart.getFullYear();
-    calState.month = calState.weekStart.getMonth();
-    renderCalHeader();
-    refreshActiveView();
-  });
-  document.getElementById("week-today").addEventListener("click", () => {
-    const t = new Date();
-    calState.weekStart = getStartOfWeek(t);
-    calState.year = t.getFullYear();
-    calState.month = t.getMonth();
-    renderCalHeader();
-    refreshActiveView();
-  });
+  const weekPrev = document.getElementById("week-prev");
+  const weekNext = document.getElementById("week-next");
+  const weekToday = document.getElementById("week-today");
 
-  document.getElementById("new-group-btn").addEventListener("click", () => {
-    openGroupModal();
-  });
+  if (weekPrev) {
+    weekPrev.addEventListener("click", () => {
+      calState.weekStart.setDate(calState.weekStart.getDate() - 7);
+      calState.year = calState.weekStart.getFullYear();
+      calState.month = calState.weekStart.getMonth();
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
 
-  document.getElementById("new-event-btn").addEventListener("click", () => {
-    openEventModal();
-  });
+  if (weekNext) {
+    weekNext.addEventListener("click", () => {
+      calState.weekStart.setDate(calState.weekStart.getDate() + 7);
+      calState.year = calState.weekStart.getFullYear();
+      calState.month = calState.weekStart.getMonth();
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
+
+  if (weekToday) {
+    weekToday.addEventListener("click", () => {
+      const t = new Date();
+      calState.weekStart = getStartOfWeek(t);
+      calState.year = t.getFullYear();
+      calState.month = t.getMonth();
+      renderCalHeader();
+      refreshActiveView();
+    });
+  }
+
+  const newGroupBtn = document.getElementById("new-group-btn");
+  if (newGroupBtn) newGroupBtn.addEventListener("click", () => openGroupModal());
+
+  const newEventBtn = document.getElementById("new-event-btn");
+  if (newEventBtn) newEventBtn.addEventListener("click", () => openEventModal());
 
   // Listen to clicks in both grids
   [document.getElementById("cal-grid"), document.getElementById("cal-week-grid")].forEach(grid => {
@@ -1220,6 +1242,7 @@ function getDefaultEventDate() {
 
 /**
  * Opens the event creation/editing modal.
+ * Handles role-based permissions, pre-filling data, and UI state toggling.
  * @param {string|null} eventId - The ID of the event to edit, or null for new.
  * @param {string|null} defaultDate - Optional pre-selected date.
  */
@@ -1231,6 +1254,7 @@ function openEventModal(eventId = null, defaultDate = null) {
   const name = document.getElementById("calendar-event-name");
   const date = document.getElementById("calendar-event-date");
   const endDate = document.getElementById("calendar-event-end-date");
+  const description = document.getElementById("calendar-event-description");
   const groupSelect = document.getElementById("calendar-event-group");
   const error = document.getElementById("calendar-event-error");
   const deleteButton = document.getElementById("calendar-event-delete");
@@ -1239,11 +1263,12 @@ function openEventModal(eventId = null, defaultDate = null) {
   form.reset();
 
   // Enforce Visibility Transition Rules
+  // Personal events can be moved anywhere, but Global events are locked to the team view.
   const currentGroup = event?.group || "personal";
   let groupOptions = "";
 
   if (!event || currentGroup === "personal") {
-    // New event or current Personal: Can go anywhere
+    // New event or current Personal: Can go anywhere.
     groupOptions += `<option value="personal">Personal</option>`;
     groupOptions += `<option value="global">Team</option>`;
     getCalendarGroups().forEach(g => {
@@ -1251,11 +1276,11 @@ function openEventModal(eventId = null, defaultDate = null) {
     });
     groupSelect.disabled = false;
   } else if (currentGroup === "global") {
-    // Current Global: Locked
+    // Current Global: Locked to Team visibility.
     groupOptions += `<option value="global">Team</option>`;
     groupSelect.disabled = true;
   } else {
-    // Current Custom Group: Can go to Global, but not back to Personal
+    // Current Custom Group: Can go to Global, but not back to Personal.
     const customGroup = findCalendarGroup(currentGroup);
     groupOptions += `<option value="${currentGroup}">${escapeHTML(customGroup?.name || "Current Group")}</option>`;
     groupOptions += `<option value="global">Team</option>`;
@@ -1269,9 +1294,10 @@ function openEventModal(eventId = null, defaultDate = null) {
   name.value = event?.title || "";
   date.value = event?.date || defaultDate || getDefaultEventDate();
   endDate.value = event?.endDate || "";
+  description.value = event?.description || "";
   groupSelect.value = currentGroup;
 
-  // Handle Group Members Field
+  // Handle Group Members Field Visibility
   const teamField = document.getElementById("calendar-event-team-field");
   const teamList = document.getElementById("calendar-event-team-list");
   const teamLabel = teamField.querySelector('span');
@@ -1294,7 +1320,7 @@ function openEventModal(eventId = null, defaultDate = null) {
       teamLabel.textContent = "Group Members";
       const group = findCalendarGroup(val);
       if (group) {
-        // Map member IDs to teammate objects
+        // Map member IDs to teammate objects for visual listing.
         members = (group.members || [])
           .map(uid => window.teammates.find(t => t.id === uid))
           .filter(Boolean);
@@ -1317,7 +1343,7 @@ function openEventModal(eventId = null, defaultDate = null) {
   groupSelect.onchange = updateTeamVisibility;
   updateTeamVisibility();
   
-  // Permissions: Owner OR Group Leader can edit
+  // Permissions Check: Only the Owner or the Group Leader can modify existing data.
   const currentUserId = window.team.currentUserId;
   const isOwner = !event || event.ownerId === currentUserId;
   
@@ -1331,9 +1357,11 @@ function openEventModal(eventId = null, defaultDate = null) {
 
   const canEdit = isOwner || isGroupLeader;
 
+  // Set field accessibility based on permissions.
   name.disabled = !canEdit;
   date.disabled = !canEdit;
   endDate.disabled = !canEdit;
+  description.disabled = !canEdit;
   if (!canEdit) groupSelect.disabled = true;
 
   deleteButton.hidden = !event || !canEdit;
@@ -1376,11 +1404,11 @@ function openGroupModal(groupId = null) {
   leaveButton.hidden = !group || isCreator;
   submitButton.textContent = group ? "Save changes" : "Create group";
   
-  // Disable fields if not creator
+  // Disable core fields if the current user is not the group's creator.
   name.disabled = !isCreator;
   color.disabled = !isCreator;
 
-  // Populate people list (excluding the current user)
+  // Populate interactive people list (multi-select checkboxes).
   const teammates = effectiveTeammates();
   
   peopleList.innerHTML = teammates
@@ -1404,7 +1432,7 @@ function openGroupModal(groupId = null) {
       `;
     }).join("");
 
-  // Add listener for visual toggle
+  // Add listener for visual toggle: highlights the row when checked.
   peopleList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => {
       cb.closest('.people-row').classList.toggle('active', cb.checked);
@@ -1458,6 +1486,7 @@ async function saveGroup(e) {
   const group = calState.editingGroupId ? findCalendarGroup(calState.editingGroupId) : null;
   const isCreator = !group || group.creatorId === currentUserId;
 
+  // Double-check permissions before attempting DB write.
   if (!isCreator) {
     error.textContent = "Only the creator can edit group details.";
     error.hidden = false;
@@ -1470,7 +1499,7 @@ async function saveGroup(e) {
     return;
   }
 
-  // Creator is always in the group
+  // Mandatory: Creator is always in the group they create.
   if (!members.includes(currentUserId)) {
     members.push(currentUserId);
   }
@@ -1488,9 +1517,9 @@ async function saveGroup(e) {
       await db.createCalendarGroup(groupData);
     }
 
-    await db.loadAll(); // Refresh groups and events from DB
+    await db.loadAll(); // Global state refresh.
     
-    // Ensure all groups are in the local visibility set if they were newly created
+    // Auto-show new groups.
     getCalendarGroups().forEach(g => {
       if (!calState.customGroups.has(g.id)) calState.customGroups.add(g.id);
     });
@@ -1591,12 +1620,15 @@ function bindEventModal() {
 async function createCalendarEvent(e) {
   e.preventDefault();
 
+  // Extract form values.
   const title = document.getElementById("calendar-event-name").value.trim();
   const date = document.getElementById("calendar-event-date").value;
   const endDate = document.getElementById("calendar-event-end-date").value;
+  const description = document.getElementById("calendar-event-description").value.trim();
   const group = document.getElementById("calendar-event-group").value;
   const error = document.getElementById("calendar-event-error");
 
+  // Client-side validation.
   if (!title || !date || !group) {
     error.textContent = "Please complete every field before creating the event.";
     error.hidden = false;
@@ -1613,6 +1645,7 @@ async function createCalendarEvent(e) {
     date, 
     endDate: endDate || null, 
     title, 
+    description,
     group,
     teamId: (group === 'global' || group !== 'personal') ? window.team.id : null
   };
@@ -1624,8 +1657,9 @@ async function createCalendarEvent(e) {
       await db.createCalendarEvent(eventData);
     }
 
-    await db.loadAll(); // Refresh global state from DB
+    await db.loadAll(); // Global state refresh.
 
+    // Navigate to the month of the newly created/edited event.
     const selectedDate = new Date(`${date}T00:00:00`);
     calState.year = selectedDate.getFullYear();
     calState.month = selectedDate.getMonth();
@@ -1660,11 +1694,16 @@ async function deleteCalendarEvent() {
   }
 }
 
-// Initial entry point
+// ─── Initialization ───────────────────────────────────────────────────
+
+/**
+ * Initial entry point.
+ * Loads all shared data from Supabase before initializing UI state and bindings.
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await db.loadAll();
-    initCalState(); // Ensure state is ready before rendering
+    initCalState(); 
     renderCalendar();
     bindCalendar();
   } catch (err) {
