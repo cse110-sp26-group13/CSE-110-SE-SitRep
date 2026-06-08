@@ -383,7 +383,14 @@
 /* ─── Timeline View ─────────────────────────────────────────────────── */
 .cal-timeline-view { 
   overflow-x: auto; 
-  background: var(--card); 
+  background: var(--card);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.cal-timeline-view .cal-hd {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
 }
 .timeline-container { width: fit-content; display: flex; flex-direction: column; }
 .timeline-grid {
