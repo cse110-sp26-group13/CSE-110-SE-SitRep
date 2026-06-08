@@ -56,7 +56,7 @@
 }
 .mood-faces {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 .mood-face {
@@ -88,6 +88,7 @@
   width: 28px;
   height: 28px;
   display: block;
+  flex-shrink: 0;
 }
 .mood-icon-sm {
   width: 20px;
@@ -103,6 +104,7 @@
 .mood-label {
   text-transform: lowercase;
   letter-spacing: 0.03em;
+  font-size: clamp(7px, calc(3.7vw - 11px), 11px);
 }
 
 .mood-face.selected {
