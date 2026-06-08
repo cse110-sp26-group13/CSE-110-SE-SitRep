@@ -31,18 +31,32 @@ const DB_STUB = `
 
   function _hydrate() {
     const s = _read();
-    window.teammates = [{
-      id: 'test-user',
-      name: 'Test User',
-      role: '',
-      mood: s.mood ?? null,
-      moodHistory: Array.from({ length: 14 }, () => null),
-      lastCheckIn: s.lastCheckIn ?? null,
-      coverNeeded: false,
-      coverNote: '',
-    }];
+    window.teammates = [
+      {
+        id: 'test-user',
+        name: 'Test User',
+        role: 'Lead',
+        mood: s.mood ?? null,
+        moodHistory: Array.from({ length: 14 }, () => null),
+        lastCheckIn: s.lastCheckIn ?? null,
+        coverNeeded: false,
+        coverNote: '',
+      },
+      {
+        id: 'other-user',
+        name: 'Other Teammate',
+        role: 'Developer',
+        mood: null,
+        moodHistory: Array.from({ length: 14 }, () => null),
+        lastCheckIn: null,
+        coverNeeded: false,
+        coverNote: '',
+      }
+    ];
     window.blockers = s.blockers || [];
     window.activity = s.activity || [];
+    window.calendarEvents = s.calendarEvents || [];
+    window.calendarGroups = s.calendarGroups || [];
   }
   _hydrate();
 
@@ -90,6 +104,56 @@ const DB_STUB = `
     },
     addBlockerComment: async () => {},
     setSlotAvailability: async () => {},
+
+    // Calendar Stubs
+    createCalendarEvent: async (ev) => {
+      const s = _read();
+      s.calendarEvents = s.calendarEvents || [];
+      s.calendarEvents.push({
+        id: 'ev-' + Math.random().toString(36).slice(2, 9),
+        ownerId: 'test-user',
+        ...ev
+      });
+      _write(s);
+    },
+    updateCalendarEvent: async (id, patch) => {
+      const s = _read();
+      const i = (s.calendarEvents || []).findIndex(e => e.id === id);
+      if (i >= 0) { Object.assign(s.calendarEvents[i], patch); _write(s); }
+    },
+    deleteCalendarEvent: async (id) => {
+      const s = _read();
+      s.calendarEvents = (s.calendarEvents || []).filter(e => e.id !== id);
+      _write(s);
+    },
+    createCalendarGroup: async (g) => {
+      const s = _read();
+      s.calendarGroups = s.calendarGroups || [];
+      s.calendarGroups.push({
+        id: 'grp-' + Math.random().toString(36).slice(2, 9),
+        creatorId: 'test-user',
+        ...g
+      });
+      _write(s);
+    },
+    updateCalendarGroup: async (id, patch) => {
+      const s = _read();
+      const i = (s.calendarGroups || []).findIndex(g => g.id === id);
+      if (i >= 0) { Object.assign(s.calendarGroups[i], patch); _write(s); }
+    },
+    deleteCalendarGroup: async (id) => {
+      const s = _read();
+      s.calendarGroups = (s.calendarGroups || []).filter(g => g.id !== id);
+      _write(s);
+    },
+    leaveCalendarGroup: async (id) => {
+      const s = _read();
+      const i = (s.calendarGroups || []).findIndex(g => g.id === id);
+      if (i >= 0) {
+        s.calendarGroups[i].members = (s.calendarGroups[i].members || []).filter(uid => uid !== 'test-user');
+        _write(s);
+      }
+    }
   };
 `;
 
