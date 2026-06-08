@@ -118,6 +118,15 @@
 
 .snapshot-body { display: flex; flex-direction: column; gap: 10px; }
 
+#snap-standup-body {
+  overflow-y: auto;
+  max-height: 160px;
+}
+#snap-standup-body::-webkit-scrollbar        { width: 4px; }
+#snap-standup-body::-webkit-scrollbar-track  { background: transparent; }
+#snap-standup-body::-webkit-scrollbar-thumb  { background: var(--hairline); }
+#snap-standup-body::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
 .av-row {
   display: flex;
   align-items: center;
