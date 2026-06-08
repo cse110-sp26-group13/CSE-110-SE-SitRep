@@ -237,8 +237,9 @@ function openGitHubSyncModal() {
       </div>
       <div class="field-row">
         <label class="field">
-          <span>Personal Access Token (Optional for public repos)</span>
-          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxx" />
+          <span>Personal Access Token (Required for private repos)</span>
+          <input type="password" id="gh-token" placeholder="ghp_... or github_pat_..." />
+          <small class="field-help">Private repos need repo access plus read access to Issues and Pull requests.</small>
         </label>
       </div>
       <p id="gh-error" class="field-error" hidden></p>
