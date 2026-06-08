@@ -22,30 +22,24 @@ CREATE TABLE IF NOT EXISTS ai_activity (
 CREATE INDEX IF NOT EXISTS ai_activity_team_date
   ON ai_activity (team_id, date DESC);
 
--- Row-Level Security: a user can only see sessions for their own team
+-- Row-Level Security: a user can see/mutate sessions for any team they
+-- belong to. Uses current_user_team_ids() (defined in the strict-privacy
+-- migration) so multi-circle members aren't limited to one arbitrary team —
+-- the earlier `LIMIT 1` subquery silently hid activity for every team but one.
 ALTER TABLE ai_activity ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "ai_activity_team_isolation" ON ai_activity;
 CREATE POLICY "ai_activity_team_isolation"
   ON ai_activity
-  USING (
-    team_id = (
-      SELECT team_id
-      FROM memberships
-      WHERE user_id = auth.uid()
-      LIMIT 1
-    )
-  );
+  FOR ALL
+  USING (team_id IN (SELECT public.current_user_team_ids()));
 
 -- Allow authenticated users to insert their own sessions
+DROP POLICY IF EXISTS "ai_activity_insert_own" ON ai_activity;
 CREATE POLICY "ai_activity_insert_own"
   ON ai_activity
   FOR INSERT
   WITH CHECK (
     user_id = auth.uid()
-    AND team_id = (
-      SELECT team_id
-      FROM memberships
-      WHERE user_id = auth.uid()
-      LIMIT 1
-    )
+    AND team_id IN (SELECT public.current_user_team_ids())
   );
