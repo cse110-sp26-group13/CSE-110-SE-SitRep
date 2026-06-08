@@ -23,7 +23,7 @@ function renderStandupSnapshot() {
   document.getElementById("snap-standup-sub").textContent =
     avg == null ? "Mood pending" : `Avg mood ${avg.toFixed(1)} / 10`;
 
-  const recentBlocker = tm.find(t => t.lastCheckIn?.blockers);
+  const membersWithBlockers = tm.filter(t => t.lastCheckIn?.blockers);
   const body = document.getElementById("snap-standup-body");
   let html = "";
   if (pending.length > 0) {
@@ -39,11 +39,11 @@ function renderStandupSnapshot() {
       Whole team's in.
     </div>`;
   }
-  if (recentBlocker) {
-    html += `<div class="checkin-note checkin-blocker" style="margin-top:6px">
-      <span class="checkin-field-label">Heads up:</span>
-      ${escapeHTML(recentBlocker.lastCheckIn.blockers)}
-    </div>`;
+  if (membersWithBlockers.length > 0) {
+    html += membersWithBlockers.map(m => `<div class="checkin-note checkin-blocker" style="margin-top:6px">
+      <span class="checkin-field-label">Heads up (${escapeHTML(m.name.split(" ")[0])}):</span>
+      ${escapeHTML(m.lastCheckIn.blockers)}
+    </div>`).join("");
   }
   body.innerHTML = html;
 }
@@ -54,7 +54,7 @@ function renderStandupSnapshot() {
  * full issues page.
  */
 function renderIssuesSnapshot() {
-  const open = effectiveBlockers().filter(b => b.status !== "resolved");
+  const open = allGithubIssues().filter(b => b.status !== "resolved");
   const counts = {
     critical: open.filter(b => b.severity === "critical").length,
     high:     open.filter(b => b.severity === "high").length,
@@ -71,9 +71,8 @@ function renderIssuesSnapshot() {
     <span><i class="dot medium"></i>${counts.medium} medium</span>
   `;
 
-  // Top 2 most-severe issues
-  const order = { critical: 0, high: 1, medium: 2 };
-  const top = open.slice().sort((a, b) => order[a.severity] - order[b.severity]).slice(0, 2);
+  // 2 most recent issues as preview (GitHub API returns issues newest-first)
+  const top = open.slice(0, 2);
   document.getElementById("snap-issues-body").innerHTML = top.length
     ? top.map(b => `
         <a class="mini-issue" href="issues.html#${escapeHTML(b.id)}">
