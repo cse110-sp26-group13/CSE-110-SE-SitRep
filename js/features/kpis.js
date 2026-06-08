@@ -27,26 +27,31 @@ function renderKPIs() {
   const tiles = [
     { label: "Checked in today", value: `${checkedIn}/${tm.length}`,
       cls: checkedIn === tm.length ? "good" : "",
-      sub: checkedIn === tm.length ? "Full team in" : `${tm.length - checkedIn} pending` },
+      sub: checkedIn === tm.length ? "Full team in" : `${tm.length - checkedIn} pending`,
+      href: "standup.html" },
     { label: "Team mood", value: `${avgStr}/10`, cls: moodCls,
-      sub: "Avg across team" },
+      sub: "Avg across team",
+      href: "standup.html#mood-title" },
     { label: "Open blockers", value: open,
       cls: open === 0 ? "good" : critical > 0 ? "alert" : "warn",
-      sub: open === 0 ? "All clear" : `${critical} critical` },
+      sub: open === 0 ? "All clear" : `${critical} critical`,
+      href: "issues.html" },
     { label: "Cover needed", value: cover,
       cls: cover === 0 ? "good" : "warn",
-      sub: cover === 0 ? "No requests" : "Help wanted" },
+      sub: cover === 0 ? "No requests" : "Help wanted",
+      href: "standup.html#meet-title" },
     ...(ai ? [
       { label: "AI sessions today", value: ai.todayCount,
         cls: ai.todayCount > 0 ? "good" : "",
-        sub: `Review rate ${ai.reviewRate}` },
+        sub: `Review rate ${ai.reviewRate}`,
+        href: "ai-agents.html" },
     ] : []),
   ];
   document.getElementById("kpis").innerHTML = tiles.map(t => `
-    <div class="kpi">
+    <a class="kpi" href="${t.href}">
       <div class="kpi-label">${t.label}</div>
       <div class="kpi-value ${t.cls || ""}">${t.value}</div>
       <div class="kpi-trend">${t.sub}</div>
-    </div>
+    </a>
   `).join("");
 }

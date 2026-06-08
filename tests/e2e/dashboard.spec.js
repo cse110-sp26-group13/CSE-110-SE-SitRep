@@ -28,6 +28,13 @@ test.describe('Dashboard summary page', () => {
     await expect(page.locator('.kpi').first()).toBeVisible();
   });
 
+  test('KPI tiles link to their relevant pages', async ({ page }) => {
+    await expect(page.locator('.kpi[href="standup.html"]').first()).toBeVisible();
+    await expect(page.locator('.kpi[href="issues.html"]').first()).toBeVisible();
+    await page.locator('.kpi[href="issues.html"]').click();
+    await expect(page).toHaveURL(/issues(\.html)?$/);
+  });
+
   test('standup snapshot card shows count and link', async ({ page }) => {
     await expect(page.locator('#snap-standup-num')).toBeVisible();
     await expect(page.locator('a.snapshot-link[href="standup.html"]').first()).toBeVisible();
@@ -75,7 +82,10 @@ test.describe('Dashboard summary page', () => {
 
     await expect(page).toHaveURL(/standup(\.html)?$/);
     const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = await page.evaluate(() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
     expect(readStore['test-team']).toContain(`standup:${today}:test-user`);
   });
 
