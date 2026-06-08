@@ -1,6 +1,6 @@
 /**
  * KPI strip — four summary tiles at the top of the dashboard:
- * check-ins today, team mood average, open blockers, cover-needed
+ * check-ins today, team mood average, open issues, cover-needed
  * count. Each tile picks a `good`/`warn`/`alert` class to drive its
  * accent color in [css/kpis.css](../../css/kpis.css).
  */
@@ -32,7 +32,7 @@ function renderKPIs() {
     { label: "Team mood", value: `${avgStr}/10`, cls: moodCls,
       sub: "Avg across team",
       href: "standup.html#mood-title" },
-    { label: "Open blockers", value: open,
+    { label: "Open issues", value: open,
       cls: open === 0 ? "good" : critical > 0 ? "alert" : "warn",
       sub: open === 0 ? "All clear" : `${critical} critical`,
       href: "issues.html" },
