@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `create_team(p_name)` Supabase RPC for atomic team + lead-membership insert, resolving the documented `team_member_read` RLS gap ([supabase/schema.sql](supabase/schema.sql), [supabase/schema.md](supabase/schema.md))
 - Pre-implementation splash wireframe per the course rubric ([docs/wireframes/splash.md](docs/wireframes/splash.md))
 - Unit tests for `mapAuthError` and the 6-digit join-code regex — 22 cases, runnable in Node (CI) and in the browser ([tests/auth.test.js](tests/auth.test.js), [tests/auth.test.html](tests/auth.test.html))
-- Vanilla CI on GitHub Actions: JS syntax checks, HTML asset-reference checks, CSS custom-property usage checks, and the unit tests — no external lint or test packages ([.github/workflows/ci.yml](.github/workflows/ci.yml), [scripts/check.js](scripts/check.js))
+- CI on GitHub Actions: ESLint, Vitest unit tests, and Playwright e2e tests ([.github/workflows/ci.yml](.github/workflows/ci.yml))
 - Research notes for Notion, Slack, and personal dashboard / sticky-note patterns ([Research/shaziResearch.md](Research/shaziResearch.md))
 
 ### Changed

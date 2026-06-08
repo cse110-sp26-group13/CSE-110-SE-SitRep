@@ -234,15 +234,8 @@ input, textarea, select {
 
 /* Anchor styling is opt-in (per-component) so rail icons, snapshot
    numbers, and button-styled anchors don't inherit underlines or
-   ink-on-hover invert. Inline body links use .lede a. */
+   ink-on-hover invert. */
 a { color: inherit; text-decoration: none; }
-.lede a {
-  color: var(--ink);
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 3px;
-}
-.lede a:hover { background: var(--ink); color: var(--paper); text-decoration: none; }
 
 /* Avatar (utils.js stamps inline bg color — override to ink-on-paper) */
 .avatar {
@@ -464,7 +457,6 @@ a { color: inherit; text-decoration: none; }
   border: 1.5px solid var(--ink);
   padding: 14px 16px;
 }
-.issue-dates-row { padding-top: 4px; }
 
 /* Comments */
 .comments-section { display: flex; flex-direction: column; gap: 10px; }

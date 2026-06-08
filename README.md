@@ -94,8 +94,7 @@ Vanilla HTML, CSS, and JavaScript — no framework, no build step. This is a cou
 │   ├── MVP/                # MVP scope and early screenshots
 │   └── UserStories.md
 ├── tests/                  # Vitest unit tests + Playwright e2e specs
-├── scripts/check.js        # Custom CI checks (no external lint deps)
-├── .github/workflows/      # CI: lint, unit tests, e2e, asset checks
+├── .github/workflows/      # CI: lint, unit tests, e2e
 ├── Research/               # Per-teammate research notes on prior art
 ├── StandupMeetings/        # Captured standup notes
 ├── SprintPlanning/         # Weekly sprint plans

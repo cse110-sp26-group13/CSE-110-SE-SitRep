@@ -18,6 +18,44 @@ Newest first. Date format: `YYYY-MM-DD`.
 
 ---
 
+### 2026-06-06 — Ophir
+
+**Tooling:** OpenAI Codex via the Codex CLI with direct repository access. File changes were made locally in the existing project workspace and reviewed against the current Issues page implementation and recent Git history.
+
+**AI-assisted output that landed in the repo:**
+
+- [`issues.html`](../issues.html) — commented out the Pull requests card, PR status filters, New PR button, PR list container, and PR-specific script imports for `github-pulls.js` and `pull-requests.js`. The code was preserved in HTML comments so it can be restored later.
+- [`js/pages/issues.js`](../js/pages/issues.js) — commented out the `renderPullRequests()` and `bindPullRequestControls()` calls so PR rendering and handlers no longer run on the Issues page.
+- [`js/features/blockers.js`](../js/features/blockers.js) — changed the GitHub sync modal back to issue-only behavior, including button text, fetch logic, warning handling, and activity log text. The previous PR fetch, count, and activity-log code was kept as comments next to the issue sync path.
+- [`tests/e2e/issues.spec.js`](../tests/e2e/issues.spec.js) — updated the Issues page E2E coverage so it expects issue sync without a PR list, while preserving the old PR-specific tests/assertions in comments.
+- This AI usage disclosure entry.
+
+**Decisions I made (not delegated):**
+
+- Kept all PR-related source code in place instead of deleting it, because the task asked for PR functionality to be reversible later.
+- Treated PR-related functionality as anything on `issues.html` that displayed, loaded, rendered, bound controls for, fetched, counted, or logged Pull Requests/PRs on the Issues page.
+- Left shared PR modules and PR unit tests in the repo because the task was scoped to the Issues page, and removing shared PR code could break a future dedicated PR page or restoration path.
+- Kept normal GitHub issue functionality active, including issue sync, issue creation, GitHub issue comments, issue closing, repo selection, and unsync behavior.
+
+**Where the AI helped most:**
+
+- Tracing PR behavior across the Issues page markup, page orchestrator, GitHub sync flow, and E2E tests.
+- Making a minimal reversible change by commenting out PR-specific UI/imports/calls/fetch logic instead of broadly refactoring the issue tracker.
+- Adding documentation comments before the touched Issues page functions so the purpose of the issue-only behavior is clear.
+
+**Where human review is still expected:**
+
+- Should still review the commented PR blocks to confirm the scope matches the team intent, especially the assumption that PR sync/count/activity text should not run from the Issues page.
+- A teammate should confirm whether PR functionality is being deferred entirely or should move to a separate page later.
+- The final PR should still receive normal human review before merge, with particular attention to the GitHub sync behavior and the updated E2E expectations.
+
+**Follow-up cleanup (2026-06-07):**
+
+- Converted the touched Issues-page comments to fuller JSDoc-style blocks where they document function behavior, side effects, or async work.
+- Fixed a CI/runtime risk from direct `updateIssuesSub()` calls in the shared blocker controls by routing filter changes through the page-level `renderAll()` function and preserving the old calls in comments.
+
+---
+
 ### 2026-05-29 — Shazi
 
 **Tooling:** Claude (Anthropic Opus 4.7) via Claude Code CLI for the documentation pass; Claude (claude.ai design / artifacts) for the visual prototypes earlier in weeks 7–8.
@@ -222,4 +260,3 @@ Covers AI use on work that predates the May 16 audit / cleanup session.
 - AI generated initial drafts; I (Shazi) reviewed before committing.
 - AI had no repository write access — output was pasted in manually.
 - The v1 PR (#2, ~1,949 LoC) was self-merged with no other human reviewer. This is a rubric violation I caught later; the Review Crew role in [Week 7 sprint plan](../SprintPlanning/Week7-SprintPlan.md) is the mitigation going forward, and >300-LoC AI-drafted PRs will get a second pair of eyes from now on.
-

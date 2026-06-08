@@ -264,34 +264,6 @@
   const ACTIVE_TEAM_KEY = "sitrep-active-team";
 
   /**
-   * Local HTML escaper. Duplicated from utils.js because this page
-   * doesn't include utils.js (settings doesn't depend on the
-   * dashboard feature modules).
-   *
-   * @param {unknown} s
-   * @returns {string}
-   */
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  /**
-   * 1–2 letter circle initials for the rail mark / list rows.
-   *
-   * @param {string} name
-   * @returns {string}
-   */
-  function circleInitials(name) {
-    const t = (name || "").trim();
-    if (!t) return "?";
-    return t.split(/\s+/).slice(0, 2).map(p => p[0]).join("").toUpperCase();
-  }
-
-  /**
    * Fetch every circle the signed-in user belongs to, with role info.
    * Same shape as the circle-switcher's fetchCircles() — kept separate
    * because this page may render before the rail's switcher has hydrated.
@@ -335,12 +307,12 @@
     ul.innerHTML = list.map(c => `
       <li>
         <button type="button" class="circles-item ${c.id === activeId ? "active" : ""}" data-team-id="${c.id}">
-          <span class="circles-item-mark">${circleInitials(c.name)}</span>
+          <span class="circles-item-mark">${initials(c.name)}</span>
           <span class="circles-item-text">
-            <span class="circles-item-name">${escapeHtml(c.name)}</span>
-            <span class="circles-item-meta">${escapeHtml(c.role || "member")}</span>
+            <span class="circles-item-name">${escapeHTML(c.name)}</span>
+            <span class="circles-item-meta">${escapeHTML(c.role || "member")}</span>
           </span>
-          <span class="circles-item-code">${escapeHtml(c.joinCode || "")}</span>
+          <span class="circles-item-code">${escapeHTML(c.joinCode || "")}</span>
           <span class="circles-item-state">${c.id === activeId ? "Active" : "Set active"}</span>
         </button>
       </li>
