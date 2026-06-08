@@ -57,7 +57,7 @@
 
     <main class="main">
       <header class="page-intro">
-        <div>
+        <div class="ai-page-title-row">
           <div class="eyebrow">
             <span class="live-dot"></span>
             <span id="header-sub">loading…</span>
@@ -65,90 +65,120 @@
           <h1>AI Agents.</h1>
         </div>
         <div class="page-actions">
-          <a class="btn-secondary" href="index.html">← Dashboard</a>
-          <button class="btn-primary" id="ai-log-btn">+ Log session</button>
+          <a class="btn-secondary ai-dashboard-btn" href="index.html">← Dashboard</a>
         </div>
       </header>
 
-      <!-- Page-local AI KPI strip -->
-      <div class="ai-kpi-row" id="ai-kpis" aria-label="AI agent KPIs"></div>
-
-      <!-- Log session form (hidden until "Log session" is clicked) -->
-      <form class="ai-log-form" id="ai-log-form" hidden aria-label="Log AI session">
-        <div class="ai-form-grid">
-
-          <div class="ai-form-field">
-            <label class="ai-form-label" for="ai-agent-select">Agent</label>
-            <select class="ai-form-select" id="ai-agent-select" required>
-              <option value="claude-code">Claude Code</option>
-              <option value="copilot">GitHub Copilot</option>
-              <option value="cursor">Cursor</option>
-              <option value="chatgpt">ChatGPT</option>
-              <option value="gemini">Gemini</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div class="ai-form-field">
-            <label class="ai-form-label" for="ai-model-select">Model</label>
-            <!-- Options are populated dynamically by ai-agents.js based on the selected agent -->
-            <select class="ai-form-select" id="ai-model-select"></select>
-          </div>
-
-          <div class="ai-form-field full-width">
-            <label class="ai-form-label" for="ai-task-input">What did you use it for?</label>
-            <textarea class="ai-form-textarea" id="ai-task-input"
-              placeholder="E.g. Wrote unit tests for the auth module, refactored the state reducer, debugged a layout issue…"
-              required></textarea>
-          </div>
-
-          <div class="ai-form-field">
-            <label class="ai-form-label" for="ai-tokens-input">
-              Tokens used <span class="optional">(optional — copy from session summary)</span>
-            </label>
-            <input class="ai-form-input" id="ai-tokens-input" type="number" min="0"
-              placeholder="e.g. 42000" />
-            <div class="ai-cost-preview" id="ai-cost-preview"></div>
-          </div>
-
-          <div class="ai-form-field">
-            <label class="ai-form-label" for="ai-pr-input">
-              PR / commit link <span class="optional">(optional)</span>
-            </label>
-            <input class="ai-form-input" id="ai-pr-input" type="url"
-              placeholder="https://github.com/…/pull/42" />
-          </div>
-
-          <div class="ai-checkbox-row">
-            <input type="checkbox" id="ai-reviewed-check" />
-            <label class="ai-checkbox-label" for="ai-reviewed-check">
-              Output was human-reviewed before merging
-            </label>
-          </div>
-
-        </div>
-        <div class="ai-form-actions">
-          <button type="button" class="btn-secondary" id="ai-cancel-btn">Cancel</button>
-          <button type="submit" class="btn-primary">Log session</button>
-        </div>
-      </form>
+      <!-- AI KPI strip -->
+      <section class="kpis" id="ai-kpis" aria-label="AI session KPIs"></section>
 
       <!-- Today's session cards -->
       <section aria-labelledby="ai-sessions-heading" style="margin-bottom: 24px;">
-        <h2 id="ai-sessions-heading" style="font-size:14px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Today's sessions</h2>
+        <div class="ai-sessions-header">
+          <h2 id="ai-sessions-heading" class="ai-section-heading">Today's sessions</h2>
+          <button class="btn-primary" id="ai-log-btn">+ Log session</button>
+        </div>
         <ul class="ai-sessions-list" id="ai-sessions-list"></ul>
       </section>
 
       <!-- Sprint token burn chart -->
-      <section aria-labelledby="ai-burn-heading">
+      <section aria-labelledby="ai-burn-heading" style="margin-bottom: 24px;">
+        <h2 id="ai-burn-heading" class="ai-section-heading">Token burn (this week)</h2>
         <div class="ai-burn-wrap">
-          <div class="ai-burn-title" id="ai-burn-heading">Sprint token burn (daily)</div>
-          <div class="ai-burn-subtitle">Each bar = total tokens logged that day. Tallest bar is the peak day. Hover a bar for the exact count.</div>
-          <div class="ai-burn-chart" id="ai-burn-chart"></div>
+          <div class="ai-burn-nav">
+            <button class="btn-secondary ai-burn-prev" id="ai-burn-prev" aria-label="Previous week">← Prev</button>
+            <span class="ai-burn-week-label" id="ai-burn-week-label"></span>
+            <button class="btn-secondary ai-burn-next" id="ai-burn-next" aria-label="Next week">Next →</button>
+          </div>
+          <div class="ai-burn-chart" id="ai-burn-chart" aria-label="Weekly token burn chart"></div>
+        </div>
+      </section>
+
+      <!-- Sprint Review -->
+      <section aria-labelledby="ai-review-heading">
+        <div class="ai-review-wrap" id="ai-sprint-review">
+          <div class="ai-section-heading-mono" id="ai-review-heading">Sprint review</div>
         </div>
       </section>
 
     </main>
+  </div>
+
+  <!-- Log session modal -->
+  <div class="ai-session-overlay" id="ai-log-overlay" hidden role="dialog"
+       aria-modal="true" aria-labelledby="ai-log-dialog-title">
+    <div class="ai-dialog-box" tabindex="-1">
+
+      <div class="ai-dialog-header ai-dialog-header--new">
+        <div class="ai-dialog-header-left">
+          <span class="ai-dialog-agent-label" id="ai-log-dialog-title">New Session</span>
+          <span class="ai-dialog-type-tag">// log ai usage</span>
+        </div>
+        <button class="ai-dialog-close" aria-label="Close dialog" title="Close (Esc)">×</button>
+      </div>
+
+      <div class="ai-dialog-body">
+        <form id="ai-log-form" aria-label="Log AI session">
+          <div class="ai-form-grid">
+
+            <div class="ai-form-field">
+              <label class="ai-form-label" for="ai-agent-select">Agent</label>
+              <select class="ai-form-select" id="ai-agent-select" required>
+                <option value="claude-code">Claude Code</option>
+                <option value="copilot">GitHub Copilot</option>
+                <option value="cursor">Cursor</option>
+                <option value="chatgpt">ChatGPT</option>
+                <option value="gemini">Gemini</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="ai-form-field">
+              <label class="ai-form-label" for="ai-model-select">Model</label>
+              <select class="ai-form-select" id="ai-model-select"></select>
+            </div>
+
+            <div class="ai-form-field full-width">
+              <label class="ai-form-label" for="ai-task-input">What did you use it for?</label>
+              <textarea class="ai-form-textarea" id="ai-task-input"
+                placeholder="E.g. Wrote unit tests for the auth module, refactored the state reducer, debugged a layout issue…"
+                required></textarea>
+            </div>
+
+            <div class="ai-form-field">
+              <label class="ai-form-label" for="ai-tokens-input">
+                Tokens used <span class="optional">(optional — copy from session summary)</span>
+              </label>
+              <input class="ai-form-input" id="ai-tokens-input" type="number" min="0"
+                placeholder="e.g. 42000" />
+              <div class="ai-cost-preview" id="ai-cost-preview"></div>
+            </div>
+
+            <div class="ai-form-field">
+              <label class="ai-form-label" for="ai-pr-input">
+                PR / commit link <span class="optional">(optional)</span>
+              </label>
+              <input class="ai-form-input" id="ai-pr-input" type="url"
+                placeholder="https://github.com/…/pull/42" />
+            </div>
+
+            <div class="ai-checkbox-row">
+              <input type="checkbox" id="ai-reviewed-check" />
+              <label class="ai-checkbox-label" for="ai-reviewed-check">
+                Output was human-reviewed before merging
+              </label>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <div class="ai-dialog-footer">
+        <button type="button" class="btn-secondary" id="ai-cancel-btn">Cancel</button>
+        <button type="submit" form="ai-log-form" class="btn-primary">Log session</button>
+      </div>
+
+    </div>
   </div>
 
   <!-- Session detail / edit overlay (hidden until a card is clicked) -->
@@ -182,7 +212,6 @@
 
           <div class="ai-form-field">
             <label class="ai-form-label" for="dlg-model-select">Model</label>
-            <!-- Populated dynamically based on agent selection -->
             <select class="ai-form-select" id="dlg-model-select"></select>
           </div>
 
@@ -229,10 +258,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/supabaseClient.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/auth-guard.js"></script>
 
   <!-- Shared infra -->
-  <script src="data.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/state.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/selectors.js"></script>

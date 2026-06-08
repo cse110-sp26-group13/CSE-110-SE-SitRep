@@ -1,65 +1,52 @@
 /* ───────────────────────────────────────────────────────────
    SitRep · AI Agents page styles
-   Follows the one-file-per-feature CSS module pattern.
    ─────────────────────────────────────────────────────────── */
 
-/* ── AI KPI strip (page-local row above the form) ─────────── */
-.ai-kpi-row {
+/* ── Page header: title + dashboard btn on one row ────────── */
+.ai-page-title-row {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
+  flex-direction: column;
 }
 
-.ai-kpi {
-  flex: 1;
-  min-width: 140px;
-  border: 1.5px solid var(--ink);
-  background: var(--card);
-  padding: 14px 16px;
+/* Give ← Dashboard the same hover lift as btn-primary */
+.ai-dashboard-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.ai-dashboard-btn:active { transform: none; box-shadow: none; }
+
+/* ── Section headings ──────────────────────────────────────── */
+.ai-section-heading {
+  font-size: 14px;
+  font-family: var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
 }
 
-.ai-kpi-label {
+.ai-section-heading-mono {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 16px;
 }
 
-.ai-kpi-value {
-  font-family: var(--display);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1;
+/* ── Today's sessions header row ──────────────────────────── */
+.ai-sessions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.ai-kpi-value.good  { color: var(--good); }
-.ai-kpi-value.warn  { color: var(--warn); }
-.ai-kpi-value.alert { color: var(--bad); }
-
-.ai-kpi-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-
-/* ── Log Session form ──────────────────────────────────────── */
-.ai-log-form {
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  padding: 20px;
-  margin-bottom: 24px;
-}
-
-.ai-log-form[hidden] { display: none; }
-
+/* ── Form fields (shared by both modals) ───────────────────── */
 .ai-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 @media (max-width: 600px) {
@@ -107,7 +94,7 @@
 
 .ai-form-textarea {
   resize: vertical;
-  min-height: 72px;
+  min-height: 88px;
   line-height: 1.5;
 }
 
@@ -168,15 +155,6 @@
   cursor: pointer;
 }
 
-/* Form action row */
-.ai-form-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-  grid-column: 1 / -1;
-  justify-content: flex-end;
-}
-
 /* ── Session cards ─────────────────────────────────────────── */
 .ai-sessions-list {
   list-style: none;
@@ -226,6 +204,8 @@
 .ai-agent-badge.copilot  { background: var(--good); border-color: var(--good); }
 .ai-agent-badge.cursor   { background: var(--warn); border-color: var(--warn); color: var(--paper); }
 .ai-agent-badge.chatgpt  { background: var(--muted); border-color: var(--muted); }
+.ai-agent-badge.gemini   { background: var(--bad); border-color: var(--bad); }
+.ai-agent-badge.other    { background: var(--subtle); border-color: var(--subtle); }
 
 .ai-session-body {}
 
@@ -277,7 +257,6 @@
   white-space: nowrap;
 }
 
-/* PR link */
 .ai-pr-link {
   display: inline-flex;
   align-items: center;
@@ -299,28 +278,40 @@
   padding: 16px;
 }
 
-.ai-burn-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 12px;
+.ai-burn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
 }
 
-.ai-burn-subtitle {
+.ai-burn-nav .btn-secondary {
   font-family: var(--mono);
-  font-size: 10px;
-  color: var(--subtle);
-  margin-bottom: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
+.ai-burn-nav .btn-secondary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ai-burn-week-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-align: center;
+  flex: 1;
 }
 
 .ai-burn-chart {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  height: 120px;
+  gap: 8px;
+  height: 140px;
 }
 
 .ai-burn-bar-wrap {
@@ -328,9 +319,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   height: 100%;
   justify-content: flex-end;
+}
+
+.ai-burn-bar-wrap--today .ai-burn-day {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .ai-burn-count {
@@ -339,6 +335,7 @@
   color: var(--muted);
   text-align: center;
   white-space: nowrap;
+  min-height: 12px;
 }
 
 .ai-burn-bar {
@@ -348,7 +345,17 @@
   transition: height 0.2s ease;
 }
 
-.ai-burn-bar-wrap:hover .ai-burn-bar {
+.ai-burn-bar--empty {
+  background: var(--hairline-2);
+  min-height: 3px;
+  height: 3px !important;
+}
+
+.ai-burn-bar--today {
+  background: var(--good);
+}
+
+.ai-burn-bar-wrap:hover .ai-burn-bar:not(.ai-burn-bar--empty) {
   background: var(--muted);
 }
 
@@ -359,14 +366,9 @@
   text-align: center;
 }
 
-.ai-burn-empty {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--subtle);
-  padding: 24px 0;
-  text-align: center;
-  width: 100%;
-  line-height: 1.6;
+.ai-burn-day--today {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 /* ── Empty states ──────────────────────────────────────────── */
@@ -376,6 +378,166 @@
   color: var(--subtle);
   padding: 24px 0;
   text-align: center;
+}
+
+/* ── Sprint Review ─────────────────────────────────────────── */
+.ai-review-wrap {
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  padding: 20px;
+}
+
+.ai-review-empty {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--subtle);
+  padding: 20px 0 4px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.ai-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 700px) {
+  .ai-review-grid { grid-template-columns: 1fr; }
+}
+
+.ai-review-stat-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ai-review-stat {
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  padding: 12px 14px;
+}
+
+.ai-review-stat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.ai-review-stat-value {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.ai-review-stat-value--sm {
+  font-size: 13px;
+  font-family: var(--mono);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.ai-review-stat-value.good  { color: var(--good); }
+.ai-review-stat-value.warn  { color: var(--warn); }
+.ai-review-stat-value.alert { color: var(--bad); }
+
+.ai-review-stat-pct {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.ai-review-breakdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ai-review-breakdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-review-breakdown-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.ai-review-top-tag {
+  font-size: 9px;
+  color: var(--subtle);
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: italic;
+}
+
+.ai-review-breakdown-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-review-breakdown-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-review-breakdown-bar-track {
+  height: 6px;
+  background: var(--hairline-2);
+}
+
+.ai-review-breakdown-bar {
+  height: 100%;
+  background: var(--ink);
+  min-width: 2px;
+}
+
+.ai-review-breakdown-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.ai-review-model-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--hairline-2);
+}
+
+.ai-review-model-row:last-child { border-bottom: none; }
+
+.ai-review-model-name {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+}
+
+.ai-review-model-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
 }
 
 /* ── Session detail / edit dialog overlay ──────────────────── */
@@ -397,36 +559,56 @@
   border: 1.5px solid var(--ink);
   box-shadow: var(--hard-shadow);
   width: 100%;
-  max-width: 560px;
+  max-width: 760px;
+  min-height: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  outline: none; /* focus managed via tabindex */
+  outline: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-dialog-body {
+  padding: 24px;
+  flex: 1;
 }
 
 .ai-dialog-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: 18px 24px 14px;
   border-bottom: 1.5px solid var(--hairline);
   gap: 12px;
+}
+
+/* "New session" modal gets a green accent on the bottom border */
+.ai-dialog-header--new {
+  border-bottom-color: var(--good);
 }
 
 .ai-dialog-header-left {}
 
 .ai-dialog-agent-label {
   font-family: var(--display);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--ink);
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .ai-dialog-time {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.ai-dialog-type-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--good);
   letter-spacing: 0.08em;
 }
 
@@ -450,10 +632,6 @@
   color: var(--paper);
 }
 
-.ai-dialog-body {
-  padding: 20px;
-}
-
 .ai-dialog-section-label {
   font-family: var(--mono);
   font-size: 9.5px;
@@ -463,11 +641,10 @@
   margin-bottom: 14px;
 }
 
-/* Reuse ai-form-* classes inside the dialog */
 .ai-dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 20px 16px;
+  padding: 14px 24px 18px;
   border-top: 1.5px solid var(--hairline);
 }
