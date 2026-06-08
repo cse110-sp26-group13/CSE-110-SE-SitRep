@@ -73,7 +73,7 @@
       <section class="kpis" id="ai-kpis" aria-label="AI session KPIs"></section>
 
       <!-- Today's session cards -->
-      <section aria-labelledby="ai-sessions-heading" style="margin-bottom: 24px;">
+      <section class="ai-section" aria-labelledby="ai-sessions-heading">
         <div class="ai-sessions-header">
           <h2 id="ai-sessions-heading" class="ai-section-heading">Today's sessions</h2>
           <button class="btn-primary" id="ai-log-btn">+ Log session</button>
@@ -82,7 +82,7 @@
       </section>
 
       <!-- Sprint token burn chart -->
-      <section aria-labelledby="ai-burn-heading" style="margin-bottom: 24px;">
+      <section class="ai-section" aria-labelledby="ai-burn-heading">
         <h2 id="ai-burn-heading" class="ai-section-heading">Token burn (this week)</h2>
         <div class="ai-burn-wrap">
           <div class="ai-burn-nav">
@@ -247,7 +247,7 @@
       </div>
 
       <div class="ai-dialog-footer">
-        <button type="button" class="btn-secondary ai-dialog-close-btn" onclick="closeSessionDialog()">Cancel</button>
+        <button type="button" class="btn-secondary ai-dialog-close-btn">Cancel</button>
         <button type="button" class="btn-primary ai-dialog-save">Save changes</button>
       </div>
 
@@ -258,7 +258,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/supabaseClient.js"></script>
-  <script src="js/db.js"></script>
   <script src="js/auth-guard.js"></script>
 
   <!-- Shared infra -->

@@ -75,7 +75,11 @@ test.describe('Dashboard summary page', () => {
 
     await expect(page).toHaveURL(/standup(\.html)?$/);
     const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
-    const today = new Date().toISOString().slice(0, 10);
+    // Build the date from local parts to match the app's todayKey() in
+    // js/features/notifications.js; toISOString() would use UTC and mismatch
+    // in the evening on the US west coast (UTC already on the next day).
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     expect(readStore['test-team']).toContain(`standup:${today}:test-user`);
   });
 
