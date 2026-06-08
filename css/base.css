@@ -171,8 +171,6 @@ input, textarea, select {
   color: var(--paper);
 }
 .btn-danger:hover {
-  background: var(--bad);
-  color: var(--paper);
   transform: translate(-1px, -1px);
   box-shadow: 4px 4px 0 var(--ink);
 }
@@ -266,7 +264,6 @@ a { color: inherit; text-decoration: none; }
   place-items: center;
   padding: 24px;
 }
-.modal-backdrop[hidden] { display: none; }
 .modal {
   background: var(--card);
   border: 1.5px solid var(--ink);

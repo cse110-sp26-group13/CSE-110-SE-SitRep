@@ -83,6 +83,10 @@ test.describe('Dashboard summary page', () => {
 
     await expect(page).toHaveURL(/standup(\.html)?$/);
     const readStore = await page.evaluate(() => JSON.parse(localStorage.getItem('sitrep-notifications-read-v1')));
+    // Derive "today" in the browser context (not Node) so it matches the
+    // app's todayKey() in js/features/notifications.js exactly — same clock,
+    // same timezone. Building from local parts (not toISOString()) avoids a
+    // UTC day-rollover mismatch in the US-west evening.
     const today = await page.evaluate(() => {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

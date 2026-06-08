@@ -201,16 +201,15 @@
   <script src="js/features/checkins.js"></script>
   <script src="js/features/slots.js"></script>
   <script src="js/features/mood-trend.js"></script>
-  <script src="js/features/activity.js"></script>
 
   <!-- Page orchestrator -->
   <script src="js/pages/standup.js"></script>
   <div id="availability-tooltip" class="availability-tooltip hidden"></div>
   <div id="availability-modal" class="delete-modal hidden">
-    <div class="delete-modal-card" style="width:67vw;max-width:95vw;">
-      <div class="delete-modal-title" style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;">
+    <div class="delete-modal-card availability-modal-card">
+      <div class="delete-modal-title availability-modal-title">
         <span>Your Availability</span>
-        <button id="close-availability-modal" class="modal-secondary-btn" style="padding:4px 10px;font-size:0.85rem;">×</button>
+        <button id="close-availability-modal" class="modal-secondary-btn">×</button>
       </div>
       <div class="delete-modal-text">Click or drag to toggle your slots. Changes save automatically.</div>
       <ul class="slots-list" id="personal-availability"></ul>
@@ -238,3 +237,4 @@
     </div>
   </div>
 </body>
+</html>
