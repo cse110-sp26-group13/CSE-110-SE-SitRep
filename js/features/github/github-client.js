@@ -10,15 +10,20 @@ function getGHToken() {
   return sessionStorage.getItem("sitrep_gh_token") || "";
 }
 
+function cleanGHToken(token) {
+  return typeof token === "string" ? token.trim() : "";
+}
+
 async function ghFetch(path, options = {}) {
   // Central wrapper for GitHub API calls so auth and error handling stay consistent.
   const { token: explicitToken, ...fetchOptions } = options;
-  const token = explicitToken ?? getGHToken();
+  const token = cleanGHToken(explicitToken ?? getGHToken());
   const url = GH_API_BASE + path;
 
   const headers = {
     // GitHub recommends this media type for the REST API.
     Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(fetchOptions.headers || {}),
@@ -29,13 +34,21 @@ async function ghFetch(path, options = {}) {
   if (!response.ok) {
     // Surface common GitHub failures as user-readable modal errors.
     const detail = await githubErrorDetail(response);
-    if (response.status === 404) throw new Error(`GitHub resource not found: ${path}${detail ? ` (${detail})` : ""}`);
+    if (response.status === 404) throw new Error(githubNotFoundMessage(path, token, detail));
     if (response.status === 401) throw new Error(detail || "GitHub authentication failed. Check your token.");
     if (response.status === 403) throw new Error(detail || "GitHub access forbidden. Token may lack required permissions.");
     throw new Error(detail || `GitHub API error ${response.status}: ${response.statusText}`);
   }
 
   return response;
+}
+
+function githubNotFoundMessage(path, token, detail) {
+  const base = `GitHub repository not found or inaccessible: ${path}${detail ? ` (${detail})` : ""}.`;
+  if (token) {
+    return `${base} For private repos, make sure the token is authorized for this repository and has read access to Issues and Pull requests, or use a classic token with the repo scope.`;
+  }
+  return `${base} Private repos require a token with repository access and read permissions for Issues and Pull requests.`;
 }
 
 async function githubErrorDetail(response) {

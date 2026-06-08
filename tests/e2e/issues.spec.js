@@ -89,6 +89,32 @@ test.describe('Issues Tracker', () => {
     await expect(page.locator('#pull-request-list')).toContainText('feature/pr-list -> main');
   });
 
+  test('GitHub sync explains private repo authorization failures', async ({ page }) => {
+    await page.route(/https:\/\/api\.github\.com\/repos\/private-owner\/private-repo\/issues\?state=all/, (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Not Found' }),
+      }),
+    );
+    await page.route(/https:\/\/api\.github\.com\/repos\/private-owner\/private-repo\/pulls\?state=all/, (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Not Found' }),
+      }),
+    );
+
+    await page.locator('#sync-gh-btn').click();
+    await page.locator('#gh-repos').fill('private-owner/private-repo');
+    await page.locator('#gh-token').fill('github_pat_test-token');
+    await page.locator('#gh-sync-form button[type="submit"]').click();
+
+    await expect(page.locator('#gh-error')).toContainText('GitHub repository not found or inaccessible');
+    await expect(page.locator('#gh-error')).toContainText('token is authorized for this repository');
+    await expect(page.locator('#gh-error')).not.toContainText('github_pat_test-token');
+  });
+
   test('user creates a new issue and it appears in the issues list', async ({ page }) => {
     // Issue creation on this page is GitHub-only, so a repo must be synced first
     // (it gives the form an active repo to post the new issue against).
