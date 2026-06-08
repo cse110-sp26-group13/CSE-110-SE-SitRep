@@ -382,6 +382,23 @@
   padding-right: 0;
 }
 
+/* Thicker horizontal scrollbar for the timeline */
+.cal-timeline-view::-webkit-scrollbar {
+  height: 14px;
+}
+.cal-timeline-view::-webkit-scrollbar-track {
+  background: var(--card-2);
+  border-top: 0.1rem solid var(--ink);
+}
+.cal-timeline-view::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border: 0.15rem solid var(--card-2);
+  border-radius: 0;
+}
+.cal-timeline-view::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
 .cal-timeline-view .cal-hd {
   padding-left: 1.75rem;
   padding-right: 1.75rem;
