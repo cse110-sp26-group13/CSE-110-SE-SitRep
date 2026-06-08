@@ -1,429 +1,43 @@
 /**
- * Calendar page orchestrator — handles month, week, and timeline views.
- * 
- * ## Architecture Overview
- * This module manages the SitRep calendar interface, providing three distinct views:
- * 1. **Month View**: A traditional 7-column grid showing events and issue bars.
- * 2. **Week View**: A focused single-week view with higher vertical density for events.
- * 3. **Projects Timeline**: A horizontal Gantt-style view for project issues/blockers.
+ * Calendar page orchestrator.
  *
- * ## Data Sources
- * - **Calendar Events**: Stored in Supabase `calendar_events`. Can be "global" (team-wide) or "personal".
- * - **Calendar Groups**: Custom shared circles (Supabase `calendar_groups`) with their own events and colors.
- * - **Blockers/Issues**: Fetched from Supabase and GitHub (via `selectors.js`). Only shown in the Timeline view.
+ * How this file works:
+ * - Owns `calState`, the local UI state for the selected month, selected week,
+ *   active filters, and currently edited records.
+ * - Renders the three main calendar surfaces: month grid, week grid, and project
+ *   timeline.
+ * - Wires page-level controls such as navigation buttons, tabs, legend filters,
+ *   day popups, hover syncing, and timeline links.
+ * - Uses helper functions from `calendar-utils.js` for date math, event layout,
+ *   filtering, and color handling.
+ * - Uses modal functions from `calendar-modals.js` for event/group persistence.
  *
- * ## Visibility & Filtering
- * Visibility is controlled via the sidebar legend. The `calState` object tracks:
- * - `kinds`: Set of basic visibility types ("global", "personal").
- * - `customGroups`: Set of active custom group IDs.
- * Filtering is performed in real-time by `filterEvents()` for calendar grids and locally within `renderCalTimeline()` for issues.
- *
- * ## Rendering Logic
- * - **Grids**: Use CSS Grid with dynamic row/column spanning for multi-day events.
- * - **Slots**: `calculateEventSlots()` performs a two-pass layout to ensure visual continuity 
- *   (bars stay on the same vertical row across days/weeks) while maximizing space usage.
- * - **Contrast**: `getContrastColor()` dynamically calculates high-contrast text colors for event bars.
+ * Load order matters because these are plain browser scripts:
+ * `calendar-utils.js` -> `calendar.js` -> `calendar-modals.js`.
  */
 
-// ─── Constants ────────────────────────────────────────────────────────
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-// ─── State ────────────────────────────────────────────────────────────
-// Basic visibility categories available to all users.
-const CAL_KINDS = ["global", "personal"];
 let calState = {};
 
-/**
- * Initializes the calendar state with default values based on the current date.
- * Sets the year, month, and active filters.
- */
 function initCalState() {
+  // Keep mutable calendar UI state centralized so renderers and modal handlers
+  // operate against one shared source of truth.
   calState = {
-    // Default to today (page loads on current month).
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
-    kinds: new Set(CAL_KINDS), // Stores which built-in categories are visible.
-    customGroups: new Set(),   // Stores which custom group IDs are visible.
+    kinds: new Set(CAL_KINDS),
+    customGroups: new Set(),
     editingEventId: null,
     editingGroupId: null,
-    weekStart: getStartOfWeek(new Date()), // Basis for the Week View.
+    weekStart: getStartOfWeek(new Date()),
   };
-  
-  // Initialize customGroups to show all by default for a full view on first load.
+
+  // Start with every custom calendar group visible so the first load shows the
+  // complete team context.
   getCalendarGroups().forEach(g => calState.customGroups.add(g.id));
 }
 
-const EVENT_KIND_LABELS = {
-  global: "Team",
-  personal: "Personal",
-};
-
-// ─── Rendering ───────────────────────────────────────────────────────
-
 /**
- * Calculates and returns the dates needed to fill a month-view grid.
- * Includes leading/trailing days from adjacent months to complete weeks (7 columns).
- * @param {number} year - The year to build for.
- * @param {number} month - The month index (0-11).
- * @returns {Object[]} Array of cell objects { date: Date, muted: boolean }.
- */
-function buildMonthCells(year, month) {
-  const first = new Date(year, month, 1);
-  const startDow = first.getDay(); // Find which day of the week the month starts on.
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrev = new Date(year, month, 0).getDate();
-  const cells = [];
-
-  // Previous-month tail: Fill the gap before the 1st of the month.
-  for (let i = startDow - 1; i >= 0; i--) {
-    cells.push({ date: new Date(year, month - 1, daysInPrev - i), muted: true });
-  }
-
-  // This month: The core days of the currently viewed month.
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ date: new Date(year, month, d), muted: false });
-  }
-
-  // Next-month head: Round out the grid to ensure full 7-day rows.
-  while (cells.length % 7 !== 0) {
-    const last = cells[cells.length - 1].date;
-    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), muted: true });
-  }
-  return cells;
-}
-
-/**
- * Formats a Date object into an ISO date string (YYYY-MM-DD).
- * Used as a key for state mapping and database queries.
- * @param {Date} d - The date to format.
- * @returns {string} The ISO date string.
- */
-function isoDate(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/**
- * Checks if two Date objects represent the same calendar day.
- * @param {Date} a 
- * @param {Date} b 
- * @returns {boolean}
- */
-function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear()
-      && a.getMonth()    === b.getMonth()
-      && a.getDate()     === b.getDate();
-}
-
-/**
- * Filters the list of calendar events based on current visibility state (legend toggles).
- * @returns {Object[]} Filtered list of events.
- */
-function filterEvents() {
-  return getCalendarEvents().filter(e => {
-    const group = e.group || "global";
-    // Check built-in categories (Team/Personal) or custom groups.
-    return CAL_KINDS.includes(group)
-      ? calState.kinds.has(group)
-      : calState.customGroups.has(group);
-  });
-}
-
-/**
- * Retrieves the current list of calendar groups from the global window object.
- * @returns {Object[]}
- */
-function getCalendarGroups() {
-  return Array.isArray(window.calendarGroups) ? window.calendarGroups : [];
-}
-
-/**
- * Retrieves the current list of calendar events from the global window object.
- * @returns {Object[]}
- */
-function getCalendarEvents() {
-  return Array.isArray(window.calendarEvents) ? window.calendarEvents : [];
-}
-
-const contrastCache = new Map();
-
-/**
- * Calculates the best contrast color (white or black) for a given background color.
- * Caches results to improve performance during large grid renders.
- * 
- * Logic:
- * 1. Resolves CSS variables to absolute RGB values.
- * 2. Calculates perceived brightness using the standard YIQ formula.
- * 3. Switches based on theme (Dark/Light) to ensure readability against the background.
- * 
- * @param {string} color - CSS color value (hex, rgb, or var).
- * @returns {string} Contrast color CSS variable.
- */
-function getContrastColor(color) {
-  if (!color) return "var(--ink)";
-  
-  const isDark = document.documentElement.dataset.theme === "dark";
-  const cacheKey = `${color}-${isDark}`;
-  if (contrastCache.has(cacheKey)) return contrastCache.get(cacheKey);
-
-  // 1. Check our hardcoded semantic map
-  const semanticMap = {
-    "var(--good)":      { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--good-soft)": { light: "var(--ink)",   dark: "var(--paper)" },
-    "var(--warn)":      { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--warn-soft)": { light: "var(--ink)",   dark: "var(--paper)" },
-    "var(--bad)":       { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--bad-soft)":  { light: "var(--ink)",   dark: "var(--paper)" },
-    "var(--ink)":       { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--ink-2)":     { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--muted)":     { light: "var(--paper)", dark: "var(--paper)" },
-    "var(--subtle)":    { light: "var(--ink)",   dark: "var(--paper)" },
-    "var(--card-3)":    { light: "var(--ink)",   dark: "var(--paper)" },
-  };
-
-  if (semanticMap[color]) {
-    const res = isDark ? semanticMap[color].dark : semanticMap[color].light;
-    contrastCache.set(cacheKey, res);
-    return res;
-  }
-
-  // 2. Resolve unknown colors (like rgb or other vars)
-  let r, g, b;
-  let resolved = color;
-
-  if (color.startsWith("var(") || (!color.startsWith("#") && !color.startsWith("rgb"))) {
-    const temp = document.createElement("div");
-    temp.style.color = color;
-    temp.style.display = "none";
-    document.body.appendChild(temp);
-    resolved = window.getComputedStyle(temp).color;
-    document.body.removeChild(temp);
-  }
-
-  if (resolved.startsWith("#")) {
-    const hex = resolved.length === 4 
-      ? "#" + resolved[1] + resolved[1] + resolved[2] + resolved[2] + resolved[3] + resolved[3]
-      : resolved;
-    r = parseInt(hex.slice(1, 3), 16);
-    g = parseInt(hex.slice(3, 5), 16);
-    b = parseInt(hex.slice(5, 7), 16);
-  } else if (resolved.startsWith("rgb")) {
-    const m = resolved.match(/\d+/g);
-    if (m && m.length >= 3) {
-      r = parseInt(m[0]);
-      g = parseInt(m[1]);
-      b = parseInt(m[2]);
-    }
-  }
-
-  if (r !== undefined) {
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    const res = isDark 
-      ? (brightness > 128 ? "var(--paper)" : "var(--ink)")
-      : (brightness > 128 ? "var(--ink)" : "var(--paper)");
-    contrastCache.set(cacheKey, res);
-    return res;
-  }
-
-  // 3. Last resort: use the theme's primary ink color (always visible against paper)
-  const lastResort = "var(--ink)";
-  contrastCache.set(cacheKey, lastResort);
-  return lastResort;
-}
-
-/**
- * Generates the style string for an event bar's background and text colors.
- * @param {Object} event - The event object.
- * @returns {string} CSS style string.
- */
-function eventColorStyle(event) {
-  const groupColors = state.calendarGroupColors || {};
-  let color = groupColors[event.group] || (event.group === "personal" ? "var(--muted)" : "var(--ink)");
-  
-  // Check if it's a custom group
-  const customGroups = getCalendarGroups();
-  const customGroup = customGroups.find(g => g.id === event.group);
-  if (customGroup) {
-    color = customGroup.color;
-  }
-  
-  const textColor = getContrastColor(color);
-  return `--event-color:${color};--event-text:${textColor};`;
-}
-
-/**
- * Returns the CSS classes for an event bar.
- * @param {Object} event - The event object.
- * @returns {string} Space-separated class list.
- */
-function eventBarClasses(event) {
-  return ["cal-bar", event.group, "custom-color"].filter(Boolean).join(" ");
-}
-
-/**
- * Generates the tooltip text for an event bar.
- * @param {Object} event - The event object.
- * @returns {string}
- */
-function eventTooltip(event) {
-  const customGroups = getCalendarGroups();
-  const customGroup = customGroups.find(g => g.id === event.group);
-  const groupLabel = customGroup ? customGroup.name : (EVENT_KIND_LABELS[event.group] || "Event");
-  return `${event.title} - ${groupLabel}`;
-}
-
-/**
- * Finds an event in the global list by its ID.
- * @param {string} id - The event UUID.
- * @returns {Object|undefined}
- */
-function findCalendarEvent(id) {
-  return getCalendarEvents().find(event => event.id === id);
-}
-
-/**
- * Finds a custom group in the global list by its ID.
- * @param {string} id - The group UUID.
- * @returns {Object|undefined}
- */
-function findCalendarGroup(id) {
-  return getCalendarGroups().find(g => g.id === id);
-}
-
-/**
- * Renders a contiguous event segment inside a week or month grid.
- */
-function renderEventSegment(event, startCol, span, slot, rowBase, weekCells, usedSlotsByDay) {
-  const prevDayKey = startCol > 0 ? isoDate(weekCells[startCol - 1].date) : null;
-  const nextDayKey = startCol + span < 7 ? isoDate(weekCells[startCol + span].date) : null;
-  const continuesFromPrevDay = prevDayKey && usedSlotsByDay[prevDayKey]?.[slot] === String(event.id);
-  const continuesToNextDay = nextDayKey && usedSlotsByDay[nextDayKey]?.[slot] === String(event.id);
-
-  const classes = [eventBarClasses(event)];
-  if (event.endDate && event.endDate !== event.date) {
-    if (continuesFromPrevDay || (startCol === 0 && isoDate(weekCells[0].date) > event.date)) {
-      classes.push("connect-left");
-    }
-    if (continuesToNextDay || (startCol + span === 7 && isoDate(weekCells[6].date) < (event.endDate || event.date))) {
-      classes.push("connect-right");
-    }
-  }
-
-  return `
-    <button class="${classes.join(" ")}" type="button" data-event-id="${escapeHTML(event.id)}" title="${escapeHTML(eventTooltip(event))}"
-      style="grid-column: ${startCol + 1} / span ${span}; grid-row: ${rowBase + 1 + slot}; z-index: ${10 + slot}; ${eventColorStyle(event)}">
-      ${escapeHTML(event.title)}
-    </button>`;
-}
-
-function renderEventSegments(weekEvents, usedSlotsByDay, weekCells, rowBase, maxSlots) {
-  const eventMap = new Map(weekEvents.map(event => [String(event.id), event]));
-  let html = "";
-
-  for (let slot = 0; slot < maxSlots; slot++) {
-    let currentEventId = null;
-    let startCol = -1;
-
-    for (let c = 0; c <= 7; c++) {
-      const key = c < 7 ? isoDate(weekCells[c].date) : null;
-      const eventIdAtSlot = key ? (usedSlotsByDay[key]?.[slot] || null) : null;
-
-      if (eventIdAtSlot !== currentEventId) {
-        if (currentEventId) {
-          const event = eventMap.get(String(currentEventId));
-          if (event) {
-            const span = c - startCol;
-            html += renderEventSegment(event, startCol, span, slot, rowBase, weekCells, usedSlotsByDay);
-          }
-        }
-        currentEventId = eventIdAtSlot;
-        startCol = c;
-      }
-    }
-  }
-
-  return html;
-}
-
-/**
- * Calculates event slots for a range of dates to support multi-day bars.
- * Standard priority sort: earlier start date first, then longer duration.
- * 
- * @param {Object[]} events - Filtered events to stack.
- * @param {Date[]} days - Array of Date objects representing the columns.
- * @param {number} maxSlots - Maximum number of visible slots before overflow.
- * @returns {Object} { usedSlotsByDay: { dateKey: string[] }, dayOverflowCounts: { dateKey: number } }
- */
-function calculateEventSlots(events, days, maxSlots) {
-  const usedSlotsByDay = {}; 
-  const dayOverflowCounts = {};
-  const dateKeys = days.map(d => isoDate(d));
-
-  dateKeys.forEach((key, c) => {
-    // Find all events active on this specific day
-    const dayEvents = events.filter(e => key >= e.date && key <= (e.endDate || e.date));
-    
-    // Sort by start date, then duration (descending)
-    dayEvents.sort((a, b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      const aEnd = a.endDate || a.date;
-      const bEnd = b.endDate || b.date;
-      const aDur = (new Date(aEnd) - new Date(a.date)) || 0;
-      const bDur = (new Date(bEnd) - new Date(b.date)) || 0;
-      return bDur - aDur;
-    });
-
-    const daySlots = [];
-    const prevKey = c > 0 ? dateKeys[c - 1] : null;
-    const prevSlots = prevKey ? (usedSlotsByDay[prevKey] || []) : [];
-
-    // Pass 1: Maintain continuity (prefer same slot as previous day)
-    for (let s = 0; s < maxSlots; s++) {
-      const prevId = prevSlots[s];
-      if (prevId && dayEvents.some(e => String(e.id) === prevId)) {
-        daySlots[s] = prevId;
-      }
-    }
-
-    // Pass 2: Fill remaining visible slots
-    let overflowCount = 0;
-    dayEvents.forEach(event => {
-      const id = String(event.id);
-      if (daySlots.includes(id)) return;
-
-      let assigned = false;
-      for (let s = 0; s < maxSlots; s++) {
-        if (!daySlots[s]) {
-          daySlots[s] = id;
-          assigned = true;
-          break;
-        }
-      }
-      if (!assigned) overflowCount++;
-    });
-
-    usedSlotsByDay[key] = daySlots;
-    dayOverflowCounts[key] = overflowCount;
-  });
-
-  return { usedSlotsByDay, dayOverflowCounts };
-}
-
-/**
- * Sunday starting a week for any given date.
- */
-function getStartOfWeek(d) {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day; // 0 = Sunday
-  return new Date(date.setDate(diff));
-}
-
-/**
- * Renders the single-week grid view.
+ * Renders the focused seven-day calendar grid.
  */
 function renderCalWeek() {
   const container = document.getElementById("cal-week-grid");
@@ -437,7 +51,7 @@ function renderCalWeek() {
   const weekStartStr = isoDate(start);
   const weekEndStr = isoDate(end);
 
-  // Update header label
+  // Update the compact week range label above the grid.
   const startM = MONTH_NAMES[start.getMonth()].slice(0, 3);
   const endM = MONTH_NAMES[end.getMonth()].slice(0, 3);
   const yearText = start.getFullYear() === end.getFullYear() ? start.getFullYear() : `${start.getFullYear()}-${end.getFullYear()}`;
@@ -451,20 +65,21 @@ function renderCalWeek() {
     weekCells.push({ date: d });
   }
 
-  // Filter events active in THIS week
+  // Include events that overlap this week even if they start before Sunday or
+  // end after Saturday.
   const weekEvents = events.filter(e => {
     const s = e.date;
     const evEnd = e.endDate || e.date;
     return s <= weekEndStr && evEnd >= weekStartStr;
   });
 
-  // Calculate slots
+  // Slot calculation keeps multi-day event bars visually continuous.
   const { usedSlotsByDay, dayOverflowCounts } = calculateEventSlots(weekEvents, weekCells.map(c => c.date), 15);
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
   let gridHTML = dayHeader;
 
-  // 1. Background Cells & Day Headers
+  // First lay down clickable day cells and headers.
   weekCells.forEach((cell, colIndex) => {
     const key = isoDate(cell.date);
     const isToday = isSameDay(cell.date, today);
@@ -486,7 +101,7 @@ function renderCalWeek() {
     }
   });
 
-  // 2. Event Bars
+  // Then draw event bars above the cells.
   gridHTML += renderEventSegments(weekEvents, usedSlotsByDay, weekCells, 2, 15);
 
   container.innerHTML = gridHTML;
@@ -503,6 +118,8 @@ function renderCalGrid() {
   const grid = document.getElementById("cal-grid");
   const cells = buildMonthCells(calState.year, calState.month);
   
+  // Apply legend filters once, then each week row narrows this list to events
+  // that overlap that specific row.
   const events = filterEvents();
 
   const dayHeader = DAY_NAMES.map(n => `<div class="cal-dayname">${n}</div>`).join("");
@@ -521,39 +138,40 @@ function renderCalGrid() {
     const weekStartStr = isoDate(weekStart);
     const weekEndStr = isoDate(weekEnd);
 
-    // Filter events active in THIS week
+    // Include events that overlap this week row even if their true start/end is
+    // outside the visible seven-day slice.
     const weekEvents = events.filter(e => {
       const s = e.date;
       const end = e.endDate || e.date;
       return s <= weekEndStr && end >= weekStartStr;
     });
 
-    // Calculate slots
+    // Month view has limited vertical room, so overflow becomes a day modal.
     const { usedSlotsByDay, dayOverflowCounts } = calculateEventSlots(weekEvents, weekCells.map(c => c.date), 3);
 
-    // Determine if any day in this week has overflow
+    // Add an extra grid row only when at least one day needs a "+N more" label.
     const hasWeekOverflow = Object.keys(dayOverflowCounts).some(dateKey => {
       return dateKey >= weekStartStr && dateKey <= weekEndStr && dayOverflowCounts[dateKey] > 0;
     });
 
     const weekSpan = hasWeekOverflow ? 5 : 4;
 
-    // 1. Background Cells & Day Headers
+    // Draw the static cell layer before event bars so bars can span columns.
     weekCells.forEach((cell, colIndex) => {
       const key = isoDate(cell.date);
       const isToday = isSameDay(cell.date, today);
 
-      // The background cell - clickable to open day modal
+      // The background cell is the click target for opening the day modal.
       gridHTML += `<div class="cal-cell ${cell.muted ? "muted" : ""} ${isToday ? "today" : ""}" 
                         data-date="${key}"
                         style="grid-column: ${colIndex + 1}; grid-row: ${currentRow} / span ${weekSpan}"></div>`;
 
-      // The header content (date)
+      // Date numbers sit in a separate layer above the background cell.
       gridHTML += `<div class="cal-cell-header" data-date="${key}" style="grid-column: ${colIndex + 1}; grid-row: ${currentRow}; z-index: 5;">
         <div class="cal-date">${cell.date.getDate()}</div>
       </div>`;
 
-      // Overflow indicator
+      // Overflow uses the same day modal as the cell click.
       const overflow = dayOverflowCounts[key];
       if (overflow > 0) {
         gridHTML += `<div class="cal-more-indicator" data-date="${key}" 
@@ -563,7 +181,8 @@ function renderCalGrid() {
       }
     });
 
-    // 2. Event Bars (Iterate by slot to find contiguous segments)
+    // Event segments span adjacent day columns when the slot map says they are
+    // the same event across multiple cells.
     gridHTML += renderEventSegments(weekEvents, usedSlotsByDay, weekCells, currentRow, 3);
 
     currentRow += weekSpan;
@@ -596,7 +215,7 @@ function renderCalLegend() {
 
   let html = "";
 
-  // 1. Kinds (Team, Personal) First
+  // Built-in visibility buckets render first because every account has them.
   html += CAL_KINDS.map(kind => {
     const currentColor = groupColors[kind] || (kind === "personal" ? "var(--muted)" : "var(--ink)");
     const pickerValue = currentColor.startsWith("var(")
@@ -617,7 +236,7 @@ function renderCalLegend() {
     `;
   }).join("");
 
-  // 2. Custom Groups Second
+  // Custom groups render after a divider and use their persisted group colors.
   if (customGroups.length > 0) {
     html += '<div class="legend-divider"></div>';
     html += customGroups.map(group => {
@@ -641,6 +260,8 @@ function renderCalLegend() {
  * Orchestrates the full rendering process for the current page state.
  */
 function renderCalendar() {
+  // Render shared page chrome first, then refresh only the selected calendar
+  // surface. This avoids duplicating header/sidebar setup in each view renderer.
   renderHeader();
   renderCalHeader();
   renderCalLegend();
@@ -655,6 +276,8 @@ function renderTeamList() {
   const container = document.getElementById("cal-team-list");
   if (!container) return;
 
+  // The team list is a read-only context panel surfaced from the legend info
+  // button.
   const teammates = effectiveTeammates();
   container.innerHTML = teammates.map(t => `
     <div class="people-row readonly">
@@ -673,6 +296,8 @@ function renderTeamList() {
  * Refreshes only the currently active view (Month, Week, or Timeline).
  */
 function refreshActiveView() {
+  // The active tab class is the single source of truth for which expensive
+  // calendar surface should redraw after state changes.
   const activeTab = document.querySelector(".cal-tab.active");
   const mode = activeTab ? activeTab.dataset.tab : "month";
   
@@ -691,6 +316,8 @@ function refreshActiveView() {
  * Binds all event listeners for calendar navigation and controls.
  */
 function bindCalendar() {
+  // Bind one-time page-level controls. Calendar cells and event bars are
+  // regenerated often, so those use delegated listeners below.
   const themeBtn = document.getElementById("theme-toggle");
   if (themeBtn) {
     themeBtn.addEventListener("click", () => {
@@ -699,7 +326,7 @@ function bindCalendar() {
     });
   }
 
-  // Month Nav
+  // Month navigation controls the month grid and timeline month.
   const calPrev = document.getElementById("cal-prev");
   const calNext = document.getElementById("cal-next");
   const calToday = document.getElementById("cal-today");
@@ -735,7 +362,7 @@ function bindCalendar() {
     });
   }
 
-  // Week Nav
+  // Week navigation moves the focused seven-day range by full weeks.
   const weekPrev = document.getElementById("week-prev");
   const weekNext = document.getElementById("week-next");
   const weekToday = document.getElementById("week-today");
@@ -777,7 +404,8 @@ function bindCalendar() {
   const newEventBtn = document.getElementById("new-event-btn");
   if (newEventBtn) newEventBtn.addEventListener("click", () => openEventModal());
 
-  // Listen to clicks in both grids
+  // Listen to clicks in both grids with delegation so re-rendered cells keep
+  // working without rebinding.
   [document.getElementById("cal-grid"), document.getElementById("cal-week-grid")].forEach(grid => {
     if (!grid) return;
     grid.addEventListener("click", e => {
@@ -803,18 +431,18 @@ function bindCalendar() {
     });
   });
 
-  // Folder tabs
+  // Folder tabs switch visible panels; `refreshActiveView` handles rendering.
   document.querySelectorAll(".cal-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       const mode = tab.dataset.tab;
       
-      // Update tab UI
+      // Update tab UI and ARIA state together.
       document.querySelectorAll(".cal-tab").forEach(t => {
         t.classList.toggle("active", t === tab);
         t.setAttribute("aria-selected", t === tab);
       });
 
-      // Show/hide sections
+      // Show/hide the heavy view sections before rendering the selected one.
       const viewMonth = document.getElementById("view-month");
       const viewWeek = document.getElementById("view-week");
       const viewTimeline = document.getElementById("view-timeline");
@@ -852,11 +480,12 @@ function bindCalLegend() {
     }
   };
 
-  // 1. Interactions (Swatches and Labels) via Click Delegation
+  // Click delegation handles generated legend rows without rebinding after every
+  // legend render.
   container.addEventListener("click", (e) => {
     const target = e.target;
     
-    // Kind Name/Swatch
+    // Built-in kind labels toggle visibility; built-in swatches open pickers.
     const kindName = target.closest("[data-kind-name]")?.dataset.kindName;
     const kindSwatch = target.closest("[data-kind-swatch]")?.dataset.kindSwatch;
     const kindId = kindName || kindSwatch;
@@ -864,10 +493,11 @@ function bindCalLegend() {
     if (kindId) {
       if (kindName) {
         if (kindId === "global") {
-          // Team label: ONLY toggle the team list view
+          // Team label only toggles the team list view; its checkbox controls
+          // actual event visibility.
           toggleTeam();
         } else {
-          // Personal (and others): Toggle visibility checkbox for events
+          // Personal label toggles the matching visibility checkbox.
           const cb = container.querySelector(`input[data-kind="${kindId}"]`);
           if (cb) {
             cb.checked = !cb.checked;
@@ -875,33 +505,33 @@ function bindCalLegend() {
           }
         }
       } else {
-        // Swatch click: open color picker
+        // Swatch clicks proxy to hidden native color inputs.
         container.querySelector(`input[data-kind-color="${kindId}"]`)?.click();
       }
       return;
     }
 
-    // Group Swatch
+    // Custom group swatches also proxy to hidden native color inputs.
     const groupSwatch = target.closest("[data-group-swatch]")?.dataset.groupSwatch;
     if (groupSwatch) {
       container.querySelector(`input[data-group-color-input="${groupSwatch}"]`)?.click();
       return;
     }
 
-    // Edit Group (Name click)
+    // Group names open the group editor instead of toggling visibility.
     const editGroupId = target.closest("[data-edit-group]")?.dataset.editGroup;
     if (editGroupId) {
       openGroupModal(editGroupId);
       return;
     }
 
-    // Info Button
+    // Info button is a second entry point for the team list panel.
     if (target.closest("#toggle-team-list")) {
       toggleTeam();
     }
   });
 
-  // 2. Visibility Toggles via Change Delegation
+  // Change delegation handles checkbox visibility and completed color picks.
   container.addEventListener("change", (e) => {
     const target = e.target;
     const kind = target.dataset.kind;
@@ -919,7 +549,7 @@ function bindCalLegend() {
       return;
     }
 
-    // Live Color Change Persistence (Kinds)
+    // Built-in colors live in local app state.
     const kindColor = target.dataset.kindColor;
     if (kindColor) {
       saveState();
@@ -927,7 +557,7 @@ function bindCalLegend() {
       return;
     }
 
-    // Live Color Change Persistence (Groups)
+    // Group colors are shared records, so they persist through the database.
     const groupColorInputId = target.dataset.groupColorInput;
     if (groupColorInputId) {
       (async () => {
@@ -942,7 +572,8 @@ function bindCalLegend() {
     }
   });
 
-  // 3. Live Color Feedback via Input Delegation
+  // Input delegation gives immediate swatch feedback while the user drags the
+  // color picker.
   container.addEventListener("input", (e) => {
     const target = e.target;
     const kindColor = target.dataset.kindColor;
@@ -963,6 +594,8 @@ function bindCalLegend() {
  * (e.g., spanning multiple weeks in the grid or appearing in both grid and timeline).
  */
 function bindSyncHover() {
+  // Related rendered elements share the same record id; toggling one class on
+  // all matches lets bars, rows, and cards highlight together.
   const containers = [
     document.getElementById("cal-grid"),
     document.getElementById("cal-week-grid"),
@@ -1003,6 +636,8 @@ function bindSyncHover() {
  * @param {string} dateStr - ISO date string of the day to inspect.
  */
 function openDayModal(dateStr) {
+  // Overflow/detail modal for a single day. Editing still routes through the
+  // event modal so permission and save logic stays in one place.
   const modal = document.getElementById("calendar-day-modal");
   const title = document.getElementById("calendar-day-modal-title");
   const list = document.getElementById("calendar-day-events-list");
@@ -1010,6 +645,7 @@ function openDayModal(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   title.textContent = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   
+  // Show the same filtered event set the user currently sees in the grid.
   const allEvents = filterEvents();
   const dayEvents = allEvents.filter(e => {
     const s = e.date;
@@ -1042,7 +678,7 @@ function openDayModal(dateStr) {
     });
   }
 
-  // Quick add button
+  // Quick add pre-fills the selected date.
   const addBtn = document.getElementById("calendar-day-add-btn");
   addBtn.onclick = () => {
     closeDayModal();
@@ -1076,14 +712,16 @@ function renderCalTimeline() {
   const container = document.getElementById("timeline-container");
   const scrollWrapper = document.querySelector(".cal-timeline-view");
   const hd = document.getElementById("timeline-hd");
+  // Timeline rows are issue/blocker records rather than calendar events.
   const allIssues = effectiveBlockers(); // Include resolved issues
   const teammates = effectiveTeammates();
 
-  // Range: Current month bounds PLUS previous and next month for context
+  // Range: current month bounds plus previous and next month for context.
   const monthStart = new Date(calState.year, calState.month - 1, 1);
   const monthEnd = new Date(calState.year, calState.month + 2, 0);
 
-  // 1. Filter and Sort issues active in this 3-month window
+  // Filter to issues active in this three-month window and allowed by the
+  // current legend visibility.
   const issues = allIssues.filter(issue => {
     // Sync: Respect group visibility filters
     if (issue.group) {
@@ -1111,7 +749,8 @@ function renderCalTimeline() {
     return;
   }
 
-  // 2. Determine "Relevant Range" based on the actual dates of the issues found
+  // Determine the visible date range from actual issue dates, while still
+  // keeping the surrounding calendar context.
   const issueDates = issues.flatMap(i => {
     const s = new Date(`${i.startDate || i.dueDate}T00:00:00`);
     const e = new Date(`${i.dueDate || i.startDate}T00:00:00`);
@@ -1121,7 +760,7 @@ function renderCalTimeline() {
   const minDate = new Date(Math.min(...issueDates));
   const maxDate = new Date(Math.max(...issueDates));
   
-  // Ensure we at least show the current month even if no issues are in it
+  // Ensure the current month stays visible even if issue dates extend wider.
   const viewMin = minDate < monthStart ? minDate : monthStart;
   const viewMax = maxDate > monthEnd ? maxDate : monthEnd;
 
@@ -1167,7 +806,7 @@ function renderCalTimeline() {
     const owner = teammates.find(t => t.id === issue.ownerId) || { name: issue.owner, id: "unknown" };
     const initials = (owner.name || "??").split(" ").map(n => n[0]).join("").toUpperCase();
     
-    // Status-based color coding
+    // Status-based color coding mirrors issue state at a glance.
     const status = (issue.status || "open").toLowerCase();
     const isDark = document.documentElement.dataset.theme === "dark";
     
@@ -1210,7 +849,7 @@ function renderCalTimeline() {
 
   container.innerHTML = html;
 
-  // Auto-scroll to today
+  // Auto-scroll to today when the current visible range contains it.
   const today = new Date();
   const todayStr = isoDate(today);
   setTimeout(() => {
@@ -1223,479 +862,11 @@ function renderCalTimeline() {
 
   container.querySelectorAll(".timeline-bar").forEach(bar => {
     bar.addEventListener("click", () => {
+      // Timeline bars deep-link to the issue detail page.
       const issueId = bar.dataset.issueId;
       window.location.href = `issues.html?id=${issueId}`;
     });
   });
-}
-
-/**
- * Returns a default date for new events, preferring today if in range.
- * @returns {string} ISO date string.
- */
-function getDefaultEventDate() {
-  const today = new Date();
-  const isViewingCurrentMonth =
-    today.getFullYear() === calState.year && today.getMonth() === calState.month;
-  return isoDate(isViewingCurrentMonth ? today : new Date(calState.year, calState.month, 1));
-}
-
-/**
- * Opens the event creation/editing modal.
- * Handles role-based permissions, pre-filling data, and UI state toggling.
- * @param {string|null} eventId - The ID of the event to edit, or null for new.
- * @param {string|null} defaultDate - Optional pre-selected date.
- */
-function openEventModal(eventId = null, defaultDate = null) {
-  const event = eventId ? findCalendarEvent(eventId) : null;
-  const modal = document.getElementById("calendar-event-modal");
-  const form = document.getElementById("calendar-event-form");
-  const title = document.getElementById("calendar-event-modal-title");
-  const name = document.getElementById("calendar-event-name");
-  const date = document.getElementById("calendar-event-date");
-  const endDate = document.getElementById("calendar-event-end-date");
-  const description = document.getElementById("calendar-event-description");
-  const groupSelect = document.getElementById("calendar-event-group");
-  const error = document.getElementById("calendar-event-error");
-  const deleteButton = document.getElementById("calendar-event-delete");
-  const submitButton = document.getElementById("calendar-event-submit");
-
-  form.reset();
-
-  // Enforce Visibility Transition Rules
-  // Personal events can be moved anywhere, but Global events are locked to the team view.
-  const currentGroup = event?.group || "personal";
-  let groupOptions = "";
-
-  if (!event || currentGroup === "personal") {
-    // New event or current Personal: Can go anywhere.
-    groupOptions += `<option value="personal">Personal</option>`;
-    groupOptions += `<option value="global">Team</option>`;
-    getCalendarGroups().forEach(g => {
-      groupOptions += `<option value="${g.id}">${escapeHTML(g.name)}</option>`;
-    });
-    groupSelect.disabled = false;
-  } else if (currentGroup === "global") {
-    // Current Global: Locked to Team visibility.
-    groupOptions += `<option value="global">Team</option>`;
-    groupSelect.disabled = true;
-  } else {
-    // Current Custom Group: Can go to Global, but not back to Personal.
-    const customGroup = findCalendarGroup(currentGroup);
-    groupOptions += `<option value="${currentGroup}">${escapeHTML(customGroup?.name || "Current Group")}</option>`;
-    groupOptions += `<option value="global">Team</option>`;
-    groupSelect.disabled = false;
-  }
-
-  groupSelect.innerHTML = groupOptions;
-
-  calState.editingEventId = event?.id || null;
-  title.textContent = event ? "Edit event" : "New event";
-  name.value = event?.title || "";
-  date.value = event?.date || defaultDate || getDefaultEventDate();
-  endDate.value = event?.endDate || "";
-  description.value = event?.description || "";
-  groupSelect.value = currentGroup;
-
-  // Handle Group Members Field Visibility
-  const teamField = document.getElementById("calendar-event-team-field");
-  const teamList = document.getElementById("calendar-event-team-list");
-  const teamLabel = teamField.querySelector('span');
-  
-  function updateTeamVisibility() {
-    const val = groupSelect.value;
-    
-    if (val === 'personal') {
-      teamField.hidden = true;
-      return;
-    }
-
-    teamField.hidden = false;
-    let members = [];
-    
-    if (val === 'global') {
-      teamLabel.textContent = "Team Members";
-      members = effectiveTeammates();
-    } else {
-      teamLabel.textContent = "Group Members";
-      const group = findCalendarGroup(val);
-      if (group) {
-        // Map member IDs to teammate objects for visual listing.
-        members = (group.members || [])
-          .map(uid => window.teammates.find(t => t.id === uid))
-          .filter(Boolean);
-      }
-    }
-
-    teamList.innerHTML = members.map(t => {
-      const isOwner = event && event.ownerId === t.id;
-      return `
-        <div class="people-row readonly">
-          <div class="people-info">
-            ${avatar(t.name, t.id)}
-            <div class="people-meta">
-              <span class="name">${escapeHTML(t.name)}</span>
-              <span class="role">${escapeHTML(t.role || "")}</span>
-              ${isOwner ? '<span class="creator-tag">Creator</span>' : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  groupSelect.onchange = updateTeamVisibility;
-  updateTeamVisibility();
-  
-  // Permissions Check: Only the Owner or the Group Leader can modify existing data.
-  const currentUserId = window.team.currentUserId;
-  const isOwner = !event || event.ownerId === currentUserId;
-  
-  let isGroupLeader = false;
-  if (event && currentGroup !== 'global' && currentGroup !== 'personal') {
-    const group = findCalendarGroup(currentGroup);
-    if (group && group.creatorId === currentUserId) {
-      isGroupLeader = true;
-    }
-  }
-
-  const canEdit = isOwner || isGroupLeader;
-
-  // Set field accessibility based on permissions.
-  name.disabled = !canEdit;
-  date.disabled = !canEdit;
-  endDate.disabled = !canEdit;
-  description.disabled = !canEdit;
-  if (!canEdit) groupSelect.disabled = true;
-
-  deleteButton.hidden = !event || !canEdit;
-  submitButton.textContent = event ? "Save changes" : "Create event";
-  submitButton.hidden = !canEdit && currentGroup === 'global';
-
-  error.hidden = true;
-  error.textContent = "";
-  modal.hidden = false;
-  if (canEdit) name.focus();
-}
-
-/**
- * Opens the group creation/editing modal.
- * @param {string|null} groupId - The ID of the group to edit, or null for new.
- */
-function openGroupModal(groupId = null) {
-  const group = groupId ? findCalendarGroup(groupId) : null;
-  const modal = document.getElementById("calendar-group-modal");
-  const form = document.getElementById("calendar-group-form");
-  const title = document.getElementById("calendar-group-modal-title");
-  const name = document.getElementById("calendar-group-name");
-  const color = document.getElementById("calendar-group-color");
-  const peopleList = document.getElementById("calendar-group-people-list");
-  const error = document.getElementById("calendar-group-error");
-  const deleteButton = document.getElementById("calendar-group-delete");
-  const leaveButton = document.getElementById("calendar-group-leave");
-  const submitButton = document.getElementById("calendar-group-submit");
-
-  form.reset();
-  calState.editingGroupId = group?.id || null;
-  title.textContent = group ? "Edit group" : "New group";
-  name.value = group?.name || "";
-  color.value = group?.color || "#4f8cff";
-  
-  const currentUserId = window.team.currentUserId;
-  const isCreator = !group || group.creatorId === currentUserId;
-
-  deleteButton.hidden = !group || !isCreator;
-  leaveButton.hidden = !group || isCreator;
-  submitButton.textContent = group ? "Save changes" : "Create group";
-  
-  // Disable core fields if the current user is not the group's creator.
-  name.disabled = !isCreator;
-  color.disabled = !isCreator;
-
-  // Populate interactive people list (multi-select checkboxes).
-  const teammates = effectiveTeammates();
-  
-  peopleList.innerHTML = teammates
-    .filter(t => t.id !== currentUserId)
-    .map(t => {
-      const isChecked = group?.members?.includes(t.id);
-      return `
-        <label class="people-row ${isChecked ? "active" : ""} ${!isCreator ? "disabled" : ""}">
-          <input type="checkbox" name="members" value="${t.id}" ${isChecked ? "checked" : ""} ${!isCreator ? "disabled" : ""}>
-          <div class="people-info">
-            ${avatar(t.name, t.id)}
-            <div class="people-meta">
-              <span class="name">${escapeHTML(t.name)}</span>
-              <span class="role">${escapeHTML(t.role || "")}</span>
-            </div>
-          </div>
-          <div class="check-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-        </label>
-      `;
-    }).join("");
-
-  // Add listener for visual toggle: highlights the row when checked.
-  peopleList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.closest('.people-row').classList.toggle('active', cb.checked);
-    });
-  });
-
-  error.hidden = true;
-  error.textContent = "";
-  modal.hidden = false;
-  if (isCreator) name.focus();
-}
-
-/**
- * Closes the group modal.
- */
-function closeGroupModal() {
-  document.getElementById("calendar-group-modal").hidden = true;
-  calState.editingGroupId = null;
-}
-
-/**
- * Binds events for the group modal.
- */
-function bindGroupModal() {
-  const modal = document.getElementById("calendar-group-modal");
-  const form = document.getElementById("calendar-group-form");
-
-  document.getElementById("calendar-group-modal-close").addEventListener("click", closeGroupModal);
-  document.getElementById("calendar-group-cancel").addEventListener("click", closeGroupModal);
-  document.getElementById("calendar-group-delete").addEventListener("click", deleteCalendarGroup);
-  document.getElementById("calendar-group-leave").addEventListener("click", leaveCalendarGroup);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeGroupModal();
-  });
-  form.addEventListener("submit", saveGroup);
-}
-
-/**
- * Persists a new or existing group to the database.
- * @param {Event} e - Form submission event.
- */
-async function saveGroup(e) {
-  e.preventDefault();
-  const name = document.getElementById("calendar-group-name").value.trim();
-  const color = document.getElementById("calendar-group-color").value;
-  const checkboxes = document.querySelectorAll('#calendar-group-people-list input[name="members"]:checked');
-  const members = Array.from(checkboxes).map(cb => cb.value);
-  const error = document.getElementById("calendar-group-error");
-
-  const currentUserId = window.team.currentUserId;
-  const group = calState.editingGroupId ? findCalendarGroup(calState.editingGroupId) : null;
-  const isCreator = !group || group.creatorId === currentUserId;
-
-  // Double-check permissions before attempting DB write.
-  if (!isCreator) {
-    error.textContent = "Only the creator can edit group details.";
-    error.hidden = false;
-    return;
-  }
-
-  if (!name) {
-    error.textContent = "Please enter a group name.";
-    error.hidden = false;
-    return;
-  }
-
-  // Mandatory: Creator is always in the group they create.
-  if (!members.includes(currentUserId)) {
-    members.push(currentUserId);
-  }
-
-  const groupData = {
-    name,
-    color,
-    members
-  };
-
-  try {
-    if (calState.editingGroupId) {
-      await db.updateCalendarGroup(calState.editingGroupId, groupData);
-    } else {
-      await db.createCalendarGroup(groupData);
-    }
-
-    await db.loadAll(); // Global state refresh.
-    
-    // Auto-show new groups.
-    getCalendarGroups().forEach(g => {
-      if (!calState.customGroups.has(g.id)) calState.customGroups.add(g.id);
-    });
-
-    renderCalLegend();
-    refreshActiveView();
-    closeGroupModal();
-  } catch (err) {
-    error.textContent = "Failed to save group. Please try again.";
-    error.hidden = false;
-    console.error(err);
-  }
-}
-
-/**
- * Deletes the currently edited group.
- */
-async function deleteCalendarGroup() {
-  const id = calState.editingGroupId;
-  if (!id) return;
-
-  if (!confirm("Are you sure you want to delete this group? All shared events in this group will be hidden for everyone.")) return;
-
-  try {
-    await db.deleteCalendarGroup(id);
-    await db.loadAll();
-    
-    calState.customGroups.delete(id);
-    
-    renderCalLegend();
-    refreshActiveView();
-    closeGroupModal();
-  } catch (err) {
-    alert("Failed to delete group.");
-    console.error(err);
-  }
-}
-
-/**
- * Removes the current user from the edited group.
- */
-async function leaveCalendarGroup() {
-  const id = calState.editingGroupId;
-  if (!id) return;
-
-  const group = findCalendarGroup(id);
-  if (!group) return;
-
-  if (!confirm("Are you sure you want to leave this group? You will no longer see its events.")) return;
-
-  try {
-    await db.leaveCalendarGroup(id);
-    await db.loadAll();
-    
-    calState.customGroups.delete(id);
-    
-    renderCalLegend();
-    refreshActiveView();
-    closeGroupModal();
-  } catch (err) {
-    console.error("Leave group failed:", err);
-    const msg = err.message || "Unknown error";
-    alert(`Failed to leave group: ${msg}`);
-  }
-}
-
-/**
- * Closes the event modal.
- */
-function closeEventModal() {
-  document.getElementById("calendar-event-modal").hidden = true;
-  calState.editingEventId = null;
-}
-
-/**
- * Binds events for the event creation/editing modal.
- */
-function bindEventModal() {
-  const modal = document.getElementById("calendar-event-modal");
-  const form = document.getElementById("calendar-event-form");
-
-  document.getElementById("calendar-event-modal-close").addEventListener("click", closeEventModal);
-  document.getElementById("calendar-event-cancel").addEventListener("click", closeEventModal);
-  document.getElementById("calendar-event-delete").addEventListener("click", deleteCalendarEvent);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeEventModal();
-  });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && !modal.hidden) closeEventModal();
-  });
-  form.addEventListener("submit", createCalendarEvent);
-}
-
-/**
- * Persists a new or edited event to the database.
- * @param {Event} e - Form submission event.
- */
-async function createCalendarEvent(e) {
-  e.preventDefault();
-
-  // Extract form values.
-  const title = document.getElementById("calendar-event-name").value.trim();
-  const date = document.getElementById("calendar-event-date").value;
-  const endDate = document.getElementById("calendar-event-end-date").value;
-  const description = document.getElementById("calendar-event-description").value.trim();
-  const group = document.getElementById("calendar-event-group").value;
-  const error = document.getElementById("calendar-event-error");
-
-  // Client-side validation.
-  if (!title || !date || !group) {
-    error.textContent = "Please complete every field before creating the event.";
-    error.hidden = false;
-    return;
-  }
-
-  if (endDate && endDate < date) {
-    error.textContent = "End date cannot be before start date.";
-    error.hidden = false;
-    return;
-  }
-
-  const eventData = { 
-    date, 
-    endDate: endDate || null, 
-    title, 
-    description,
-    group,
-    teamId: (group === 'global' || group !== 'personal') ? window.team.id : null
-  };
-
-  try {
-    if (calState.editingEventId) {
-      await db.updateCalendarEvent(calState.editingEventId, eventData);
-    } else {
-      await db.createCalendarEvent(eventData);
-    }
-
-    await db.loadAll(); // Global state refresh.
-
-    // Navigate to the month of the newly created/edited event.
-    const selectedDate = new Date(`${date}T00:00:00`);
-    calState.year = selectedDate.getFullYear();
-    calState.month = selectedDate.getMonth();
-    calState.weekStart = getStartOfWeek(selectedDate);
-    
-    renderCalHeader();
-    refreshActiveView();
-    closeEventModal();
-  } catch (err) {
-    error.textContent = "Failed to save event. Please try again.";
-    error.hidden = false;
-    console.error(err);
-  }
-}
-
-/**
- * Deletes the currently edited event.
- */
-async function deleteCalendarEvent() {
-  const id = calState.editingEventId;
-  if (!id) return;
-
-  try {
-    await db.deleteCalendarEvent(id);
-    await db.loadAll();
-    
-    refreshActiveView();
-    closeEventModal();
-  } catch (err) {
-    alert("Failed to delete event.");
-    console.error(err);
-  }
 }
 
 // ─── Initialization ───────────────────────────────────────────────────
@@ -1706,6 +877,8 @@ async function deleteCalendarEvent() {
  */
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    // Hydrate shared Supabase-backed state before any renderers ask selectors
+    // for events, groups, teammates, or issues.
     await db.loadAll();
     initCalState(); 
     renderCalendar();
